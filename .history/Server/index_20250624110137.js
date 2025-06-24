@@ -29,21 +29,12 @@ const io = new Server(server, {
 // Store io instance so we can use it in routes
 app.set("io", io);
 
+// Socket events
 io.on("connection", (socket) => {
-  console.log("🧠 New client connected:", socket.id);
-
-  socket.on("join-room", (roomId) => {
-    socket.join(roomId);
-    console.log(`User joined room: ${roomId}`);
-  });
-
-  socket.on("send-message", (data) => {
-    const { roomId, message } = data;
-    socket.to(roomId).emit("receive-message", message);
-  });
+  console.log("🟢 New client connected:", socket.id);
 
   socket.on("disconnect", () => {
-    console.log("❌ Client disconnected:", socket.id);
+    console.log("🔴 Client disconnected:", socket.id);
   });
 });
 
@@ -56,8 +47,6 @@ app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/request", requestRoutes);
 app.use("/api/match", match);
-app.use("/api/message", messageRoutes);
-
 // MongoDB connection
 mongoose
   .connect(process.env.MONGO_URI, {
@@ -71,7 +60,5 @@ mongoose
 app.get("/", (req, res) => res.send("API is working"));
 
 // Start server
-export { io }; // optional, in case needed elsewhere
-
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => console.log(`Server running on ${PORT}`));
+server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

@@ -16,7 +16,7 @@ import RequestForm from "../pages/RequestForm";
 import NearbyRequests from "../pages/NearbyRequests";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import MatchedRequests from "../pages/MatchedRequests";
+import MatchedRequests from "./pages/MatchedRequests";
 
 function App() {
   const { token } = useContext(AuthContext);

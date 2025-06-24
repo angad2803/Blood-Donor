@@ -153,27 +153,19 @@ const Dashboard = () => {
                       </p>
                     )}
                   </div>
-
-                  <div className="mt-2 md:mt-0 flex gap-2">
+                  <div className="mt-2 md:mt-0">
                     {req.fulfilled ? (
                       <span className="text-green-600 font-semibold">
                         ✔ Fulfilled
                       </span>
                     ) : (
                       user?.isDonor && (
-                        <>
-                          <button
-                            className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 transition"
-                            onClick={() => markFulfilled(req._id)}
-                          >
-                            Mark Fulfilled
-                          </button>
-                          <Link to={`/chat/${req._id}`}>
-                            <button className="px-3 py-1 bg-purple-500 text-white rounded hover:bg-purple-600 transition">
-                              Chat
-                            </button>
-                          </Link>
-                        </>
+                        <button
+                          className="ml-2 px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 transition"
+                          onClick={() => markFulfilled(req._id)}
+                        >
+                          Mark Fulfilled
+                        </button>
                       )
                     )}
                   </div>
