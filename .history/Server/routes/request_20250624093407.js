@@ -61,6 +61,7 @@ router.put("/:id/fulfill", verifyToken, async (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 });
+import { canDonateTo } from "../utils/compatability.js";
 
 router.get("/all", verifyToken, async (req, res) => {
   try {

@@ -4,9 +4,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import api from "../api/api.js";
 import { io } from "socket.io-client";
-import { canDonateTo } from "../../Server/utils/compatability.js";
-
-const socket = io("http://localhost:5000");
+import 
+const socket = io("http://localhost:5000"); // Use your backend URL here
 
 const Dashboard = () => {
   const { user, logout } = useContext(AuthContext);
@@ -18,26 +17,29 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchRequests = async () => {
       try {
-        const res = await api.get("/request/all");
+        const res = await api.get("/request/all"); // Fetch all requests
 
         let relevant = [];
+
         if (user?.isDonor) {
+          // Donor: see unfulfilled requests matching blood group and location
           relevant = res.data.requests.filter(
             (r) =>
               !r.fulfilled &&
               r.location === user.location &&
-              canDonateTo(user.bloodGroup, r.bloodGroup)
+              r.bloodGroup === user.bloodGroup
           );
         } else {
+          // Recipient: see their own requests
           relevant = res.data.requests.filter((r) => r.user === user._id);
         }
 
-        const sorted = relevant.sort((a, b) => {
+        const sortedRequests = relevant.sort((a, b) => {
           if (a.fulfilled !== b.fulfilled) return a.fulfilled ? 1 : -1;
           return new Date(b.createdAt) - new Date(a.createdAt);
         });
 
-        setRequests(sorted);
+        setRequests(sortedRequests);
       } catch (err) {
         console.error("Error fetching requests:", err.response || err.message);
       } finally {
@@ -52,26 +54,27 @@ const Dashboard = () => {
     socket.on("new-blood-request", (data) => {
       alert(`🩸 New request: ${data.bloodGroup} at ${data.location}`);
     });
-    return () => socket.off("new-blood-request");
+    return () => {
+      socket.off("new-blood-request");
+    };
   }, []);
 
   const markFulfilled = async (id) => {
     try {
       await api.put(`/request/${id}/fulfill`);
       setRequests((prev) =>
-        prev.map((r) => (r._id === id ? { ...r, fulfilled: true } : r))
+        prev.map((req) => (req._id === id ? { ...req, fulfilled: true } : req))
       );
       toast.success("✅ Marked as fulfilled!");
     } catch (err) {
       toast.error("❌ Could not mark as fulfilled.");
-      console.error(err);
+      console.error("Error marking fulfilled", err);
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-blue-50 py-8">
       <div className="w-full max-w-2xl bg-white rounded-lg shadow-md p-8">
-        {/* Top user details */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
           <div>
             <h2 className="text-2xl font-semibold text-blue-700 mb-2">
@@ -93,7 +96,6 @@ const Dashboard = () => {
           </button>
         </div>
 
-        {/* Buttons */}
         <div className="flex flex-wrap gap-4 mb-6">
           {!user?.isDonor && (
             <Link to="/request" className="w-full md:w-auto">
@@ -113,7 +115,6 @@ const Dashboard = () => {
           {user?.isDonor ? "Requests You Can Fulfill" : "Your Blood Requests"}
         </h3>
 
-        {/* Request List */}
         {loading ? (
           <p>Loading...</p>
         ) : requests.length === 0 ? (
@@ -129,16 +130,21 @@ const Dashboard = () => {
                     : "bg-white border-gray-200"
                 }`}
               >
+                <div>
+                  <strong className="text-lg">{req.bloodGroup}</strong> at{" "}
+                  <em>{req.location}</em> – {req.urgency}
+                  {user?.isDonor &&
+                    canDonateTo(user.bloodGroup, req.bloodGroup) && (
+                      <div className="text-xs text-blue-600 mt-1">
+                        Compatible with your blood group
+                      </div>
+                    )}
+                </div>
+
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                   <div>
                     <strong className="text-lg">{req.bloodGroup}</strong> at{" "}
                     <em>{req.location}</em> – {req.urgency}
-                    {user?.isDonor &&
-                      canDonateTo(user.bloodGroup, req.bloodGroup) && (
-                        <div className="text-xs text-blue-600 mt-1">
-                          Compatible with your blood group
-                        </div>
-                      )}
                   </div>
                   <div className="mt-2 md:mt-0">
                     {req.fulfilled ? (

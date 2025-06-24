@@ -1,8 +1,6 @@
 import express from "express";
 import BloodRequest from "../models/BloodRequest.js";
 import verifyToken from "../middleware/auth.js";
-import User from "../models/User.js";
-import { canDonateTo } from "../utils/compatability.js";
 
 const router = express.Router();
 
@@ -61,6 +59,7 @@ router.put("/:id/fulfill", verifyToken, async (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 });
+import { canDonateTo } from "../utils/compatibility.js";
 
 router.get("/all", verifyToken, async (req, res) => {
   try {
