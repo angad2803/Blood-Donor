@@ -31,16 +31,15 @@ router.post("/create", verifyToken, async (req, res) => {
 // Get all active blood requests
 router.get("/all", async (req, res) => {
   try {
-    const requests = await BloodRequest.find()
-      .populate("requester", "name bloodGroup location")
-      .populate("fulfilledBy", "name"); // 👈 add this line
-
+    const requests = await BloodRequest.find({ fulfilled: false }).populate(
+      "requester",
+      "name bloodGroup location"
+    );
     res.status(200).json({ requests });
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 });
-
 router.put("/:id/fulfill", verifyToken, async (req, res) => {
   try {
     const request = await BloodRequest.findById(req.params.id);
