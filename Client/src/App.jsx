@@ -20,9 +20,20 @@ import MatchedRequests from "../pages/MatchedRequests";
 import ChatPage from "../pages/ChatPage";
 import OAuthSuccess from "../pages/OAuthSuccess";
 import CompleteProfile from "../pages/CompleteProfile";
+import SessionManager from "../components/SessionManager";
 
 function App() {
-  const { token } = useContext(AuthContext);
+  const { token, isLoading } = useContext(AuthContext);
+
+  // Show loading while checking authentication state
+  if (isLoading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <div className="loading-text">Loading...</div>
+      </div>
+    );
+  }
 
   // Protected route wrapper
   const PrivateRoute = ({ children }) => {
@@ -32,6 +43,7 @@ function App() {
   return (
     <Router>
       <>
+        <SessionManager />
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -72,14 +84,6 @@ function App() {
             element={
               <PrivateRoute>
                 <DonorList />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/complete-profile"
-            element={
-              <PrivateRoute>
-                <CompleteProfile />
               </PrivateRoute>
             }
           />

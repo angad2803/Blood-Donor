@@ -9,7 +9,8 @@ import { canDonateTo } from "../../Server/utils/compatability.js";
 const socket = io("http://localhost:5000");
 
 const Dashboard = () => {
-  const { user, logout, loginWithToken } = useContext(AuthContext);
+  const { user, logout, logoutCurrentTab, loginWithToken, tabId } =
+    useContext(AuthContext);
   const navigate = useNavigate();
   const [params] = useSearchParams();
 
@@ -17,6 +18,26 @@ const Dashboard = () => {
   const [myRequests, setMyRequests] = useState([]); // Requests made by the user (for requesters)
   const [fulfilledRequests, setFulfilledRequests] = useState([]); // Requests fulfilled by the user (for donors)
   const [loading, setLoading] = useState(true);
+  const [crossedOutRequests, setCrossedOutRequests] = useState(() => {
+    // Load crossed out requests from localStorage
+    const saved = localStorage.getItem("crossedOutRequests");
+    return saved ? new Set(JSON.parse(saved)) : new Set();
+  }); // Track crossed out fulfilled requests
+  const [showCrossedOut, setShowCrossedOut] = useState(true); // Toggle to show/hide crossed out requests
+
+  const toggleCrossOut = (requestId) => {
+    setCrossedOutRequests((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(requestId)) {
+        newSet.delete(requestId);
+      } else {
+        newSet.add(requestId);
+      }
+      // Save to localStorage
+      localStorage.setItem("crossedOutRequests", JSON.stringify([...newSet]));
+      return newSet;
+    });
+  };
 
   // Handle token from OAuth redirect
   useEffect(() => {
@@ -68,6 +89,7 @@ const Dashboard = () => {
         }
 
         // All users can see their own requests (requests they made)
+        // But we only show this section for non-donors in the UI
         userRequests = res.data.requests.filter(
           (r) => r.requester._id === user._id
         );
@@ -147,13 +169,25 @@ const Dashboard = () => {
             <p className="text-gray-700">
               Location: <span className="font-semibold">{user?.location}</span>
             </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Tab ID: {tabId?.substring(0, 12)}... | User ID:{" "}
+              {user?._id?.substring(0, 8)}...
+            </p>
           </div>
-          <button
-            onClick={logout}
-            className="mt-4 md:mt-0 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
-          >
-            Logout
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => logout(true)}
+              className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
+            >
+              Logout All Tabs
+            </button>
+            <button
+              onClick={() => logoutCurrentTab()}
+              className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition"
+            >
+              Logout This Tab
+            </button>
+          </div>
         </div>
 
         {/* Buttons */}
@@ -179,165 +213,147 @@ const Dashboard = () => {
           )}
         </div>
 
-        {/* My Blood Requests Section (for all users) */}
-        {myRequests.length > 0 && (
+        {/* My Blood Requests Section (for requesters only - non-donors) */}
+        {!user?.isDonor && myRequests.length > 0 && (
           <div className="mb-8">
-            <h3 className="text-xl font-semibold mb-4 text-blue-700">
-              📋 Your Blood Requests
-            </h3>
-            <div className="space-y-4">
-              {myRequests.map((req) => (
-                <div
-                  key={req._id}
-                  className={`p-4 rounded-lg border-2 transition-all ${
-                    req.fulfilled
-                      ? "bg-green-50 border-green-200 shadow-sm"
-                      : "bg-white border-gray-200 shadow-md hover:shadow-lg"
-                  }`}
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold text-blue-700">
+                📋 Your Blood Requests
+                {crossedOutRequests.size > 0 && (
+                  <span className="ml-2 text-sm text-gray-500">
+                    ({crossedOutRequests.size} crossed out)
+                  </span>
+                )}
+              </h3>
+              {myRequests.some(
+                (req) => req.fulfilled && crossedOutRequests.has(req._id)
+              ) && (
+                <button
+                  onClick={() => setShowCrossedOut(!showCrossedOut)}
+                  className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition"
                 >
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <strong className="text-lg">{req.bloodGroup}</strong>
-                        <span className="text-gray-600">at</span>
-                        <em className="text-gray-800">{req.location}</em>
-                        <span className="text-gray-600">–</span>
-                        <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${
-                            req.urgency === "urgent" ||
-                            req.urgency === "Emergency"
-                              ? "bg-red-100 text-red-800"
-                              : req.urgency === "moderate" ||
-                                req.urgency === "High"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-blue-100 text-blue-800"
-                          }`}
-                        >
-                          {req.urgency}
-                        </span>
-                        {req.fulfilled && (
-                          <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">
-                            ✓ FULFILLED
+                  {showCrossedOut
+                    ? "🙈 Hide Crossed Out"
+                    : "👀 Show Crossed Out"}
+                </button>
+              )}
+            </div>
+            <div className="space-y-4">
+              {myRequests
+                .filter(
+                  (req) => showCrossedOut || !crossedOutRequests.has(req._id)
+                )
+                .map((req) => (
+                  <div
+                    key={req._id}
+                    className={`p-4 rounded-lg border-2 transition-all ${
+                      req.fulfilled
+                        ? "bg-green-50 border-green-200 shadow-sm"
+                        : "bg-white border-gray-200 shadow-md hover:shadow-lg"
+                    } ${crossedOutRequests.has(req._id) ? "opacity-60" : ""}`}
+                  >
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                      <div
+                        className={`flex-1 ${
+                          crossedOutRequests.has(req._id) ? "line-through" : ""
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <strong className="text-lg">{req.bloodGroup}</strong>
+                          <span className="text-gray-600">at</span>
+                          <em className="text-gray-800">{req.location}</em>
+                          <span className="text-gray-600">–</span>
+                          <span
+                            className={`px-2 py-1 rounded text-xs font-medium ${
+                              req.urgency === "urgent" ||
+                              req.urgency === "Emergency"
+                                ? "bg-red-100 text-red-800"
+                                : req.urgency === "moderate" ||
+                                  req.urgency === "High"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-blue-100 text-blue-800"
+                            }`}
+                          >
+                            {req.urgency}
                           </span>
+                          {req.fulfilled && (
+                            <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">
+                              ✓ FULFILLED
+                            </span>
+                          )}
+                          {req.fulfilled && (
+                            <button
+                              onClick={() => toggleCrossOut(req._id)}
+                              className={`ml-2 px-2 py-1 rounded text-xs font-medium transition ${
+                                crossedOutRequests.has(req._id)
+                                  ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
+                                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                              }`}
+                              title={
+                                crossedOutRequests.has(req._id)
+                                  ? "Restore request"
+                                  : "Cross out request"
+                              }
+                            >
+                              {crossedOutRequests.has(req._id)
+                                ? "↶ Restore"
+                                : "✕ Cross Out"}
+                            </button>
+                          )}
+                        </div>
+
+                        {req.description && (
+                          <p className="text-sm text-gray-600 mb-2">
+                            {req.description}
+                          </p>
+                        )}
+
+                        <p className="text-xs text-gray-500">
+                          Requested on:{" "}
+                          {new Date(req.createdAt).toLocaleDateString()}
+                        </p>
+
+                        {req.fulfilledBy?.name && (
+                          <div className="mt-2 p-2 bg-green-50 rounded border border-green-200">
+                            <p className="text-sm text-green-700 font-medium">
+                              ✓ Fulfilled by: {req.fulfilledBy.name}
+                            </p>
+                            <p className="text-xs text-green-600">
+                              Completed on:{" "}
+                              {new Date(req.fulfilledAt).toLocaleString()}
+                            </p>
+                          </div>
                         )}
                       </div>
 
-                      {req.description && (
-                        <p className="text-sm text-gray-600 mb-2">
-                          {req.description}
-                        </p>
-                      )}
-
-                      <p className="text-xs text-gray-500">
-                        Requested on:{" "}
-                        {new Date(req.createdAt).toLocaleDateString()}
-                      </p>
-
-                      {req.fulfilledBy?.name && (
-                        <div className="mt-2 p-2 bg-green-50 rounded border border-green-200">
-                          <p className="text-sm text-green-700 font-medium">
-                            ✓ Fulfilled by: {req.fulfilledBy.name}
-                          </p>
-                          <p className="text-xs text-green-600">
-                            Completed on:{" "}
-                            {new Date(req.fulfilledAt).toLocaleString()}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="mt-3 md:mt-0 md:ml-4 flex flex-col gap-2">
-                      {req.fulfilled ? (
-                        <div className="flex flex-col gap-2">
-                          <span className="inline-block px-3 py-2 bg-green-100 text-green-800 rounded-lg font-semibold text-sm text-center">
-                            ✓ Request Completed
-                          </span>
-                          <Link to={`/chat/${req._id}`}>
-                            <button className="w-full px-3 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition text-sm font-medium">
-                              💬 View Chat History
-                            </button>
-                          </Link>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col gap-2">
-                          <span className="inline-block px-3 py-2 bg-orange-100 text-orange-800 rounded-lg font-medium text-sm text-center">
-                            Waiting for donor
-                          </span>
-                          <Link to={`/chat/${req._id}`}>
-                            <button className="w-full px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition text-sm font-medium">
-                              💬 Chat with Donors
-                            </button>
-                          </Link>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Requests Fulfilled by User (for donors) */}
-        {user?.isDonor && fulfilledRequests.length > 0 && (
-          <div className="mb-8">
-            <h3 className="text-xl font-semibold mb-4 text-green-700">
-              💚 Requests You Have Fulfilled
-            </h3>
-            <div className="space-y-4">
-              {fulfilledRequests.map((req) => (
-                <div
-                  key={req._id}
-                  className="p-4 rounded-lg border-2 bg-green-50 border-green-200 shadow-sm"
-                >
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <strong className="text-lg">{req.bloodGroup}</strong>
-                        <span className="text-gray-600">at</span>
-                        <em className="text-gray-800">{req.location}</em>
-                        <span className="text-gray-600">–</span>
-                        <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${
-                            req.urgency === "urgent" ||
-                            req.urgency === "Emergency"
-                              ? "bg-red-100 text-red-800"
-                              : req.urgency === "moderate" ||
-                                req.urgency === "High"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-blue-100 text-blue-800"
-                          }`}
-                        >
-                          {req.urgency}
-                        </span>
-                        <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">
-                          ✓ FULFILLED BY YOU
-                        </span>
+                      <div className="mt-3 md:mt-0 md:ml-4 flex flex-col gap-2">
+                        {req.fulfilled ? (
+                          <div className="flex flex-col gap-2">
+                            <span className="inline-block px-3 py-2 bg-green-100 text-green-800 rounded-lg font-semibold text-sm text-center">
+                              ✓ Request Completed
+                            </span>
+                            <Link to={`/chat/${req._id}`}>
+                              <button className="w-full px-3 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition text-sm font-medium">
+                                💬 View Chat History
+                              </button>
+                            </Link>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col gap-2">
+                            <span className="inline-block px-3 py-2 bg-orange-100 text-orange-800 rounded-lg font-medium text-sm text-center">
+                              Waiting for donor
+                            </span>
+                            <Link to={`/chat/${req._id}`}>
+                              <button className="w-full px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition text-sm font-medium">
+                                💬 Chat with Donors
+                              </button>
+                            </Link>
+                          </div>
+                        )}
                       </div>
-
-                      <p className="text-sm text-gray-600 mb-1">
-                        Requested by: {req.requester?.name}
-                      </p>
-
-                      <p className="text-xs text-gray-500">
-                        Originally requested:{" "}
-                        {new Date(req.createdAt).toLocaleDateString()}
-                      </p>
-
-                      <p className="text-xs text-green-600 font-medium">
-                        Fulfilled on:{" "}
-                        {new Date(req.fulfilledAt).toLocaleString()}
-                      </p>
-                    </div>
-
-                    <div className="mt-3 md:mt-0 md:ml-4">
-                      <span className="inline-block px-3 py-2 bg-green-100 text-green-800 rounded-lg font-semibold text-sm">
-                        ✓ Completed
-                      </span>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
         )}
@@ -430,6 +446,124 @@ const Dashboard = () => {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Requests Fulfilled by User (for donors) */}
+        {user?.isDonor && fulfilledRequests.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold text-green-700">
+                💚 Requests You Have Fulfilled
+                {fulfilledRequests.filter((req) =>
+                  crossedOutRequests.has(req._id)
+                ).length > 0 && (
+                  <span className="ml-2 text-sm text-gray-500">
+                    (
+                    {
+                      fulfilledRequests.filter((req) =>
+                        crossedOutRequests.has(req._id)
+                      ).length
+                    }{" "}
+                    crossed out)
+                  </span>
+                )}
+              </h3>
+              {fulfilledRequests.some((req) =>
+                crossedOutRequests.has(req._id)
+              ) && (
+                <button
+                  onClick={() => setShowCrossedOut(!showCrossedOut)}
+                  className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition"
+                >
+                  {showCrossedOut
+                    ? "🙈 Hide Crossed Out"
+                    : "👀 Show Crossed Out"}
+                </button>
+              )}
+            </div>
+            <div className="space-y-4">
+              {fulfilledRequests
+                .filter(
+                  (req) => showCrossedOut || !crossedOutRequests.has(req._id)
+                )
+                .map((req) => (
+                  <div
+                    key={req._id}
+                    className={`p-4 rounded-lg border-2 bg-green-50 border-green-200 shadow-sm transition-all ${
+                      crossedOutRequests.has(req._id) ? "opacity-60" : ""
+                    }`}
+                  >
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                      <div
+                        className={`flex-1 ${
+                          crossedOutRequests.has(req._id) ? "line-through" : ""
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <strong className="text-lg">{req.bloodGroup}</strong>
+                          <span className="text-gray-600">at</span>
+                          <em className="text-gray-800">{req.location}</em>
+                          <span className="text-gray-600">–</span>
+                          <span
+                            className={`px-2 py-1 rounded text-xs font-medium ${
+                              req.urgency === "urgent" ||
+                              req.urgency === "Emergency"
+                                ? "bg-red-100 text-red-800"
+                                : req.urgency === "moderate" ||
+                                  req.urgency === "High"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-blue-100 text-blue-800"
+                            }`}
+                          >
+                            {req.urgency}
+                          </span>
+                          <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">
+                            ✓ FULFILLED BY YOU
+                          </span>
+                          <button
+                            onClick={() => toggleCrossOut(req._id)}
+                            className={`ml-2 px-2 py-1 rounded text-xs font-medium transition ${
+                              crossedOutRequests.has(req._id)
+                                ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
+                                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                            }`}
+                            title={
+                              crossedOutRequests.has(req._id)
+                                ? "Restore request"
+                                : "Cross out request"
+                            }
+                          >
+                            {crossedOutRequests.has(req._id)
+                              ? "↶ Restore"
+                              : "✕ Cross Out"}
+                          </button>
+                        </div>
+
+                        <p className="text-sm text-gray-600 mb-1">
+                          Requested by: {req.requester?.name}
+                        </p>
+
+                        <p className="text-xs text-gray-500">
+                          Originally requested:{" "}
+                          {new Date(req.createdAt).toLocaleDateString()}
+                        </p>
+
+                        <p className="text-xs text-green-600 font-medium">
+                          Fulfilled on:{" "}
+                          {new Date(req.fulfilledAt).toLocaleString()}
+                        </p>
+                      </div>
+
+                      <div className="mt-3 md:mt-0 md:ml-4">
+                        <span className="inline-block px-3 py-2 bg-green-100 text-green-800 rounded-lg font-semibold text-sm">
+                          ✓ Completed
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+            </div>
           </div>
         )}
 
