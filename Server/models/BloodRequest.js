@@ -36,6 +36,34 @@ const bloodRequestSchema = new mongoose.Schema({
     type: Date,
     default: null,
   },
+  // New fields for fulfillment offers
+  fulfillmentOffers: [
+    {
+      donor: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+      },
+      offeredAt: {
+        type: Date,
+        default: Date.now,
+      },
+      status: {
+        type: String,
+        enum: ["pending", "accepted", "rejected"],
+        default: "pending",
+      },
+      message: {
+        type: String,
+        default: "",
+      },
+    },
+  ],
+  acceptedOffer: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    default: null,
+  },
 });
 
 export default mongoose.model("BloodRequest", bloodRequestSchema);

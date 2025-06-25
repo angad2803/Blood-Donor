@@ -119,15 +119,110 @@ const Dashboard = () => {
     };
 
     if (user) fetchRequests();
+
+    // Make fetchRequests available for socket event handlers
+    window.fetchRequests = fetchRequests;
   }, [user]);
 
   useEffect(() => {
     socket.on("new-blood-request", (data) => {
       alert(`🩸 New request: ${data.bloodGroup} at ${data.location}`);
     });
-    return () => socket.off("new-blood-request");
-  }, []);
 
+    socket.on("new-fulfillment-offer", (data) => {
+      if (
+        user &&
+        data.requestId &&
+        myRequests.some((req) => req._id === data.requestId)
+      ) {
+        toast.info(
+          `💝 New offer from ${data.donorName} for your blood request!`
+        );
+        // Refresh requests to show new offer
+        if (window.fetchRequests) window.fetchRequests();
+      }
+    });
+
+    socket.on("offer-response", (data) => {
+      if (user && data.donorId === user._id) {
+        if (data.action === "accept") {
+          toast.success(`✅ Your offer was accepted by ${data.requesterName}!`);
+        } else {
+          toast.info(`ℹ️ Your offer was declined by ${data.requesterName}`);
+        }
+        // Refresh requests to update status
+        if (window.fetchRequests) window.fetchRequests();
+      }
+    });
+
+    return () => {
+      socket.off("new-blood-request");
+      socket.off("new-fulfillment-offer");
+      socket.off("offer-response");
+    };
+  }, [user, myRequests]);
+
+  // Function for donors to send fulfillment offers
+  const sendOffer = async (requestId, message = "") => {
+    try {
+      await api.post(`/request/${requestId}/offer`, { message });
+      toast.success("🤝 Fulfillment offer sent successfully!");
+
+      // Refresh requests to update UI
+      const res = await api.get("/request/all");
+      const sorted = res.data.requests
+        .filter(
+          (r) =>
+            !r.fulfilled &&
+            r.location === user.location &&
+            canDonateTo(user.bloodGroup, r.bloodGroup)
+        )
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      setRequests(sorted);
+    } catch (err) {
+      toast.error(
+        "❌ Could not send offer. " + (err.response?.data?.message || "")
+      );
+      console.error(err);
+    }
+  };
+
+  // Function for requesters to respond to offers
+  const respondToOffer = async (requestId, offerId, action) => {
+    try {
+      await api.put(`/request/${requestId}/offer/${offerId}/${action}`);
+      toast.success(
+        action === "accept" ? "✅ Offer accepted!" : "ℹ️ Offer declined"
+      );
+
+      // Refresh requests to update status
+      const res = await api.get("/request/all");
+      const userRequests = res.data.requests.filter(
+        (r) => r.requester._id === user._id
+      );
+      setMyRequests(
+        userRequests.sort((a, b) => {
+          if (a.fulfilled !== b.fulfilled) return a.fulfilled ? 1 : -1;
+          return new Date(b.createdAt) - new Date(a.createdAt);
+        })
+      );
+
+      if (action === "accept") {
+        // If accepted, also update fulfilled requests for donors
+        const fulfilledRequest = userRequests.find((r) => r._id === requestId);
+        if (fulfilledRequest && user?.isDonor) {
+          setFulfilledRequests((prev) => [fulfilledRequest, ...prev]);
+        }
+      }
+    } catch (err) {
+      toast.error(
+        "❌ Could not respond to offer. " + (err.response?.data?.message || "")
+      );
+      console.error(err);
+    }
+  };
+
+  // Legacy function - kept for backward compatibility
   const markFulfilled = async (id) => {
     try {
       await api.put(`/request/${id}/fulfill`);
@@ -324,6 +419,82 @@ const Dashboard = () => {
                             </p>
                           </div>
                         )}
+
+                        {/* Show fulfillment offers for unfulfilled requests */}
+                        {!req.fulfilled &&
+                          req.fulfillmentOffers &&
+                          req.fulfillmentOffers.length > 0 && (
+                            <div className="mt-3">
+                              <p className="text-sm font-medium text-gray-700 mb-2">
+                                💝 Fulfillment Offers (
+                                {req.fulfillmentOffers.length})
+                              </p>
+                              <div className="space-y-2 max-h-32 overflow-y-auto">
+                                {req.fulfillmentOffers.map((offer) => (
+                                  <div
+                                    key={offer._id}
+                                    className={`p-2 rounded border text-xs ${
+                                      offer.status === "pending"
+                                        ? "bg-blue-50 border-blue-200"
+                                        : offer.status === "accepted"
+                                        ? "bg-green-50 border-green-200"
+                                        : "bg-gray-50 border-gray-200"
+                                    }`}
+                                  >
+                                    <div className="flex justify-between items-start mb-1">
+                                      <span className="font-medium">
+                                        {offer.donor.name}
+                                      </span>
+                                      <span
+                                        className={`px-1 py-0.5 rounded text-xs ${
+                                          offer.status === "pending"
+                                            ? "bg-blue-100 text-blue-800"
+                                            : offer.status === "accepted"
+                                            ? "bg-green-100 text-green-800"
+                                            : "bg-gray-100 text-gray-800"
+                                        }`}
+                                      >
+                                        {offer.status}
+                                      </span>
+                                    </div>
+                                    {offer.message && (
+                                      <p className="text-gray-600 text-xs mb-2">
+                                        {offer.message}
+                                      </p>
+                                    )}
+                                    {offer.status === "pending" && (
+                                      <div className="flex gap-1">
+                                        <button
+                                          onClick={() =>
+                                            respondToOffer(
+                                              req._id,
+                                              offer._id,
+                                              "accept"
+                                            )
+                                          }
+                                          className="px-2 py-1 bg-green-500 text-white rounded text-xs hover:bg-green-600"
+                                        >
+                                          ✓ Accept
+                                        </button>
+                                        <button
+                                          onClick={() =>
+                                            respondToOffer(
+                                              req._id,
+                                              offer._id,
+                                              "reject"
+                                            )
+                                          }
+                                          className="px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600"
+                                        >
+                                          ✗ Decline
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                       </div>
 
                       <div className="mt-3 md:mt-0 md:ml-4 flex flex-col gap-2">
@@ -428,12 +599,35 @@ const Dashboard = () => {
 
                       <div className="mt-3 md:mt-0 md:ml-4 flex flex-col gap-2">
                         <div className="flex gap-2">
-                          <button
-                            className="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition text-sm font-medium"
-                            onClick={() => markFulfilled(req._id)}
-                          >
-                            Mark Fulfilled
-                          </button>
+                          {/* Check if user already made an offer */}
+                          {req.fulfillmentOffers &&
+                          req.fulfillmentOffers.some(
+                            (offer) => offer.donor._id === user._id
+                          ) ? (
+                            <span className="px-3 py-2 bg-yellow-100 text-yellow-800 rounded-lg text-sm font-medium">
+                              {req.fulfillmentOffers.find(
+                                (offer) => offer.donor._id === user._id
+                              )?.status === "pending"
+                                ? "🕒 Offer Sent"
+                                : req.fulfillmentOffers.find(
+                                    (offer) => offer.donor._id === user._id
+                                  )?.status === "rejected"
+                                ? "❌ Offer Declined"
+                                : "✅ Offer Accepted"}
+                            </span>
+                          ) : (
+                            <button
+                              className="px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition text-sm font-medium"
+                              onClick={() =>
+                                sendOffer(
+                                  req._id,
+                                  `Hi! I'm ${user.bloodGroup} and available to help with your blood request in ${user.location}.`
+                                )
+                              }
+                            >
+                              🤝 Send Offer
+                            </button>
+                          )}
                           <Link to={`/chat/${req._id}`}>
                             <button className="px-3 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition text-sm font-medium">
                               Chat
