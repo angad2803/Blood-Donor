@@ -17,6 +17,7 @@ import NearbyRequests from "../pages/NearbyRequests";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import MatchedRequests from "../pages/MatchedRequests";
+import OAuthSuccess from "../pages/OAuthSuccess";
 
 function App() {
   const { token } = useContext(AuthContext);
@@ -32,6 +33,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/oauth-success" element={<OAuthSuccess />} />
 
           {/* Protected routes */}
           <Route

@@ -46,6 +46,20 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Login function for OAuth (to be called from OAuthSuccess)
+  const loginWithToken = (token, userData) => {
+    // Save to localStorage
+    localStorage.setItem("token", token);
+    localStorage.setItem("user", JSON.stringify(userData));
+
+    // Set token for future requests
+    api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+    // Update context
+    setUser(userData);
+    setToken(token);
+  };
+
   // Logout function
   const logout = () => {
     localStorage.removeItem("token");
@@ -56,7 +70,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
+    <AuthContext.Provider
+      value={{ user, token, login, logout, loginWithToken }}
+    >
       {children}
     </AuthContext.Provider>
   );

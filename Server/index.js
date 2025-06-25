@@ -10,6 +10,9 @@ import userRoutes from "./routes/user.js";
 import requestRoutes from "./routes/request.js";
 import match from "./routes/match.js";
 import messageRoutes from "./routes/message.js";
+import googleAuthRoutes from "./routes/googleAuth.js";
+import passport from "passport";
+import "./config/passport.js"; // 👈 initialize passport config
 
 // Config
 dotenv.config();
@@ -57,6 +60,8 @@ app.use("/api/user", userRoutes);
 app.use("/api/request", requestRoutes);
 app.use("/api/match", match);
 app.use("/api/message", messageRoutes);
+app.use("/api/google-auth", googleAuthRoutes);
+app.use(passport.initialize());
 
 // MongoDB connection
 mongoose

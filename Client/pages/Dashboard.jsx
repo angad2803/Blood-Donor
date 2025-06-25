@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../context/AuthContext";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import api from "../api/api.js";
 import { io } from "socket.io-client";
@@ -9,11 +9,30 @@ import { canDonateTo } from "../../Server/utils/compatability.js";
 const socket = io("http://localhost:5000");
 
 const Dashboard = () => {
-  const { user, logout } = useContext(AuthContext);
+  const { user, logout, loginWithToken } = useContext(AuthContext);
   const navigate = useNavigate();
+  const [params] = useSearchParams();
 
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Handle token from OAuth redirect
+  useEffect(() => {
+    const token = params.get("token");
+    if (token && !user) {
+      // Set token and fetch user data
+      api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      api
+        .get("/user/me")
+        .then((res) => {
+          loginWithToken(token, res.data.user);
+        })
+        .catch(() => {
+          localStorage.setItem("token", token);
+          navigate("/login");
+        });
+    }
+  }, [params, user, loginWithToken, navigate]);
 
   useEffect(() => {
     const fetchRequests = async () => {

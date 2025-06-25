@@ -2,9 +2,29 @@ import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import passport from "passport";
 
 const router = express.Router();
-
+// Start Google OAuth
+router.get(
+  "/google",
+  passport.authenticate("google", { scope: ["profile", "email"] })
+);
+// Handle OAuth callback
+router.get(
+  "/google/callback",
+  passport.authenticate("google", {
+    session: false,
+    failureRedirect: "/login",
+  }),
+  (req, res) => {
+    // On success, redirect to frontend with token
+    const token = req.user.token;
+    // Use CLIENT_URL from .env, fallback to localhost:5173 if not set
+    const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+    res.redirect(`${clientUrl}/oauth-success?token=${token}`);
+  }
+);
 // REGISTER USER
 router.post("/register", async (req, res) => {
   try {

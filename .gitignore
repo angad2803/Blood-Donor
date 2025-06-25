@@ -5,6 +5,9 @@
 # Ignore sensitive files
 *.env
 
+# Ignore VS Code history files
+.history/
+
 # Ignore server-side node_modules and logs
 Server/node_modules/
 Server/logs/

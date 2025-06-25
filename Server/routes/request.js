@@ -3,9 +3,28 @@ import BloodRequest from "../models/BloodRequest.js";
 import verifyToken from "../middleware/auth.js";
 import User from "../models/User.js";
 import { canDonateTo } from "../utils/compatability.js";
-
+import passport from "passport";
+// Ensure you have passport configured properly in your main server file
 const router = express.Router();
-
+// Redirect to Google consent screen
+router.get(
+  "/google",
+  passport.authenticate("google", {
+    scope: ["profile", "email"],
+  })
+);
+router.get(
+  "/google/callback",
+  passport.authenticate("google", {
+    session: false,
+    failureRedirect: "/login", // frontend fallback
+  }),
+  (req, res) => {
+    // Send JWT token or redirect with token
+    const token = req.user.token;
+    res.redirect(`http://localhost:3000/oauth-success?token=${token}`);
+  }
+);
 // Create a new blood request
 router.post("/create", verifyToken, async (req, res) => {
   const { bloodGroup, location, urgency } = req.body;
