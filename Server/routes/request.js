@@ -50,6 +50,75 @@ router.post("/create", verifyToken, async (req, res) => {
     // Emit socket event only after save
     const io = req.app.get("io");
     if (io) io.emit("new-blood-request", newRequest);
+
+    // Add queue jobs for background processing
+    const urgentNotificationQueue = req.app.get("urgentNotificationQueue");
+    const donorMatchingQueue = req.app.get("donorMatchingQueue");
+    const emailQueue = req.app.get("emailQueue");
+    const smsQueue = req.app.get("smsQueue");
+
+    // Add urgent notification job if high priority
+    if (urgency === "Emergency" || urgency === "High") {
+      await urgentNotificationQueue.add(
+        "send-urgent-notification",
+        {
+          requestId: newRequest._id,
+          bloodGroup,
+          location,
+          hospital,
+          urgency,
+          requesterName: req.user.name,
+        },
+        {
+          priority: urgency === "Emergency" ? 100 : 50,
+          attempts: 3,
+          backoff: {
+            type: "exponential",
+            delay: 2000,
+          },
+        }
+      );
+      console.log(`🚨 Added urgent notification job for ${urgency} request`);
+    }
+
+    // Add donor matching job
+    await donorMatchingQueue.add(
+      "match-donors",
+      {
+        requestId: newRequest._id,
+        bloodGroup,
+        location,
+        urgency,
+      },
+      {
+        delay: urgency === "Emergency" ? 0 : 5000, // Immediate for emergency, 5s delay for others
+        attempts: 2,
+      }
+    );
+    console.log("🎯 Added donor matching job");
+
+    // Add email notification job for requester
+    await emailQueue.add(
+      "send-email",
+      {
+        to: req.user.email,
+        subject: "Blood Request Created Successfully",
+        template: "request-created",
+        data: {
+          requesterName: req.user.name,
+          bloodGroup,
+          hospital,
+          urgency,
+          requestId: newRequest._id,
+        },
+      },
+      {
+        attempts: 3,
+        backoff: "exponential",
+      }
+    );
+    console.log("📧 Added email confirmation job");
+
     res
       .status(201)
       .json({ message: "Blood request created", request: newRequest });
@@ -83,7 +152,10 @@ router.get("/all", verifyToken, async (req, res) => {
 router.post("/:id/offer", verifyToken, async (req, res) => {
   try {
     const { message } = req.body;
-    const request = await BloodRequest.findById(req.params.id);
+    const request = await BloodRequest.findById(req.params.id).populate(
+      "requester",
+      "name email phone"
+    );
 
     if (!request) return res.status(404).json({ message: "Request not found" });
     if (request.fulfilled)
@@ -118,6 +190,49 @@ router.post("/:id/offer", verifyToken, async (req, res) => {
         message,
       });
     }
+
+    // Add queue jobs for notifications
+    const emailQueue = req.app.get("emailQueue");
+    const smsQueue = req.app.get("smsQueue");
+
+    // Email notification to requester
+    await emailQueue.add(
+      "send-email",
+      {
+        to: request.requester.email,
+        subject: "New Donor Response to Your Blood Request",
+        template: "donor-offer",
+        data: {
+          requesterName: request.requester.name,
+          donorName: req.user.name,
+          bloodGroup: request.bloodGroup,
+          hospital: request.hospital,
+          message: message || "I would like to help with this blood request.",
+          requestId: request._id,
+        },
+      },
+      {
+        attempts: 3,
+        backoff: "exponential",
+      }
+    );
+
+    // SMS notification for urgent/emergency requests
+    if (request.urgency === "Emergency" || request.urgency === "High") {
+      await smsQueue.add(
+        "send-sms",
+        {
+          to: request.requester.phone,
+          message: `New donor ${req.user.name} responded to your ${request.urgency} blood request for ${request.bloodGroup} at ${request.hospital}. Check the app for details.`,
+        },
+        {
+          attempts: 2,
+          priority: request.urgency === "Emergency" ? 100 : 50,
+        }
+      );
+    }
+
+    console.log("📧 Added donor offer notification jobs");
 
     res.status(200).json({ message: "Fulfillment offer sent successfully" });
   } catch (err) {
@@ -340,12 +455,10 @@ router.put("/:id/fulfill-offer", verifyToken, async (req, res) => {
       request.hospital === req.user.hospitalName;
 
     if (!isRequester && !isHospitalForThisRequest) {
-      return res
-        .status(403)
-        .json({
-          message:
-            "Only the requester or assigned hospital can fulfill this request",
-        });
+      return res.status(403).json({
+        message:
+          "Only the requester or assigned hospital can fulfill this request",
+      });
     }
 
     // Mark as fulfilled

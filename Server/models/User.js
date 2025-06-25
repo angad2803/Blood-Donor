@@ -11,6 +11,10 @@ const UserSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    phone: {
+      type: String,
+      required: false,
+    },
     googleId: {
       type: String,
       unique: true,
@@ -71,6 +75,10 @@ const UserSchema = new mongoose.Schema(
     needsAccountTypeSelection: {
       type: Boolean,
       default: false,
+    },
+    lastLoginAt: {
+      type: Date,
+      default: null,
     },
   },
   {

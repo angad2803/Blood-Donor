@@ -11,8 +11,19 @@ import requestRoutes from "./routes/request.js";
 import match from "./routes/match.js";
 import messageRoutes from "./routes/message.js";
 import googleAuthRoutes from "./routes/googleAuth.js";
+import emailRoutes from "./routes/email.js";
 import passport from "passport";
 import "./config/passport.js"; // 👈 initialize passport config
+
+// Import BullMQ queue system
+import { startWorkers } from "./queues/workers.js";
+import { createBullBoardRouter } from "./queues/dashboard.js";
+import {
+  urgentNotificationQueue,
+  donorMatchingQueue,
+  emailQueue,
+  smsQueue,
+} from "./queues/config.js";
 
 // Config
 dotenv.config();
@@ -31,6 +42,12 @@ const io = new Server(server, {
 
 // Store io instance so we can use it in routes
 app.set("io", io);
+
+// Store queue instances so we can use them in routes
+app.set("urgentNotificationQueue", urgentNotificationQueue);
+app.set("donorMatchingQueue", donorMatchingQueue);
+app.set("emailQueue", emailQueue);
+app.set("smsQueue", smsQueue);
 
 io.on("connection", (socket) => {
   console.log("🧠 New client connected:", socket.id);
@@ -54,6 +71,10 @@ io.on("connection", (socket) => {
 app.use(cors());
 app.use(express.json());
 
+// Mount Bull Board dashboard (before other routes)
+const { router: bullBoardRouter } = createBullBoardRouter();
+app.use("/admin/queues", bullBoardRouter);
+
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
@@ -61,6 +82,7 @@ app.use("/api/request", requestRoutes);
 app.use("/api/match", match);
 app.use("/api/message", messageRoutes);
 app.use("/api/google-auth", googleAuthRoutes);
+app.use("/api/email", emailRoutes);
 app.use(passport.initialize());
 
 // MongoDB connection
@@ -69,11 +91,19 @@ mongoose
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
-  .then(() => console.log("✅ MongoDB connected"))
+  .then(() => {
+    console.log("✅ MongoDB connected");
+
+    // Start BullMQ workers after database connection
+    startWorkers();
+    console.log("✅ BullMQ workers started");
+  })
   .catch((err) => console.error("❌ MongoDB connection error:", err));
 
 // Sample route
-app.get("/", (req, res) => res.send("API is working"));
+app.get("/", (req, res) =>
+  res.send("Blood Donor API is working - Queue Dashboard: /admin/queues")
+);
 
 // Start server
 export { io }; // optional, in case needed elsewhere
