@@ -20,6 +20,7 @@ import MatchedRequests from "../pages/MatchedRequests";
 import ChatPage from "../pages/ChatPage";
 import OAuthSuccess from "../pages/OAuthSuccess";
 import CompleteProfile from "../pages/CompleteProfile";
+import AccountTypeSelection from "../pages/AccountTypeSelection";
 import SessionManager from "../components/SessionManager";
 
 function App() {
@@ -49,6 +50,10 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/oauth-success" element={<OAuthSuccess />} />
           <Route path="/complete-profile" element={<CompleteProfile />} />
+          <Route
+            path="/account-type-selection"
+            element={<AccountTypeSelection />}
+          />
 
           {/* Protected routes */}
           <Route

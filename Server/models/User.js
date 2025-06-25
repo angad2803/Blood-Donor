@@ -39,12 +39,38 @@ const UserSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isHospital: {
+      type: Boolean,
+      default: false,
+    },
+    hospitalName: {
+      type: String,
+      required: function () {
+        return this.isHospital;
+      },
+    },
+    hospitalAddress: {
+      type: String,
+      required: function () {
+        return this.isHospital;
+      },
+    },
+    hospitalLicense: {
+      type: String,
+      required: function () {
+        return this.isHospital;
+      },
+    },
     lastDonationDate: {
       type: Date,
     },
     available: {
       type: Boolean,
       default: true,
+    },
+    needsAccountTypeSelection: {
+      type: Boolean,
+      default: false,
     },
   },
   {

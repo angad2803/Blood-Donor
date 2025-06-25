@@ -14,6 +14,10 @@ const bloodRequestSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  hospital: {
+    type: String,
+    required: true,
+  },
   urgency: {
     type: String,
     enum: ["Low", "Medium", "High", "Emergency"],
@@ -62,6 +66,15 @@ const bloodRequestSchema = new mongoose.Schema({
   acceptedOffer: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
+    default: null,
+  },
+  // New field to track if blood was actually donated
+  bloodDonated: {
+    type: Boolean,
+    default: false,
+  },
+  donationConfirmedAt: {
+    type: Date,
     default: null,
   },
 });

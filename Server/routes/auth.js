@@ -28,12 +28,31 @@ router.get(
 // REGISTER USER
 router.post("/register", async (req, res) => {
   try {
-    const { name, email, password, bloodGroup, location, isDonor } = req.body;
+    const {
+      name,
+      email,
+      password,
+      bloodGroup,
+      location,
+      isDonor,
+      isHospital,
+      hospitalName,
+      hospitalAddress,
+      hospitalLicense,
+    } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser)
       return res.status(400).json({ message: "User already exists" });
+
+    // Validate hospital fields if registering as hospital
+    if (isHospital && (!hospitalName || !hospitalAddress || !hospitalLicense)) {
+      return res.status(400).json({
+        message:
+          "Hospital name, address, and license are required for hospital registration",
+      });
+    }
 
     // Hash password
     const salt = await bcrypt.genSalt(10);
@@ -43,9 +62,13 @@ router.post("/register", async (req, res) => {
     const newUser = new User({
       name,
       email,
-      bloodGroup,
+      bloodGroup: isHospital ? undefined : bloodGroup, // Hospitals don't need blood group
       location,
-      isDonor,
+      isDonor: isHospital ? false : isDonor, // Hospitals can't be donors
+      isHospital: isHospital || false,
+      hospitalName: isHospital ? hospitalName : undefined,
+      hospitalAddress: isHospital ? hospitalAddress : undefined,
+      hospitalLicense: isHospital ? hospitalLicense : undefined,
       password: hashedPassword,
     });
 

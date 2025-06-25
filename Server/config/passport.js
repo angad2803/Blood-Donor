@@ -29,22 +29,28 @@ passport.use(
             await existingUser.save();
             user = existingUser;
           } else {
-            // Create new user
+            // Create new user with incomplete profile flag
             user = await User.create({
               googleId: profile.id,
               name: profile.displayName,
               email: profile.emails[0].value,
-              isDonor: false, // default, you can update later from frontend
+              isDonor: false, // default, user will choose later
+              isHospital: false, // default, user will choose later
               password: Math.random().toString(36).slice(-8), // random password
               location: "Unknown", // default value to satisfy schema
               bloodGroup: "O+", // default value to satisfy schema
+              needsAccountTypeSelection: true, // Flag to indicate user needs to choose account type
             });
           }
         }
 
         // Generate JWT token
         const token = jwt.sign(
-          { id: user._id, isDonor: user.isDonor },
+          {
+            id: user._id,
+            isDonor: user.isDonor,
+            isHospital: user.isHospital,
+          },
           process.env.JWT_SECRET,
           { expiresIn: "7d" }
         );

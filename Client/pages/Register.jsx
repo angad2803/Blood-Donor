@@ -10,6 +10,10 @@ const Register = () => {
     bloodGroup: "",
     location: "",
     isDonor: false,
+    isHospital: false,
+    hospitalName: "",
+    hospitalAddress: "",
+    hospitalLicense: "",
   });
 
   const [error, setError] = useState("");
@@ -65,8 +69,11 @@ const Register = () => {
             name="bloodGroup"
             placeholder="Blood Group (e.g., A+)"
             onChange={handleChange}
-            required
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+            required={!form.isHospital}
+            disabled={form.isHospital}
+            className={`w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 ${
+              form.isHospital ? "bg-gray-100 cursor-not-allowed" : ""
+            }`}
           />
           <input
             name="location"
@@ -75,10 +82,73 @@ const Register = () => {
             required
             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
-          <label className="flex items-center space-x-2">
-            <input name="isDonor" type="checkbox" onChange={handleChange} />
-            <span>I want to register as a donor</span>
-          </label>
+
+          {/* User Type Selection */}
+          <div className="space-y-3 p-4 border border-gray-200 rounded-md bg-gray-50">
+            <h3 className="text-sm font-medium text-gray-700">
+              Select Account Type:
+            </h3>
+            <label className="flex items-center space-x-2">
+              <input
+                name="isDonor"
+                type="checkbox"
+                onChange={handleChange}
+                disabled={form.isHospital}
+                className="form-checkbox"
+              />
+              <span className={form.isHospital ? "text-gray-400" : ""}>
+                I want to register as a donor
+              </span>
+            </label>
+            <label className="flex items-center space-x-2">
+              <input
+                name="isHospital"
+                type="checkbox"
+                onChange={(e) => {
+                  handleChange(e);
+                  if (e.target.checked) {
+                    setForm((prev) => ({
+                      ...prev,
+                      isDonor: false,
+                      bloodGroup: "",
+                    }));
+                  }
+                }}
+                className="form-checkbox"
+              />
+              <span>I want to register as a hospital</span>
+            </label>
+          </div>
+
+          {/* Hospital-specific fields */}
+          {form.isHospital && (
+            <div className="space-y-4 p-4 border border-blue-200 rounded-md bg-blue-50">
+              <h3 className="text-sm font-medium text-blue-700">
+                Hospital Information:
+              </h3>
+              <input
+                name="hospitalName"
+                placeholder="Hospital Name"
+                onChange={handleChange}
+                required={form.isHospital}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+              <input
+                name="hospitalAddress"
+                placeholder="Hospital Address"
+                onChange={handleChange}
+                required={form.isHospital}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+              <input
+                name="hospitalLicense"
+                placeholder="Hospital License Number"
+                onChange={handleChange}
+                required={form.isHospital}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+            </div>
+          )}
           <button
             type="submit"
             className="w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded-md shadow-md hover:bg-blue-700 transition duration-200"

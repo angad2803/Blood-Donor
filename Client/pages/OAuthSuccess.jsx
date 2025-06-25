@@ -19,8 +19,15 @@ const OAuthSuccess = () => {
           const userData = res.data.user;
           loginWithToken(token, userData);
 
+          // Check if user needs to select account type (new OAuth users)
+          if (userData.needsAccountTypeSelection) {
+            navigate("/account-type-selection");
+          }
           // Check if user needs to complete profile (from OAuth with default values)
-          if (userData.bloodGroup === "O+" && userData.location === "Unknown") {
+          else if (
+            userData.bloodGroup === "O+" &&
+            userData.location === "Unknown"
+          ) {
             navigate("/complete-profile");
           } else {
             navigate("/dashboard");

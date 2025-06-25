@@ -1,15 +1,28 @@
-import React, { useState } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import api from "../api/api";
 import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
 
 const RequestForm = () => {
+  const { user } = useContext(AuthContext);
   const [bloodGroup, setBloodGroup] = useState("");
   const [location, setLocation] = useState("");
+  const [hospital, setHospital] = useState("");
   const [urgency, setUrgency] = useState("");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const navigate = useNavigate();
+
+  // Set default values based on user type
+  useEffect(() => {
+    if (user) {
+      setLocation(user.location || "");
+      if (user.isHospital) {
+        setHospital(user.hospitalName || "");
+      }
+    }
+  }, [user]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,6 +34,7 @@ const RequestForm = () => {
       const res = await api.post("/request/create", {
         bloodGroup,
         location,
+        hospital,
         urgency,
         notes,
       });
@@ -59,6 +73,20 @@ const RequestForm = () => {
           onChange={(e) => setLocation(e.target.value)}
           required
           style={styles.input}
+        />
+
+        <input
+          type="text"
+          placeholder="Hospital Name"
+          value={hospital}
+          onChange={(e) => setHospital(e.target.value)}
+          required
+          readOnly={user?.isHospital}
+          style={{
+            ...styles.input,
+            backgroundColor: user?.isHospital ? "#f0f0f0" : "white",
+            cursor: user?.isHospital ? "not-allowed" : "text",
+          }}
         />
 
         <select

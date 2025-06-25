@@ -169,6 +169,14 @@ export const AuthProvider = ({ children }) => {
   // Separate function to logout only current tab
   const logoutCurrentTab = () => logout(false);
 
+  // Update user function (for profile updates)
+  const updateUser = (updatedUserData) => {
+    setUser(updatedUserData);
+    // Update stored user data in both storage types
+    localStorage.setItem("user", JSON.stringify(updatedUserData));
+    sessionStorage.setItem("user", JSON.stringify(updatedUserData));
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -180,6 +188,7 @@ export const AuthProvider = ({ children }) => {
         loginWithToken,
         isLoading,
         tabId,
+        updateUser,
       }}
     >
       {children}
