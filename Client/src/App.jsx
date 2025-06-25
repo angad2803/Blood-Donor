@@ -17,6 +17,7 @@ import NearbyRequests from "../pages/NearbyRequests";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import MatchedRequests from "../pages/MatchedRequests";
+import ChatPage from "../pages/ChatPage";
 import OAuthSuccess from "../pages/OAuthSuccess";
 import CompleteProfile from "../pages/CompleteProfile";
 
@@ -49,6 +50,14 @@ function App() {
           <Route path="/request" element={<RequestForm />} />
           <Route path="/nearby" element={<NearbyRequests />} />
           <Route path="/match" element={<MatchedRequests />} />
+          <Route
+            path="/chat/:requestId"
+            element={
+              <PrivateRoute>
+                <ChatPage />
+              </PrivateRoute>
+            }
+          />
 
           <Route
             path="/create-request"

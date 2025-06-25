@@ -5,7 +5,7 @@ import verifyToken from "../middleware/auth.js";
 const router = express.Router();
 
 // GET messages for a room (chat for a request)
-router.get("/:requestId", async (req, res) => {
+router.get("/:requestId", verifyToken, async (req, res) => {
   try {
     const messages = await Message.find({ roomId: req.params.requestId }).sort({
       timestamp: 1,
@@ -19,10 +19,10 @@ router.get("/:requestId", async (req, res) => {
 });
 
 // POST a new message
-router.post("/:requestId", async (req, res) => {
+router.post("/:requestId", verifyToken, async (req, res) => {
   try {
     const { text } = req.body;
-    const user = req.user || req.body.user; // adapt based on your auth setup
+    const user = req.user; // from verifyToken middleware
     const newMsg = new Message({
       roomId: req.params.requestId,
       sender: user._id,

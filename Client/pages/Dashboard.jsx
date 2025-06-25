@@ -246,17 +246,29 @@ const Dashboard = () => {
                       )}
                     </div>
 
-                    <div className="mt-3 md:mt-0 md:ml-4">
+                    <div className="mt-3 md:mt-0 md:ml-4 flex flex-col gap-2">
                       {req.fulfilled ? (
-                        <div className="text-center">
-                          <span className="inline-block px-3 py-2 bg-green-100 text-green-800 rounded-lg font-semibold text-sm">
+                        <div className="flex flex-col gap-2">
+                          <span className="inline-block px-3 py-2 bg-green-100 text-green-800 rounded-lg font-semibold text-sm text-center">
                             ✓ Request Completed
                           </span>
+                          <Link to={`/chat/${req._id}`}>
+                            <button className="w-full px-3 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition text-sm font-medium">
+                              💬 View Chat History
+                            </button>
+                          </Link>
                         </div>
                       ) : (
-                        <span className="inline-block px-3 py-2 bg-orange-100 text-orange-800 rounded-lg font-medium text-sm">
-                          Waiting for donor
-                        </span>
+                        <div className="flex flex-col gap-2">
+                          <span className="inline-block px-3 py-2 bg-orange-100 text-orange-800 rounded-lg font-medium text-sm text-center">
+                            Waiting for donor
+                          </span>
+                          <Link to={`/chat/${req._id}`}>
+                            <button className="w-full px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition text-sm font-medium">
+                              💬 Chat with Donors
+                            </button>
+                          </Link>
+                        </div>
                       )}
                     </div>
                   </div>
