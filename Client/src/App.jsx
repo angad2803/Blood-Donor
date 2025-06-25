@@ -18,6 +18,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import MatchedRequests from "../pages/MatchedRequests";
 import OAuthSuccess from "../pages/OAuthSuccess";
+import CompleteProfile from "../pages/CompleteProfile";
 
 function App() {
   const { token } = useContext(AuthContext);
@@ -34,6 +35,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/oauth-success" element={<OAuthSuccess />} />
+          <Route path="/complete-profile" element={<CompleteProfile />} />
 
           {/* Protected routes */}
           <Route
@@ -61,6 +63,14 @@ function App() {
             element={
               <PrivateRoute>
                 <DonorList />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/complete-profile"
+            element={
+              <PrivateRoute>
+                <CompleteProfile />
               </PrivateRoute>
             }
           />

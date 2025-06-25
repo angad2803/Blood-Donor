@@ -45,4 +45,34 @@ router.get("/me", verifyToken, async (req, res) => {
   }
 });
 
+// Update user profile (for OAuth users completing their profile)
+router.put("/profile", verifyToken, async (req, res) => {
+  try {
+    const { bloodGroup, location, isDonor } = req.body;
+
+    if (!bloodGroup || !location) {
+      return res
+        .status(400)
+        .json({ message: "Blood group and location are required" });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user.id,
+      { bloodGroup, location, isDonor },
+      { new: true }
+    ).select("-password");
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json({
+      message: "Profile updated successfully",
+      user: updatedUser,
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
 export default router;

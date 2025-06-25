@@ -16,13 +16,20 @@ const OAuthSuccess = () => {
       api
         .get("/user/me")
         .then((res) => {
-          loginWithToken(token, res.data.user);
-          navigate("/dashboard");
+          const userData = res.data.user;
+          loginWithToken(token, userData);
+
+          // Check if user needs to complete profile (from OAuth with default values)
+          if (userData.bloodGroup === "O+" && userData.location === "Unknown") {
+            navigate("/complete-profile");
+          } else {
+            navigate("/dashboard");
+          }
         })
         .catch(() => {
           // If user fetch fails, still store token and navigate
           localStorage.setItem("token", token);
-          navigate("/dashboard");
+          navigate("/complete-profile");
         });
     } else {
       navigate("/login");

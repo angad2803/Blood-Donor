@@ -11,14 +11,25 @@ const UserSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true, // allows multiple null values
+    },
     bloodGroup: {
       type: String,
-      required: true,
+      required: function () {
+        // Only require if not a Google OAuth user with default values
+        return !(this.googleId && this.bloodGroup === "O+");
+      },
       enum: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"],
     },
     location: {
       type: String,
-      required: true,
+      required: function () {
+        // Only require if not a Google OAuth user with default values
+        return !(this.googleId && this.location === "Unknown");
+      },
     },
     password: {
       type: String,

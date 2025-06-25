@@ -34,6 +34,13 @@ const Dashboard = () => {
     }
   }, [params, user, loginWithToken, navigate]);
 
+  // Check if user needs to complete profile
+  useEffect(() => {
+    if (user && user.bloodGroup === "O+" && user.location === "Unknown") {
+      navigate("/complete-profile");
+    }
+  }, [user, navigate]);
+
   useEffect(() => {
     const fetchRequests = async () => {
       try {
