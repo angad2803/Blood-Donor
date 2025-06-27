@@ -1,29 +1,271 @@
-# Ignore environment variables
+# ========================================
+# 🔐 SENSITIVE & SECURITY FILES
+# ========================================
+
+# Environment variables and secrets
 .env
 .env.*
-
-# Ignore sensitive files
+.env.local
+.env.development
+.env.staging
+.env.production
+.env.test
 *.env
 
-# Ignore VS Code history files
-.history/
+# API Keys and secrets
+config/secrets.js
+config/keys.js
+secrets/
+keys/
+.secrets
+.keys
 
-# Ignore server-side node_modules and logs
-Server/node_modules/
+# Database files and dumps
+*.sqlite
+*.sqlite3
+*.db
+*.mdb
+*.accdb
+dump.rdb
+*.sql
+*.dump
+
+# Authentication and certificates
+*.pem
+*.key
+*.crt
+*.cert
+*.p12
+*.pfx
+jwt-private.key
+jwt-public.key
+private-key.pem
+public-key.pem
+
+# Cloud service files
+.gcloud/
+.aws/
+credentials.json
+service-account*.json
+
+# ========================================
+# 📦 DEPENDENCIES & BUILD FILES
+# ========================================
+
+# Node modules at any level
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn/
+.pnpm-debug.log*
+
+# Package manager lock files (keep package-lock.json, remove others)
+yarn.lock
+pnpm-lock.yaml
+
+# Build outputs
+dist/
+build/
+out/
+.next/
+.nuxt/
+.cache/
+.parcel-cache/
+.vite/
+
+# ========================================
+# 🗂️ DEVELOPMENT & TESTING FILES
+# ========================================
+
+# ========================================
+# 🗂️ DEVELOPMENT & TESTING FILES
+# ========================================
+
+# VS Code history and settings
+.history/
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+.vscode/.ropeproject
+
+# Development and test files (but keep docs/)
+Server/scripts/
+Server/tests/
+*.test.js
+*-test.js
+test-*.js
+debug-*.js
+create-test-*.js
+
+# Logs and debugging files
+logs/
+*.log
 Server/logs/
 Server/*.log
+Client/logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+debug.log
+error.log
 
-# Ignore client-side node_modules and build
+# Coverage and testing reports
+coverage/
+.nyc_output/
+.coverage/
+jest-coverage/
+test-results/
+
+# ========================================
+# 🖥️ CLIENT-SIDE SPECIFIC
+# ========================================
+
+# Client build and cache
 Client/node_modules/
 Client/dist/
 Client/dist-ssr/
+Client/build/
+Client/.cache/
+Client/.vite/
 
-# Ignore editor and OS files
+# ========================================
+# 🌐 SERVER-SIDE SPECIFIC  
+# ========================================
+
+# Server dependencies and logs
+Server/node_modules/
+Server/logs/
+Server/*.log
+Server/uploads/
+Server/temp/
+Server/tmp/
+
+# Session storage
+sessions/
+.sessions/
+
+# ========================================
+# 📱 MOBILE & PLATFORM SPECIFIC
+# ========================================
+
+# React Native
+.expo/
+.expo-shared/
+
+# ========================================
+# 🛠️ EDITOR & OS FILES
+# ========================================
+
+# ========================================
+# 🛠️ EDITOR & OS FILES
+# ========================================
+
+# IDE and editor files
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+.metadata/
+
+# OS generated files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Windows
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# Linux
+*~
+
+# ========================================
+# 🔧 RUNTIME & TEMPORARY FILES
+# ========================================
+
+# Runtime files
+*.pid
+*.seed
+*.pid.lock
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+.temp/
+*.tmp
+*.temp
+
+# Backup files
+*.bak
+*.backup
+*.old
+*.orig
+
+# Archive files (unless intentional)
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+
+# ========================================
+# 📊 MONITORING & ANALYTICS
+# ========================================
+
+# Monitoring files
+.nyc_output/
+.eslintcache
+.stylelintcache
+
+# Analytics and tracking
+.vercel
+.netlify/
+
+# ========================================
+# 🚀 DEPLOYMENT FILES
+# ========================================
+
+# Docker files (keep docker-compose.yml)
+.dockerignore
+Dockerfile.dev
+docker-compose.dev.yml
+docker-compose.override.yml
+
+# PM2 process files
+ecosystem.config.js
+.pm2/
+
+# ========================================
+# 💾 MISCELLANEOUS
+# ========================================
+
+# Local configuration overrides
+config/local.js
+config/development.js
+config/production.js
+local.json
+
+# User-specific files
+.user
+.personal
+
+# Large files that shouldn't be in git
+*.large
+*.huge
+*.massive

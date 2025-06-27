@@ -1,8 +1,10 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/api";
 import { AuthContext } from "../context/AuthContext";
 import { toast } from "react-toastify";
+import LocationCapture from "../components/LocationCapture";
+import gpsLocationService from "../utils/gpsLocationService";
 
 const AccountTypeSelection = () => {
   const { user, updateUser } = useContext(AuthContext);
@@ -17,6 +19,45 @@ const AccountTypeSelection = () => {
   const [location, setLocation] = useState("");
   const [isDonor, setIsDonor] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [locationData, setLocationData] = useState(null);
+  const [showLocationCapture, setShowLocationCapture] = useState(false);
+  const [locationCaptured, setLocationCaptured] = useState(false);
+
+  // Auto-capture location when component mounts
+  useEffect(() => {
+    const autoCapturLocation = async () => {
+      if (
+        gpsLocationService.isSupported() &&
+        !user?.coordinates?.coordinates?.[0]
+      ) {
+        try {
+          const result = await gpsLocationService.captureLocationAutomatically(
+            "complete your profile setup",
+            false // Don't show prompt initially, capture silently
+          );
+
+          if (result.success) {
+            setLocationData(result);
+            setLocation(
+              result.address ||
+                `${result.position.latitude}, ${result.position.longitude}`
+            );
+            setLocationCaptured(true);
+            toast.success("Location captured automatically!");
+          } else {
+            // If silent capture fails, show location capture component
+            setShowLocationCapture(true);
+          }
+        } catch (error) {
+          console.log("Auto location capture failed:", error);
+          setShowLocationCapture(true);
+        }
+      }
+    };
+
+    // Small delay to let the component render first
+    setTimeout(autoCapturLocation, 1000);
+  }, [user]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,6 +68,15 @@ const AccountTypeSelection = () => {
         needsAccountTypeSelection: false,
         location: location || user?.location,
       };
+
+      // Include GPS coordinates if available
+      if (locationData && locationData.coordinates) {
+        updateData.coordinates = {
+          latitude: locationData.coordinates.latitude,
+          longitude: locationData.coordinates.longitude,
+          accuracy: locationData.coordinates.accuracy,
+        };
+      }
 
       if (selectedType === "hospital") {
         updateData.isHospital = true;
@@ -61,6 +111,51 @@ const AccountTypeSelection = () => {
     }
   };
 
+  const handleLocationCaptured = (capturedLocationData) => {
+    setLocationData(capturedLocationData);
+    setLocation(capturedLocationData.address || capturedLocationData.formatted);
+    setLocationCaptured(true);
+    setShowLocationCapture(false);
+    toast.success("Location captured successfully!");
+  };
+
+  const handleLocationSkipped = () => {
+    setShowLocationCapture(false);
+    toast.info(
+      "Location capture skipped. You can enable it later in settings."
+    );
+  };
+
+  const handleLocationFieldChange = async (e) => {
+    const value = e.target.value;
+    setLocation(value);
+
+    // Try to capture location when user starts typing
+    if (
+      value.length > 3 &&
+      !locationCaptured &&
+      gpsLocationService.isSupported()
+    ) {
+      try {
+        const result = await gpsLocationService.captureLocationAutomatically(
+          "enhance location accuracy",
+          false
+        );
+
+        if (result.success) {
+          setLocationData(result);
+          setLocationCaptured(true);
+        }
+      } catch (error) {
+        console.log("Background location capture failed:", error);
+      }
+    }
+  };
+
+  const handleManualLocationCapture = () => {
+    setShowLocationCapture(true);
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-blue-50">
       <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-md">
@@ -71,6 +166,23 @@ const AccountTypeSelection = () => {
           <p className="text-gray-600 mt-2">
             Please select your account type to continue
           </p>
+
+          {/* Location Status */}
+          {locationCaptured ? (
+            <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-sm text-green-700 flex items-center justify-center">
+                <span className="mr-2">📍</span>
+                Location captured successfully
+              </p>
+            </div>
+          ) : (
+            <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-700 flex items-center justify-center">
+                <span className="mr-2">⚠️</span>
+                Location access recommended for better experience
+              </p>
+            </div>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -157,14 +269,34 @@ const AccountTypeSelection = () => {
                 <option value="O-">O-</option>
               </select>
 
-              <input
-                type="text"
-                placeholder="Location (e.g., Mumbai)"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Location
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Location (e.g., Mumbai)"
+                    value={location}
+                    onChange={handleLocationFieldChange}
+                    required
+                    className="w-full px-4 py-2 pr-12 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleManualLocationCapture}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-blue-600 hover:text-blue-800"
+                    title="Capture GPS Location"
+                  >
+                    📍
+                  </button>
+                </div>
+                {locationCaptured && (
+                  <p className="text-xs text-green-600 mt-1">
+                    ✅ GPS location captured accurately
+                  </p>
+                )}
+              </div>
 
               <label className="flex items-center space-x-2">
                 <input
@@ -227,14 +359,34 @@ const AccountTypeSelection = () => {
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
 
-              <input
-                type="text"
-                placeholder="Location (e.g., Mumbai)"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-blue-700">
+                  Hospital Location
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Location (e.g., Mumbai)"
+                    value={location}
+                    onChange={handleLocationFieldChange}
+                    required
+                    className="w-full px-4 py-2 pr-12 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleManualLocationCapture}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-blue-600 hover:text-blue-800"
+                    title="Capture GPS Location"
+                  >
+                    📍
+                  </button>
+                </div>
+                {locationCaptured && (
+                  <p className="text-xs text-green-600 mt-1">
+                    ✅ GPS location captured accurately
+                  </p>
+                )}
+              </div>
             </div>
           )}
 
@@ -246,6 +398,21 @@ const AccountTypeSelection = () => {
             {loading ? "Setting up account..." : "Continue"}
           </button>
         </form>
+
+        {/* Location Capture Component */}
+        {showLocationCapture && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 m-4 max-w-md w-full">
+              <LocationCapture
+                onLocationCaptured={handleLocationCaptured}
+                onSkip={handleLocationSkipped}
+                purpose="complete your account setup and find nearby blood requests"
+                showSkipOption={true}
+                className=""
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

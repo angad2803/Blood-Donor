@@ -1,512 +1,184 @@
 import express from "express";
 import BloodRequest from "../models/BloodRequest.js";
 import verifyToken from "../middleware/auth.js";
-import User from "../models/User.js";
-import { canDonateTo } from "../utils/compatability.js";
-import passport from "passport";
-// Ensure you have passport configured properly in your main server file
+import { addEmailJob, urgentNotificationQueue } from "../queues/config.js";
+
 const router = express.Router();
-// Redirect to Google consent screen
-router.get(
-  "/google",
-  passport.authenticate("google", {
-    scope: ["profile", "email"],
-  })
-);
-router.get(
-  "/google/callback",
-  passport.authenticate("google", {
-    session: false,
-    failureRedirect: "/login", // frontend fallback
-  }),
-  (req, res) => {
-    // Send JWT token or redirect with token
-    const token = req.user.token;
-    res.redirect(`http://localhost:3000/oauth-success?token=${token}`);
-  }
-);
+
 // Create a new blood request
 router.post("/create", verifyToken, async (req, res) => {
-  const { bloodGroup, location, hospital, urgency } = req.body;
-  console.log("Creating request:", {
-    bloodGroup,
-    location,
-    hospital,
-    urgency,
-    requester: req.user._id,
-  });
+  const { bloodGroup, location, urgency, coordinates } = req.body;
 
   try {
-    const newRequest = new BloodRequest({
+    const requestData = {
       requester: req.user._id,
       bloodGroup,
       location,
-      hospital,
       urgency,
-    });
+    };
+
+    // Add coordinates if provided, otherwise use user's coordinates
+    if (coordinates && coordinates.latitude && coordinates.longitude) {
+      requestData.coordinates = {
+        type: "Point",
+        coordinates: [coordinates.longitude, coordinates.latitude],
+      };
+    } else if (req.user.coordinates && req.user.coordinates.coordinates) {
+      requestData.coordinates = req.user.coordinates;
+    }
+
+    const newRequest = new BloodRequest(requestData);
     await newRequest.save();
-    console.log("Request saved:", newRequest);
 
-    // Emit socket event only after save
-    const io = req.app.get("io");
-    if (io) io.emit("new-blood-request", newRequest);
-
-    // Add queue jobs for background processing
-    const urgentNotificationQueue = req.app.get("urgentNotificationQueue");
-    const donorMatchingQueue = req.app.get("donorMatchingQueue");
-    const emailQueue = req.app.get("emailQueue");
-    const smsQueue = req.app.get("smsQueue");
-
-    // Add urgent notification job if high priority
-    if (urgency === "Emergency" || urgency === "High") {
-      await urgentNotificationQueue.add(
-        "send-urgent-notification",
-        {
+    // Queue urgent notification if urgency is high
+    if (urgency === "urgent" || urgency === "critical") {
+      try {
+        await urgentNotificationQueue.add("urgent-blood-request", {
           requestId: newRequest._id,
           bloodGroup,
           location,
-          hospital,
           urgency,
+          hospital: req.user.hospitalName || "Not specified",
           requesterName: req.user.name,
-        },
-        {
-          priority: urgency === "Emergency" ? 100 : 50,
-          attempts: 3,
-          backoff: {
-            type: "exponential",
-            delay: 2000,
-          },
-        }
-      );
-      console.log(`🚨 Added urgent notification job for ${urgency} request`);
+        });
+        console.log(
+          `🚨 Urgent notification queued for ${bloodGroup} request in ${location}`
+        );
+      } catch (queueError) {
+        console.error("❌ Failed to queue urgent notification:", queueError);
+        // Don't fail the request creation if queue fails
+      }
     }
 
-    // Add donor matching job
-    await donorMatchingQueue.add(
-      "match-donors",
-      {
-        requestId: newRequest._id,
-        bloodGroup,
-        location,
-        urgency,
-      },
-      {
-        delay: urgency === "Emergency" ? 0 : 5000, // Immediate for emergency, 5s delay for others
-        attempts: 2,
-      }
-    );
-    console.log("🎯 Added donor matching job");
-
-    // Add email notification job for requester
-    await emailQueue.add(
-      "send-email",
-      {
+    // Queue regular email notification to requester
+    try {
+      await addEmailJob({
         to: req.user.email,
-        subject: "Blood Request Created Successfully",
         template: "request-created",
         data: {
           requesterName: req.user.name,
           bloodGroup,
-          hospital,
+          location,
           urgency,
           requestId: newRequest._id,
         },
-      },
-      {
-        attempts: 3,
-        backoff: "exponential",
-      }
-    );
-    console.log("📧 Added email confirmation job");
+      });
+      console.log(`📧 Request confirmation email queued for ${req.user.email}`);
+    } catch (emailError) {
+      console.error("❌ Failed to queue confirmation email:", emailError);
+    }
 
-    res
-      .status(201)
-      .json({ message: "Blood request created", request: newRequest });
+    res.status(201).json({
+      message: "Blood request created",
+      request: newRequest,
+    });
   } catch (err) {
-    console.error("Error creating request:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 });
 
 // Get all active blood requests
-router.get("/all", verifyToken, async (req, res) => {
+router.get("/all", async (req, res) => {
   try {
-    console.log("GET /all called by user:", req.user);
-    const requests = await BloodRequest.find()
-      .populate("requester", "name bloodGroup location")
-      .populate("fulfilledBy", "name")
-      .populate("fulfillmentOffers.donor", "name bloodGroup")
-      .populate("acceptedOffer", "name");
+    const requests = await BloodRequest.find({ fulfilled: false })
+      .populate("requester", "name bloodGroup location coordinates")
+      .populate("offers")
+      .sort({ createdAt: -1 });
+    res.status(200).json({ requests });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
 
-    console.log("Found requests:", requests.length);
-    console.log("Sample request:", requests[0] || "No requests found");
+// Get requests created by the current user
+router.get("/my-requests", verifyToken, async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const requests = await BloodRequest.find({ requester: userId })
+      .populate({
+        path: "offers",
+        populate: {
+          path: "donor",
+          select: "name bloodGroup location coordinates",
+        },
+      })
+      .sort({ createdAt: -1 });
 
     res.status(200).json({ requests });
   } catch (err) {
-    console.error("Error in /all route:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 });
 
-// New route: Donor sends fulfillment offer
-router.post("/:id/offer", verifyToken, async (req, res) => {
+// Fulfill a blood request (for hospitals)
+router.put("/:requestId/fulfill", verifyToken, async (req, res) => {
   try {
-    const { message } = req.body;
-    const request = await BloodRequest.findById(req.params.id).populate(
-      "requester",
-      "name email phone"
-    );
+    const { requestId } = req.params;
+    const { hospitalName } = req.body;
 
-    if (!request) return res.status(404).json({ message: "Request not found" });
-    if (request.fulfilled)
-      return res.status(400).json({ message: "Request already fulfilled" });
-
-    // Check if donor already made an offer
-    const existingOffer = request.fulfillmentOffers.find(
-      (offer) => offer.donor.toString() === req.user._id.toString()
-    );
-
-    if (existingOffer) {
-      return res
-        .status(400)
-        .json({ message: "You have already made an offer for this request" });
-    }
-
-    // Add new offer
-    request.fulfillmentOffers.push({
-      donor: req.user._id,
-      message: message || "I would like to help with this blood request.",
-      status: "pending",
-    });
-
-    await request.save();
-
-    // Emit socket event to notify requester
-    const io = req.app.get("io");
-    if (io) {
-      io.emit("new-fulfillment-offer", {
-        requestId: request._id,
-        donorName: req.user.name,
-        message,
-      });
-    }
-
-    // Add queue jobs for notifications
-    const emailQueue = req.app.get("emailQueue");
-    const smsQueue = req.app.get("smsQueue");
-
-    // Email notification to requester
-    await emailQueue.add(
-      "send-email",
-      {
-        to: request.requester.email,
-        subject: "New Donor Response to Your Blood Request",
-        template: "donor-offer",
-        data: {
-          requesterName: request.requester.name,
-          donorName: req.user.name,
-          bloodGroup: request.bloodGroup,
-          hospital: request.hospital,
-          message: message || "I would like to help with this blood request.",
-          requestId: request._id,
-        },
-      },
-      {
-        attempts: 3,
-        backoff: "exponential",
-      }
-    );
-
-    // SMS notification for urgent/emergency requests
-    if (request.urgency === "Emergency" || request.urgency === "High") {
-      await smsQueue.add(
-        "send-sms",
-        {
-          to: request.requester.phone,
-          message: `New donor ${req.user.name} responded to your ${request.urgency} blood request for ${request.bloodGroup} at ${request.hospital}. Check the app for details.`,
-        },
-        {
-          attempts: 2,
-          priority: request.urgency === "Emergency" ? 100 : 50,
-        }
-      );
-    }
-
-    console.log("📧 Added donor offer notification jobs");
-
-    res.status(200).json({ message: "Fulfillment offer sent successfully" });
-  } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
-  }
-});
-
-// New route: Requester accepts/rejects offer
-router.put("/:id/offer/:offerId/:action", verifyToken, async (req, res) => {
-  try {
-    const { id, offerId, action } = req.params;
-    console.log("Processing offer response:", {
-      id,
-      offerId,
-      action,
-      userId: req.user._id,
-    });
-
-    if (!["accept", "reject"].includes(action)) {
-      return res
-        .status(400)
-        .json({ message: "Action must be 'accept' or 'reject'" });
-    }
-
-    const request = await BloodRequest.findById(id).populate(
-      "fulfillmentOffers.donor",
-      "name"
-    );
-
-    if (!request) return res.status(404).json({ message: "Request not found" });
-    if (request.fulfilled)
-      return res.status(400).json({ message: "Request already fulfilled" });
-
-    // Check if user is the requester
-    if (request.requester.toString() !== req.user._id.toString()) {
-      return res
-        .status(403)
-        .json({ message: "Only the requester can accept/reject offers" });
-    }
-
-    const offer = request.fulfillmentOffers.id(offerId);
-    if (!offer) return res.status(404).json({ message: "Offer not found" });
-
-    console.log("Found offer:", offer);
-    console.log("Offer donor:", offer.donor);
-
-    if (action === "accept") {
-      // Accept the offer but DON'T mark as fulfilled yet
-      offer.status = "accepted";
-      // Fix: Get the donor ID properly - it might be an object or just an ID
-      const donorId = offer.donor._id || offer.donor;
-      request.acceptedOffer = donorId;
-      console.log("Setting acceptedOffer to:", donorId);
-      // Note: We don't set fulfilled = true here - that happens only after donation confirmation
-
-      // Reject all other pending offers
-      request.fulfillmentOffers.forEach((otherOffer) => {
-        if (
-          otherOffer._id.toString() !== offerId &&
-          otherOffer.status === "pending"
-        ) {
-          otherOffer.status = "rejected";
-        }
-      });
-    } else {
-      // Reject the offer
-      offer.status = "rejected";
-    }
-
-    await request.save();
-    console.log("Request saved successfully");
-
-    // Emit socket event to notify donor
-    const donorId = offer.donor._id || offer.donor;
-    const io = req.app.get("io");
-    if (io) {
-      io.emit("offer-response", {
-        requestId: request._id,
-        donorId: donorId,
-        action,
-        requesterName: req.user.name,
-      });
-    }
-
-    res.status(200).json({
-      message: `Offer ${action}ed successfully`,
-      fulfilled: request.fulfilled,
-      acceptedDonor: action === "accept" ? offer.donor : null,
-    });
-  } catch (err) {
-    console.error("Error in offer response route:", err);
-    console.error("Error stack:", err.stack);
-    res.status(500).json({ message: "Server error", error: err.message });
-  }
-});
-
-// New route: Donor marks blood as donated (replaces old fulfill functionality)
-router.put("/:id/mark-donated", verifyToken, async (req, res) => {
-  try {
-    const request = await BloodRequest.findById(req.params.id);
-
-    if (!request) return res.status(404).json({ message: "Request not found" });
-    if (request.fulfilled)
-      return res.status(400).json({ message: "Request already fulfilled" });
-
-    // Check if user is the accepted donor
-    if (
-      !request.acceptedOffer ||
-      request.acceptedOffer.toString() !== req.user._id.toString()
-    ) {
-      return res
-        .status(403)
-        .json({ message: "Only the accepted donor can mark blood as donated" });
-    }
-
-    request.bloodDonated = true;
-    request.donationConfirmedAt = new Date();
-
-    await request.save();
-
-    // Emit socket event to notify requester for confirmation
-    const io = req.app.get("io");
-    if (io) {
-      io.emit("blood-donation-claim", {
-        requestId: request._id,
-        donorName: req.user.name,
-        hospital: request.hospital,
-      });
-    }
-
-    res.status(200).json({
-      message: "Blood donation marked. Awaiting requester confirmation.",
-    });
-  } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
-  }
-});
-
-// New route: Requester confirms blood donation
-router.put("/:id/confirm-donation", verifyToken, async (req, res) => {
-  try {
-    const { confirmed } = req.body; // true/false
-    const request = await BloodRequest.findById(req.params.id);
-
-    if (!request) return res.status(404).json({ message: "Request not found" });
-    if (request.fulfilled)
-      return res.status(400).json({ message: "Request already fulfilled" });
-
-    // Check if user is the requester
-    if (request.requester.toString() !== req.user._id.toString()) {
-      return res
-        .status(403)
-        .json({ message: "Only the requester can confirm donation" });
-    }
-
-    if (!request.bloodDonated) {
-      return res
-        .status(400)
-        .json({ message: "Donor hasn't marked blood as donated yet" });
-    }
-
-    if (confirmed) {
-      // Confirm donation - mark as fulfilled
-      request.fulfilled = true;
-      request.fulfilledBy = request.acceptedOffer;
-      request.fulfilledAt = new Date();
-    } else {
-      // Reject donation claim - reset back to accepted offer state
-      request.bloodDonated = false;
-      request.donationConfirmedAt = null;
-    }
-
-    await request.save();
-
-    // Emit socket event to notify donor
-    const io = req.app.get("io");
-    if (io) {
-      io.emit("donation-confirmation", {
-        requestId: request._id,
-        donorId: request.acceptedOffer,
-        confirmed,
-        requesterName: req.user.name,
-      });
-    }
-
-    res.status(200).json({
-      message: confirmed
-        ? "Blood donation confirmed! Request marked as fulfilled."
-        : "Donation claim rejected.",
-      fulfilled: request.fulfilled,
-    });
-  } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
-  }
-});
-
-// NEW: Route for requester/hospital to fulfill accepted offers directly
-router.put("/:id/fulfill-offer", verifyToken, async (req, res) => {
-  try {
-    const request = await BloodRequest.findById(req.params.id).populate(
-      "requester",
-      "name"
-    );
-
-    if (!request) return res.status(404).json({ message: "Request not found" });
-    if (request.fulfilled)
-      return res.status(400).json({ message: "Request already fulfilled" });
-
-    // Check if there's an accepted offer
-    if (!request.acceptedOffer) {
-      return res.status(400).json({ message: "No accepted offer to fulfill" });
-    }
-
-    // Check if user is the requester or a hospital (for hospital requests)
-    const isRequester =
-      request.requester._id.toString() === req.user._id.toString();
-    const isHospitalForThisRequest =
-      req.user.isHospital &&
-      req.user.hospitalName &&
-      request.hospital === req.user.hospitalName;
-
-    if (!isRequester && !isHospitalForThisRequest) {
+    // Check if user is a hospital
+    if (!req.user.isHospital) {
       return res.status(403).json({
-        message:
-          "Only the requester or assigned hospital can fulfill this request",
+        message: "Only hospitals can fulfill blood requests",
+      });
+    }
+
+    // Find and update the blood request
+    const bloodRequest = await BloodRequest.findById(requestId).populate(
+      "requester",
+      "name email"
+    );
+
+    if (!bloodRequest) {
+      return res.status(404).json({ message: "Blood request not found" });
+    }
+
+    if (bloodRequest.fulfilled) {
+      return res.status(400).json({
+        message: "Blood request is already fulfilled",
       });
     }
 
     // Mark as fulfilled
-    request.fulfilled = true;
-    request.fulfilledBy = request.acceptedOffer;
-    request.fulfilledAt = new Date();
+    bloodRequest.fulfilled = true;
+    bloodRequest.fulfilledBy = req.user._id;
+    bloodRequest.fulfilledAt = new Date();
+    bloodRequest.hospitalName = hospitalName || req.user.hospitalName;
+    await bloodRequest.save();
 
-    await request.save();
-
-    // Emit socket event to notify donor
-    const io = req.app.get("io");
-    if (io) {
-      io.emit("request-fulfilled", {
-        requestId: request._id,
-        donorId: request.acceptedOffer,
-        fulfilledBy: req.user.name,
-        isHospital: req.user.isHospital,
-      });
+    // Queue notification email to requester
+    try {
+      if (bloodRequest.requester?.email) {
+        await addEmailJob({
+          to: bloodRequest.requester.email,
+          template: "request-fulfilled-by-hospital",
+          data: {
+            requesterName: bloodRequest.requester.name,
+            bloodGroup: bloodRequest.bloodGroup,
+            location: bloodRequest.location,
+            hospitalName: bloodRequest.hospitalName,
+            contactEmail: req.user.email,
+            requestId: bloodRequest._id,
+          },
+        });
+        console.log(
+          `📧 Hospital fulfillment notification queued for ${bloodRequest.requester.email}`
+        );
+      }
+    } catch (emailError) {
+      console.error(
+        "❌ Failed to queue hospital fulfillment email:",
+        emailError
+      );
     }
 
-    res.status(200).json({
-      message: "Request marked as fulfilled successfully!",
-      fulfilled: true,
+    res.json({
+      message: "Blood request marked as fulfilled successfully",
+      request: bloodRequest,
     });
-  } catch (err) {
-    console.error("Error in fulfill-offer route:", err);
-    res.status(500).json({ message: "Server error", error: err.message });
-  }
-});
-
-// Legacy route - kept for backward compatibility but now deprecated
-router.put("/:id/fulfill", verifyToken, async (req, res) => {
-  try {
-    const request = await BloodRequest.findById(req.params.id);
-
-    if (!request) return res.status(404).json({ message: "Request not found" });
-    if (request.fulfilled)
-      return res.status(400).json({ message: "Already fulfilled" });
-
-    request.fulfilled = true;
-    request.fulfilledBy = req.user.id;
-    request.fulfilledAt = new Date();
-
-    await request.save();
-
-    res.status(200).json({ message: "Request marked as fulfilled" });
-  } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+  } catch (error) {
+    console.error("Error fulfilling request:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 });
 

@@ -2,6 +2,7 @@ import express from "express";
 import axios from "axios";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js"; // your user schema
+import { addEmailJob } from "../queues/config.js";
 const router = express.Router();
 
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
@@ -43,6 +44,8 @@ router.get("/google/callback", async (req, res) => {
     );
 
     let user = await User.findOne({ email: profile.email });
+    let isNewUser = false;
+
     if (!user) {
       user = await User.create({
         name: profile.name,
@@ -50,7 +53,26 @@ router.get("/google/callback", async (req, res) => {
         isDonor: false, // default
         location: "unknown", // default
         bloodGroup: "NA", // default
+        needsAccountTypeSelection: true, // Flag to show account type selection
       });
+      isNewUser = true;
+    }
+
+    // Queue welcome email for new Google OAuth users
+    if (isNewUser) {
+      try {
+        await addEmailJob({
+          to: user.email,
+          template: "oauth-welcome",
+          data: {
+            name: user.name,
+            provider: "Google",
+          },
+        });
+        console.log(`📧 OAuth welcome email queued for ${user.email}`);
+      } catch (emailError) {
+        console.error("❌ Failed to queue OAuth welcome email:", emailError);
+      }
     }
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {

@@ -1,9 +1,8 @@
 import React, { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
-import Dashboard from "../pages/Dashboard";
 import { toast } from "react-toastify";
 
-const Dashboard = () => {
+const DashboardComponent = () => {
   const { user, logout } = useContext(AuthContext);
 
   return (
@@ -16,4 +15,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default DashboardComponent;

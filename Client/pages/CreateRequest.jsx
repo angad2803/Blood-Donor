@@ -61,85 +61,188 @@ const Dashboard = () => {
   };
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>Welcome, {user?.name}</h2>
-      <p>Blood Group: {user?.bloodGroup}</p>
-      <p>Location: {user?.location}</p>
-      <button onClick={logout}>Logout</button>
+    <div className="min-h-screen bg-gray-100">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <div className="flex items-center space-x-6">
+              {/* Main Title */}
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  Blood Donation Platform
+                </h1>
+                <p className="text-sm text-gray-500 mt-1">
+                  Create and manage blood requests
+                </p>
+              </div>
+              
+              {/* User Info Card */}
+              <div className="bg-gradient-to-r from-red-50 to-pink-50 border border-red-100 rounded-lg px-4 py-3 shadow-sm">
+                <div className="flex items-center space-x-4">
+                  {/* User Avatar */}
+                  <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                    <span className="text-red-600 font-semibold text-lg">
+                      {user?.name?.charAt(0)?.toUpperCase()}
+                    </span>
+                  </div>
+                  
+                  {/* User Details */}
+                  <div>
+                    <div className="flex items-center space-x-3">
+                      <span className="text-sm font-medium text-gray-900">
+                        {user?.name}
+                      </span>
+                      <div className="flex items-center space-x-1">
+                        <span className="text-xs text-gray-500">Blood Group:</span>
+                        <span className="text-sm font-semibold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">
+                          {user?.bloodGroup}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {/* Location Info */}
+                    {user?.location && (
+                      <div className="flex items-center space-x-1 mt-1">
+                        <span className="text-xs text-gray-400">📍</span>
+                        <span className="text-xs text-gray-500 truncate max-w-48">
+                          {user.location}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
 
-      <h3 style={{ marginTop: 30 }}>Blood Requests</h3>
-      {requests.length === 0 ? (
-        <p>No requests found</p>
-      ) : (
-        <ul>
-          {requests.map((req) => (
-            <li key={req._id} style={{ marginBottom: 10 }}>
-              <strong>{req.bloodGroup}</strong> at <em>{req.location}</em> -{" "}
-              {req.urgency}
-              {req.fulfilled ? (
-                <span style={{ color: "green" }}> ✔ Fulfilled</span>
-              ) : (
+            {/* Right Side Actions */}
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="text-sm text-gray-600 hover:text-gray-800 bg-gray-50 hover:bg-gray-100 px-3 py-2 rounded-md transition-colors duration-200"
+              >
+                🏠 Dashboard
+              </button>
+              <button
+                onClick={logout}
+                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all duration-200 shadow-sm hover:shadow-md"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Blood Requests Section */}
+        <div className="bg-white rounded-lg shadow-md mb-8">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-800">Blood Requests</h3>
+            <p className="text-sm text-gray-600 mt-1">Active blood requests in the system</p>
+          </div>
+          <div className="p-6">
+            {requests.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-6xl mb-4">🩸</div>
+                <p className="text-gray-500">No requests found</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {requests.map((req) => (
+                  <div key={req._id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <span className="text-lg font-semibold text-red-600">{req.bloodGroup}</span>
+                        <span className="text-gray-600 ml-2">at</span>
+                        <span className="text-gray-800 font-medium ml-2">{req.location}</span>
+                        <span className="text-sm text-gray-500 ml-4">({req.urgency})</span>
+                      </div>
+                      {req.fulfilled ? (
+                        <span className="text-green-600 font-medium">✔ Fulfilled</span>
+                      ) : (
+                        <button
+                          onClick={() => markFulfilled(req._id)}
+                          className="bg-green-600 text-white px-3 py-1 rounded-md hover:bg-green-700 transition-colors duration-200"
+                        >
+                          Mark Fulfilled
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Create Blood Request Form */}
+        <div className="max-w-2xl mx-auto">
+          <div className="bg-white rounded-lg shadow-md">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-blue-700 text-center">Create Blood Request</h2>
+              <p className="text-sm text-gray-600 text-center mt-1">Fill out the form to create a new blood request</p>
+            </div>
+            <div className="p-6">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Blood Group</label>
+                  <input
+                    name="bloodGroup"
+                    placeholder="Blood Group (e.g., A+)"
+                    value={form.bloodGroup}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                  <input
+                    name="location"
+                    placeholder="Location (e.g., Mumbai)"
+                    value={form.location}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Urgency Level</label>
+                  <select
+                    name="urgency"
+                    value={form.urgency}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  >
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                    <option value="Emergency">Emergency</option>
+                  </select>
+                </div>
                 <button
-                  style={{ marginLeft: 10 }}
-                  onClick={() => markFulfilled(req._id)}
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3 px-4 bg-blue-600 text-white font-semibold rounded-md shadow-md hover:bg-blue-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Mark Fulfilled
+                  {loading ? "Creating..." : "+ Create Request"}
                 </button>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <div className="mt-10">
-        <h2 className="text-2xl font-semibold text-center text-blue-700 mb-6">
-          Create Blood Request
-        </h2>
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-4 max-w-md mx-auto bg-white p-6 rounded-lg shadow-md"
-        >
-          <input
-            name="bloodGroup"
-            placeholder="Blood Group (e.g., A+)"
-            value={form.bloodGroup}
-            onChange={handleChange}
-            required
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-          />
-          <input
-            name="location"
-            placeholder="Location (e.g., Mumbai)"
-            value={form.location}
-            onChange={handleChange}
-            required
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-          />
-          <select
-            name="urgency"
-            value={form.urgency}
-            onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-          >
-            <option value="Low">Low</option>
-            <option value="Medium">Medium</option>
-            <option value="High">High</option>
-            <option value="Emergency">Emergency</option>
-          </select>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded-md shadow-md hover:bg-blue-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? "Creating..." : "+ Create Request"}
-          </button>
-          {error && (
-            <p className="text-red-500 text-sm text-center mt-2">{error}</p>
-          )}
-          {success && (
-            <p className="text-green-600 text-sm text-center mt-2">{success}</p>
-          )}
-        </form>
+                {error && (
+                  <div className="bg-red-50 border border-red-200 rounded-md p-3">
+                    <p className="text-red-600 text-sm text-center">{error}</p>
+                  </div>
+                )}
+                {success && (
+                  <div className="bg-green-50 border border-green-200 rounded-md p-3">
+                    <p className="text-green-600 text-sm text-center">{success}</p>
+                  </div>
+                )}
+              </form>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

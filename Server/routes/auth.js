@@ -40,6 +40,7 @@ router.post("/register", async (req, res) => {
       hospitalName,
       hospitalAddress,
       hospitalLicense,
+      coordinates, // GPS coordinates from frontend
     } = req.body;
 
     // Check if user already exists
@@ -59,8 +60,8 @@ router.post("/register", async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Create new user
-    const newUser = new User({
+    // Prepare user data
+    const userData = {
       name,
       email,
       bloodGroup: isHospital ? undefined : bloodGroup, // Hospitals don't need blood group
@@ -71,9 +72,38 @@ router.post("/register", async (req, res) => {
       hospitalAddress: isHospital ? hospitalAddress : undefined,
       hospitalLicense: isHospital ? hospitalLicense : undefined,
       password: hashedPassword,
-    });
+    };
 
+    // Add GPS coordinates if provided
+    if (coordinates && coordinates.latitude && coordinates.longitude) {
+      userData.coordinates = {
+        type: "Point",
+        coordinates: [
+          parseFloat(coordinates.longitude),
+          parseFloat(coordinates.latitude),
+        ], // [longitude, latitude]
+      };
+      userData.locationAccuracy = coordinates.accuracy || null;
+      userData.locationTimestamp = new Date();
+      console.log(
+        `✅ GPS coordinates captured during registration: [${userData.coordinates.coordinates[0]}, ${userData.coordinates.coordinates[1]}]`
+      );
+    }
+
+    // Create new user
+    const newUser = new User(userData);
     await newUser.save();
+
+    console.log(
+      `✅ New user registered: ${newUser.email} (${
+        isHospital ? "Hospital" : isDonor ? "Donor" : "Recipient"
+      })`
+    );
+    if (userData.coordinates) {
+      console.log(`   Location: ${location} with GPS coordinates`);
+    } else {
+      console.log(`   Location: ${location} (no GPS coordinates)`);
+    }
 
     // Send welcome email
     try {

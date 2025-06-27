@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import api from "../api/api.js";
-import Dashboard from "../pages/Dashboard";
 
 function DonorsList() {
   const [bloodGroup, setBloodGroup] = useState("");
@@ -9,7 +8,7 @@ function DonorsList() {
 
   const handleSearch = async () => {
     try {
-      const res = await API.get("/donors", {
+      const res = await api.get("/donors", {
         params: { bloodGroup, location },
       });
       setDonors(res.data.donors);

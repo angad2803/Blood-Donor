@@ -1,1385 +1,769 @@
 import React, { useContext, useEffect, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
-import { useNavigate, Link, useSearchParams } from "react-router-dom";
-import { toast } from "react-toastify";
 import api from "../api/api.js";
-import { io } from "socket.io-client";
-import { canDonateTo } from "../../Server/utils/compatability.js";
-
-const socket = io("http://localhost:5000");
+import SendOfferModal from "../components/SendOfferModal";
+import AcceptedOffers from "../components/AcceptedOffers";
+import LoadingSpinner from "../components/LoadingSpinner";
+import QuickStats from "../components/QuickStats";
+import KeyboardShortcutsModal from "../components/KeyboardShortcutsModal";
+import ChatComponent from "../components/ChatComponent";
+import mapsDirectionsService from "../utils/mapsDirectionsService";
+import { toast } from "react-toastify";
 
 const Dashboard = () => {
-  const { user, logout, logoutCurrentTab, loginWithToken, tabId } =
-    useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
-  const [params] = useSearchParams();
-
+  const location = useLocation();
   const [requests, setRequests] = useState([]);
-  const [myRequests, setMyRequests] = useState([]); // Requests made by the user (for requesters)
-  const [fulfilledRequests, setFulfilledRequests] = useState([]); // Requests fulfilled by the user (for donors)
+  const [myRequests, setMyRequests] = useState([]);
+  const [myOffers, setMyOffers] = useState([]);
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [showOfferModal, setShowOfferModal] = useState(false);
+  const [showShortcutsModal, setShowShortcutsModal] = useState(false);
+  const [showChatModal, setShowChatModal] = useState(false);
+  const [selectedChatRequest, setSelectedChatRequest] = useState(null);
+  const [activeTab, setActiveTab] = useState("browse"); // browse, my-requests, my-offers, accepted
   const [loading, setLoading] = useState(true);
-  const [crossedOutRequests, setCrossedOutRequests] = useState(() => {
-    // Load crossed out requests from localStorage
-    const saved = localStorage.getItem("crossedOutRequests");
-    return saved ? new Set(JSON.parse(saved)) : new Set();
-  }); // Track crossed out fulfilled requests
-  const [showCrossedOut, setShowCrossedOut] = useState(true); // Toggle to show/hide crossed out requests
+  const [requestsWithOffers, setRequestsWithOffers] = useState(new Set()); // Track requests user has sent offers for
 
-  const toggleCrossOut = (requestId) => {
-    setCrossedOutRequests((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(requestId)) {
-        newSet.delete(requestId);
-      } else {
-        newSet.add(requestId);
-      }
-      // Save to localStorage
-      localStorage.setItem("crossedOutRequests", JSON.stringify([...newSet]));
-      return newSet;
-    });
-  };
-
-  // Handle token from OAuth redirect
   useEffect(() => {
-    const token = params.get("token");
-    if (token && !user) {
-      // Set token and fetch user data
-      api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-      api
-        .get("/user/me")
-        .then((res) => {
-          loginWithToken(token, res.data.user);
-        })
-        .catch(() => {
-          localStorage.setItem("token", token);
-          navigate("/login");
-        });
+    fetchData();
+
+    // Handle success messages from navigation state
+    if (location.state?.message) {
+      toast.success(location.state.message);
+      if (location.state.activeTab) {
+        setActiveTab(location.state.activeTab);
+      }
+      // Clear the state to prevent showing message on refresh
+      window.history.replaceState({}, document.title);
     }
-  }, [params, user, loginWithToken, navigate]);
 
-  // Check if user needs to select account type or complete profile
-  useEffect(() => {
-    if (user) {
-      if (user.needsAccountTypeSelection) {
-        navigate("/account-type-selection");
-      } else if (user.bloodGroup === "O+" && user.location === "Unknown") {
-        navigate("/complete-profile");
-      }
-    }
-  }, [user, navigate]);
-
-  useEffect(() => {
-    const fetchRequests = async () => {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const res = await api.get("/request/all");
-
-        let relevant = [];
-        let userRequests = [];
-        let donorFulfilled = [];
-
-        if (user?.isDonor) {
-          // Donors see unfulfilled requests they can help with
-          relevant = res.data.requests.filter(
-            (r) =>
-              !r.fulfilled &&
-              user?.location &&
-              r.location === user.location &&
-              user?.bloodGroup &&
-              canDonateTo(user.bloodGroup, r.bloodGroup)
-          );
-
-          // Also get requests they have fulfilled
-          donorFulfilled = res.data.requests.filter(
-            (r) => r.fulfilled && user?._id && r.fulfilledBy?._id === user._id
-          );
-        } else if (user?.isHospital) {
-          // Hospitals see all requests for their hospital or in their location
-          relevant = res.data.requests.filter(
-            (r) =>
-              (user?.hospitalName && r.hospital === user.hospitalName) ||
-              (user?.location && r.location === user.location)
-          );
-        } else {
-          // TEMPORARY: Show some requests for testing
-          relevant = res.data.requests.slice(0, 5);
-        }
-
-        // All users can see their own requests (requests they made)
-        // But we only show this section for non-donors in the UI
-        userRequests = res.data.requests.filter(
-          (r) => user?._id && r.requester?._id === user._id
-        );
-
-        const sorted = relevant.sort((a, b) => {
-          if (a.fulfilled !== b.fulfilled) return a.fulfilled ? 1 : -1;
-          return new Date(b.createdAt) - new Date(a.createdAt);
-        });
-
-        const sortedUserRequests = userRequests.sort((a, b) => {
-          if (a.fulfilled !== b.fulfilled) return a.fulfilled ? 1 : -1;
-          return new Date(b.createdAt) - new Date(a.createdAt);
-        });
-
-        const sortedFulfilled = donorFulfilled.sort((a, b) => {
-          return new Date(b.fulfilledAt) - new Date(a.fulfilledAt);
-        });
-
-        setRequests(sorted);
-        setMyRequests(sortedUserRequests);
-        setFulfilledRequests(sortedFulfilled);
-      } catch (err) {
-        console.error("Error fetching requests:", err.response || err.message);
-        console.error("Full error object:", err);
-        if (err.response) {
-          console.error("Response status:", err.response.status);
-          console.error("Response data:", err.response.data);
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (user) fetchRequests();
-
-    // Make fetchRequests available for socket event handlers
-    window.fetchRequests = fetchRequests;
-  }, [user]);
-
-  useEffect(() => {
-    socket.on("new-blood-request", (data) => {
-      alert(`🩸 New request: ${data.bloodGroup} at ${data.location}`);
-    });
-
-    socket.on("new-fulfillment-offer", (data) => {
+    // Add keyboard shortcuts
+    const handleKeyPress = (event) => {
+      // Only trigger if not typing in an input/textarea
       if (
-        user &&
-        data.requestId &&
-        myRequests.some((req) => req._id === data.requestId)
+        event.target.tagName !== "INPUT" &&
+        event.target.tagName !== "TEXTAREA"
       ) {
-        toast.info(
-          `💝 New offer from ${data.donorName} for your blood request!`
-        );
-        // Refresh requests to show new offer
-        if (window.fetchRequests) window.fetchRequests();
-      }
-    });
-
-    socket.on("offer-response", (data) => {
-      if (user && data.donorId === user._id) {
-        if (data.action === "accept") {
-          toast.success(`✅ Your offer was accepted by ${data.requesterName}!`);
-        } else {
-          toast.info(`ℹ️ Your offer was declined by ${data.requesterName}`);
+        switch (event.key) {
+          case "1":
+            setActiveTab("browse");
+            break;
+          case "2":
+            setActiveTab("my-requests");
+            break;
+          case "3":
+            setActiveTab("my-offers");
+            break;
+          case "4":
+            setActiveTab("accepted");
+            break;
+          case "c":
+          case "C":
+            if (event.ctrlKey || event.metaKey) return; // Don't interfere with Ctrl+C
+            navigate("/create-request");
+            break;
+          case "?":
+            setShowShortcutsModal(true);
+            break;
+          case "Escape":
+            setShowShortcutsModal(false);
+            setShowOfferModal(false);
+            setShowChatModal(false);
+            break;
+          default:
+            break;
         }
-        // Refresh requests to update status
-        if (window.fetchRequests) window.fetchRequests();
       }
-    });
-
-    socket.on("blood-donation-claim", (data) => {
-      if (user && myRequests.some((req) => req._id === data.requestId)) {
-        toast.info(
-          `🩸 ${data.donorName} claims to have donated blood at ${data.hospital}. Please confirm!`
-        );
-        // Refresh requests to show confirmation UI
-        if (window.fetchRequests) window.fetchRequests();
-      }
-    });
-
-    socket.on("donation-confirmation", (data) => {
-      if (user && data.donorId === user._id) {
-        if (data.confirmed) {
-          toast.success(
-            `✅ ${data.requesterName} confirmed your blood donation!`
-          );
-        } else {
-          toast.warning(
-            `❌ ${data.requesterName} rejected your donation claim.`
-          );
-        }
-        // Refresh requests to update status
-        if (window.fetchRequests) window.fetchRequests();
-      }
-    });
-
-    socket.on("request-fulfilled", (data) => {
-      if (user && data.donorId === user._id) {
-        const fulfillerType = data.isHospital ? "hospital" : "requester";
-        toast.success(
-          `✅ Request fulfilled! The ${fulfillerType} (${data.fulfilledBy}) marked your accepted offer as completed.`
-        );
-        // Refresh requests to update status
-        if (window.fetchRequests) window.fetchRequests();
-      }
-    });
-
-    return () => {
-      socket.off("new-blood-request");
-      socket.off("new-fulfillment-offer");
-      socket.off("offer-response");
-      socket.off("blood-donation-claim");
-      socket.off("donation-confirmation");
-      socket.off("request-fulfilled");
     };
-  }, [user, myRequests]);
 
-  // Function for donors to send fulfillment offers
-  const sendOffer = async (requestId, message = "") => {
+    window.addEventListener("keydown", handleKeyPress);
+    return () => window.removeEventListener("keydown", handleKeyPress);
+  }, [location.state, navigate]);
+
+  const fetchData = async () => {
     try {
-      await api.post(`/request/${requestId}/offer`, { message });
-      toast.success("🤝 Fulfillment offer sent successfully!");
+      setLoading(true);
+      await Promise.all([fetchRequests(), fetchMyRequests(), fetchMyOffers()]);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      // Refresh requests to update UI
+  const fetchRequests = async () => {
+    try {
       const res = await api.get("/request/all");
-      const sorted = res.data.requests
-        .filter(
-          (r) =>
-            !r.fulfilled &&
-            r.location === user.location &&
-            canDonateTo(user.bloodGroup, r.bloodGroup)
-        )
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      setRequests(sorted);
+      setRequests(res.data.requests);
     } catch (err) {
-      toast.error(
-        "❌ Could not send offer. " + (err.response?.data?.message || "")
-      );
-      console.error(err);
+      console.error("Error fetching requests", err);
     }
   };
 
-  // Function for requesters to respond to offers
-  const respondToOffer = async (requestId, offerId, action) => {
+  const fetchMyRequests = async () => {
     try {
-      await api.put(`/request/${requestId}/offer/${offerId}/${action}`);
+      const res = await api.get("/request/my-requests");
+      setMyRequests(res.data.requests);
+    } catch (err) {
+      console.error("Error fetching my requests", err);
+    }
+  };
+
+  const fetchMyOffers = async () => {
+    try {
+      const res = await api.get("/offer/my-offers");
+      setMyOffers(res.data.offers);
+
+      // Extract request IDs that the user has already sent offers for
+      const offeredRequestIds = new Set(
+        res.data.offers.map((offer) => offer.bloodRequest._id)
+      );
+      setRequestsWithOffers(offeredRequestIds);
+    } catch (err) {
+      console.error("Error fetching my offers", err);
+    }
+  };
+
+  const handleSendOffer = (request) => {
+    setSelectedRequest(request);
+    setShowOfferModal(true);
+  };
+
+  const handleOpenChat = (request) => {
+    setSelectedChatRequest(request);
+    setShowChatModal(true);
+  };
+
+  const handleOfferSent = () => {
+    fetchMyOffers(); // Refresh offers and update requestsWithOffers
+    fetchRequests(); // Refresh available requests to reflect the change
+    setShowOfferModal(false);
+  };
+
+  const handleAcceptOffer = async (offerId) => {
+    try {
+      await api.post(`/offer/accept/${offerId}`);
+      fetchMyRequests(); // Refresh requests
       toast.success(
-        action === "accept" ? "✅ Offer accepted!" : "ℹ️ Offer declined"
+        "🎉 Offer accepted successfully! The donor has been notified and will contact you soon."
       );
-
-      // Refresh requests to update status
-      const res = await api.get("/request/all");
-      const userRequests = res.data.requests.filter(
-        (r) => r.requester._id === user._id
-      );
-      setMyRequests(
-        userRequests.sort((a, b) => {
-          if (a.fulfilled !== b.fulfilled) return a.fulfilled ? 1 : -1;
-          return new Date(b.createdAt) - new Date(a.createdAt);
-        })
-      );
-
-      if (action === "accept") {
-        // If accepted, also update fulfilled requests for donors
-        const fulfilledRequest = userRequests.find((r) => r._id === requestId);
-        if (fulfilledRequest && user?.isDonor) {
-          setFulfilledRequests((prev) => [fulfilledRequest, ...prev]);
-        }
-      }
     } catch (err) {
-      toast.error(
-        "❌ Could not respond to offer. " + (err.response?.data?.message || "")
-      );
-      console.error(err);
+      toast.error(err.response?.data?.message || "Failed to accept offer");
     }
   };
 
-  // Function for accepted donor to mark blood as donated
-  const markBloodDonated = async (requestId) => {
-    try {
-      await api.put(`/request/${requestId}/mark-donated`);
-      toast.success(
-        "🩸 Blood donation marked! Awaiting requester confirmation."
-      );
-
-      // Refresh requests to update status
-      if (window.fetchRequests) window.fetchRequests();
-    } catch (err) {
-      toast.error(
-        "❌ Could not mark as donated. " + (err.response?.data?.message || "")
-      );
-      console.error(err);
+  const getDistanceInfo = (request) => {
+    if (
+      !user.coordinates?.coordinates ||
+      !request.requester?.coordinates?.coordinates
+    ) {
+      return null;
     }
+
+    const [userLon, userLat] = user.coordinates.coordinates;
+    const [reqLon, reqLat] = request.requester.coordinates.coordinates;
+
+    return mapsDirectionsService.getDirectionsInfo(
+      userLat,
+      userLon,
+      reqLat,
+      reqLon
+    );
   };
 
-  // Function for requester to confirm blood donation
-  const confirmDonation = async (requestId, confirmed) => {
-    try {
-      await api.put(`/request/${requestId}/confirm-donation`, { confirmed });
-      toast.success(
-        confirmed
-          ? "✅ Blood donation confirmed! Request completed."
-          : "❌ Donation claim rejected."
-      );
-
-      // Refresh requests to update status
-      if (window.fetchRequests) window.fetchRequests();
-    } catch (err) {
-      toast.error(
-        "❌ Could not confirm donation. " + (err.response?.data?.message || "")
-      );
-      console.error(err);
-    }
-  };
-
-  // NEW: Function for requester/hospital to directly fulfill accepted offers
-  const fulfillAcceptedOffer = async (requestId) => {
-    try {
-      await api.put(`/request/${requestId}/fulfill-offer`);
-      toast.success("✅ Request marked as fulfilled! Coordination completed.");
-
-      // Refresh requests to update status
-      if (window.fetchRequests) window.fetchRequests();
-    } catch (err) {
-      toast.error(
-        "❌ Could not fulfill request. " + (err.response?.data?.message || "")
-      );
-      console.error(err);
-    }
-  };
-
-  // Legacy function - kept for backward compatibility
-  const markFulfilled = async (id) => {
-    try {
-      await api.put(`/request/${id}/fulfill`);
-
-      // Update the requests state by moving the fulfilled request to the fulfilled list
-      const fulfilledRequest = requests.find((r) => r._id === id);
-      if (fulfilledRequest) {
-        const updatedRequest = {
-          ...fulfilledRequest,
-          fulfilled: true,
-          fulfilledBy: { _id: user._id, name: user.name },
-          fulfilledAt: new Date(),
-        };
-
-        setRequests((prev) => prev.filter((r) => r._id !== id));
-        setFulfilledRequests((prev) => [updatedRequest, ...prev]);
-      }
-
-      toast.success("✅ Marked as fulfilled!");
-    } catch (err) {
-      toast.error("❌ Could not mark as fulfilled.");
-      console.error(err);
-    }
-  };
-
-  return (
-    <div className="min-h-screen flex flex-col items-center bg-blue-50 py-8">
-      <div className="w-full max-w-2xl bg-white rounded-lg shadow-md p-8">
-        {/* Top user details */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-semibold text-blue-700 mb-2">
-              Welcome, {user?.name}
-            </h2>
-            {user?.isHospital ? (
-              <div>
-                <p className="text-gray-700">
-                  Hospital:{" "}
-                  <span className="font-semibold">{user?.hospitalName}</span>
-                </p>
-                <p className="text-gray-700">
-                  Location:{" "}
-                  <span className="font-semibold">{user?.location}</span>
-                </p>
-                <p className="text-gray-700">
-                  License:{" "}
-                  <span className="font-semibold">{user?.hospitalLicense}</span>
-                </p>
-              </div>
-            ) : (
-              <div>
-                <p className="text-gray-700">
-                  Blood Group:{" "}
-                  <span className="font-semibold">{user?.bloodGroup}</span>
-                </p>
-                <p className="text-gray-700">
-                  Location:{" "}
-                  <span className="font-semibold">{user?.location}</span>
-                </p>
-                {user?.isDonor && (
-                  <p className="text-green-600 font-medium text-sm">
-                    ✓ Registered Donor
-                  </p>
-                )}
-              </div>
-            )}
-            <p className="text-xs text-gray-500 mt-1">
-              Tab ID: {tabId?.substring(0, 12)}... | User ID:{" "}
-              {user?._id?.substring(0, 8)}...
+  const renderBloodRequests = () => (
+    <div className="bg-white rounded-lg shadow-md">
+      <div className="px-6 py-4 border-b border-gray-200">
+        <h2 className="text-lg font-semibold text-gray-800">
+          Available Blood Requests
+        </h2>
+        <p className="text-sm text-gray-600 mt-1">
+          Send offers to help those in need
+        </p>
+      </div>
+      <div className="p-6">
+        {requests.filter((req) => !requestsWithOffers.has(req._id)).length ===
+        0 ? (
+          <div className="text-center py-8">
+            <div className="text-6xl mb-4">🩸</div>
+            <p className="text-gray-500">
+              {requests.length === 0
+                ? "No active blood requests at the moment"
+                : "No new blood requests available - you've already sent offers to all current requests"}
             </p>
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => logout(true)}
-              className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
-            >
-              Logout All Tabs
-            </button>
-            <button
-              onClick={() => logoutCurrentTab()}
-              className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition"
-            >
-              Logout This Tab
-            </button>
-          </div>
-        </div>
-
-        {/* Buttons */}
-        <div className="flex flex-wrap gap-4 mb-6">
-          {user?.isHospital ? (
-            // Hospital-specific buttons
-            <>
-              <Link to="/request" className="w-full md:w-auto">
-                <button className="w-full px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700 transition">
-                  + Create Blood Request
-                </button>
-              </Link>
-              <Link to="/nearby" className="w-full md:w-auto">
-                <button className="w-full px-4 py-2 bg-green-600 text-white rounded shadow hover:bg-green-700 transition">
-                  View All Requests
-                </button>
-              </Link>
-              <Link to="/donors" className="w-full md:w-auto">
-                <button className="w-full px-4 py-2 bg-purple-600 text-white rounded shadow hover:bg-purple-700 transition">
-                  View Donors
-                </button>
-              </Link>
-            </>
-          ) : (
-            // Regular user buttons
-            <>
-              {!user?.isDonor && (
-                <Link to="/request" className="w-full md:w-auto">
-                  <button className="w-full px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700 transition">
-                    + New Blood Request
-                  </button>
-                </Link>
-              )}
-              <Link to="/nearby" className="w-full md:w-auto">
-                <button className="w-full px-4 py-2 bg-green-600 text-white rounded shadow hover:bg-green-700 transition">
-                  View Nearby Requests
-                </button>
-              </Link>
-              {user?.isDonor && (
-                <Link to="/match" className="w-full md:w-auto">
-                  <button className="w-full px-4 py-2 bg-purple-600 text-white rounded shadow hover:bg-purple-700 transition">
-                    View Matched Requests
-                  </button>
-                </Link>
-              )}
-            </>
-          )}
-        </div>
-
-        {/* My Blood Requests Section (for requesters only - non-donors and non-hospitals) */}
-        {!user?.isDonor && !user?.isHospital && myRequests.length > 0 && (
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold text-blue-700">
-                📋 Your Blood Requests
-                {crossedOutRequests.size > 0 && (
-                  <span className="ml-2 text-sm text-gray-500">
-                    ({crossedOutRequests.size} crossed out)
-                  </span>
-                )}
-              </h3>
-              {myRequests.some(
-                (req) => req.fulfilled && crossedOutRequests.has(req._id)
-              ) && (
-                <button
-                  onClick={() => setShowCrossedOut(!showCrossedOut)}
-                  className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition"
-                >
-                  {showCrossedOut
-                    ? "🙈 Hide Crossed Out"
-                    : "👀 Show Crossed Out"}
-                </button>
-              )}
-            </div>
-            <div className="space-y-4">
-              {myRequests
-                .filter(
-                  (req) => showCrossedOut || !crossedOutRequests.has(req._id)
-                )
-                .map((req) => (
+        ) : (
+          <div className="space-y-4">
+            {requests
+              .filter((req) => !requestsWithOffers.has(req._id))
+              .map((req) => {
+                const distanceInfo = getDistanceInfo(req);
+                return (
                   <div
                     key={req._id}
-                    className={`p-4 rounded-lg border-2 transition-all ${
-                      req.fulfilled
-                        ? "bg-green-50 border-green-200 shadow-sm"
-                        : "bg-white border-gray-200 shadow-md hover:shadow-lg"
-                    } ${crossedOutRequests.has(req._id) ? "opacity-60" : ""}`}
+                    className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
                   >
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                      <div
-                        className={`flex-1 ${
-                          crossedOutRequests.has(req._id) ? "line-through" : ""
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 mb-1">
-                          <strong className="text-lg">{req.bloodGroup}</strong>
-                          <span className="text-gray-600">at</span>
-                          <em className="text-blue-800 font-medium">
-                            {req.hospital || "Hospital not specified"}
-                          </em>
-                          <span className="text-gray-600">in</span>
-                          <em className="text-gray-800">{req.location}</em>
-                          <span className="text-gray-600">–</span>
-                          <span
-                            className={`px-2 py-1 rounded text-xs font-medium ${
-                              req.urgency === "urgent" ||
-                              req.urgency === "Emergency"
-                                ? "bg-red-100 text-red-800"
-                                : req.urgency === "moderate" ||
-                                  req.urgency === "High"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-blue-100 text-blue-800"
-                            }`}
-                          >
-                            {req.urgency}
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h3 className="font-semibold text-red-600 flex items-center">
+                          <span className="mr-2">🩸</span>
+                          {req.bloodGroup} Blood Needed
+                          {req.urgency === "Emergency" && (
+                            <span className="ml-2 animate-pulse">🚨</span>
+                          )}
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          Requested by:{" "}
+                          <span className="font-medium">
+                            {req.requester?.name}
                           </span>
-                          {/* Show different states */}
-                          {req.fulfilled ? (
-                            <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">
-                              ✓ FULFILLED
-                            </span>
-                          ) : req.acceptedOffer ? (
-                            req.bloodDonated ? (
-                              <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-medium">
-                                🩸 Donation Pending Confirmation
-                              </span>
-                            ) : (
-                              <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium">
-                                🤝 Offer Accepted - Awaiting Donation
-                              </span>
-                            )
-                          ) : (
-                            <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs font-medium">
-                              📢 Open for Offers
-                            </span>
-                          )}
-                          {req.fulfilled && (
-                            <button
-                              onClick={() => toggleCrossOut(req._id)}
-                              className={`ml-2 px-2 py-1 rounded text-xs font-medium transition ${
-                                crossedOutRequests.has(req._id)
-                                  ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
-                                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                              }`}
-                              title={
-                                crossedOutRequests.has(req._id)
-                                  ? "Restore request"
-                                  : "Cross out request"
-                              }
-                            >
-                              {crossedOutRequests.has(req._id)
-                                ? "↶ Restore"
-                                : "✕ Cross Out"}
-                            </button>
-                          )}
-                        </div>
-
-                        {req.description && (
-                          <p className="text-sm text-gray-600 mb-2">
-                            {req.description}
-                          </p>
-                        )}
-
-                        <p className="text-xs text-gray-500">
-                          Requested on:{" "}
-                          {new Date(req.createdAt).toLocaleDateString()}
-                        </p>
-
-                        {req.fulfilledBy?.name && (
-                          <div className="mt-2 p-2 bg-green-50 rounded border border-green-200">
-                            <p className="text-sm text-green-700 font-medium">
-                              ✓ Fulfilled by: {req.fulfilledBy.name}
-                            </p>
-                            <p className="text-xs text-green-600">
-                              Completed on:{" "}
-                              {new Date(req.fulfilledAt).toLocaleString()}
-                            </p>
-                          </div>
-                        )}
-
-                        {/* Show fulfillment offers for unfulfilled requests */}
-                        {!req.fulfilled &&
-                          req.fulfillmentOffers &&
-                          req.fulfillmentOffers.length > 0 && (
-                            <div className="mt-3">
-                              <p className="text-sm font-medium text-gray-700 mb-2">
-                                💝 Fulfillment Offers (
-                                {req.fulfillmentOffers.length})
-                              </p>
-                              <div className="space-y-2 max-h-32 overflow-y-auto">
-                                {req.fulfillmentOffers.map((offer) => (
-                                  <div
-                                    key={offer._id}
-                                    className={`p-2 rounded border text-xs ${
-                                      offer.status === "pending"
-                                        ? "bg-blue-50 border-blue-200"
-                                        : offer.status === "accepted"
-                                        ? "bg-green-50 border-green-200"
-                                        : "bg-gray-50 border-gray-200"
-                                    }`}
-                                  >
-                                    <div className="flex justify-between items-start mb-1">
-                                      <span className="font-medium">
-                                        {offer.donor.name}
-                                      </span>
-                                      <span
-                                        className={`px-1 py-0.5 rounded text-xs ${
-                                          offer.status === "pending"
-                                            ? "bg-blue-100 text-blue-800"
-                                            : offer.status === "accepted"
-                                            ? "bg-green-100 text-green-800"
-                                            : "bg-gray-100 text-gray-800"
-                                        }`}
-                                      >
-                                        {offer.status}
-                                      </span>
-                                    </div>
-                                    {offer.message && (
-                                      <p className="text-gray-600 text-xs mb-2">
-                                        {offer.message}
-                                      </p>
-                                    )}
-                                    {offer.status === "pending" && (
-                                      <div className="flex gap-1">
-                                        <button
-                                          onClick={() =>
-                                            respondToOffer(
-                                              req._id,
-                                              offer._id,
-                                              "accept"
-                                            )
-                                          }
-                                          className="px-2 py-1 bg-green-500 text-white rounded text-xs hover:bg-green-600"
-                                        >
-                                          ✓ Accept
-                                        </button>
-                                        <button
-                                          onClick={() =>
-                                            respondToOffer(
-                                              req._id,
-                                              offer._id,
-                                              "reject"
-                                            )
-                                          }
-                                          className="px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600"
-                                        >
-                                          ✗ Decline
-                                        </button>
-                                      </div>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                      </div>
-
-                      <div className="mt-3 md:mt-0 md:ml-4 flex flex-col gap-2">
-                        {req.fulfilled ? (
-                          <div className="flex flex-col gap-2">
-                            <span className="inline-block px-3 py-2 bg-green-100 text-green-800 rounded-lg font-semibold text-sm text-center">
-                              ✓ Request Completed
-                            </span>
-                            <Link to={`/chat/${req._id}`}>
-                              <button className="w-full px-3 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition text-sm font-medium">
-                                💬 View Chat History
-                              </button>
-                            </Link>
-                          </div>
-                        ) : req.bloodDonated ? (
-                          <div className="flex flex-col gap-2">
-                            <div className="p-3 bg-yellow-50 border-2 border-yellow-200 rounded-lg">
-                              <p className="text-sm font-medium text-yellow-800 mb-2">
-                                🩸 Donor claims blood was donated
-                              </p>
-                              <p className="text-xs text-yellow-700 mb-3">
-                                Has the donor successfully donated the blood?
-                              </p>
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() => confirmDonation(req._id, true)}
-                                  className="flex-1 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition text-sm font-medium"
-                                >
-                                  ✅ Yes, Confirm
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    confirmDonation(req._id, false)
-                                  }
-                                  className="flex-1 px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition text-sm font-medium"
-                                >
-                                  ❌ No, Reject
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        ) : req.acceptedOffer ? (
-                          <div className="flex flex-col gap-2">
-                            <span className="inline-block px-3 py-2 bg-blue-100 text-blue-800 rounded-lg font-medium text-sm text-center">
-                              🤝 Coordinating with accepted donor
-                            </span>
-                            <div className="flex gap-2">
-                              <Link to={`/chat/${req._id}`} className="flex-1">
-                                <button className="w-full px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition text-sm font-medium">
-                                  💬 Chat with Donor
-                                </button>
-                              </Link>
-                              <button
-                                onClick={() => fulfillAcceptedOffer(req._id)}
-                                className="flex-1 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition text-sm font-medium"
-                                title="Mark as fulfilled when coordination is complete"
-                              >
-                                ✅ Mark Fulfilled
-                              </button>
-                            </div>
-                            <p className="text-xs text-gray-600 text-center">
-                              Coordinate with donor, then mark as fulfilled when
-                              done
-                            </p>
-                          </div>
-                        ) : (
-                          <div className="flex flex-col gap-2">
-                            <span className="inline-block px-3 py-2 bg-orange-100 text-orange-800 rounded-lg font-medium text-sm text-center">
-                              📢 Waiting for offers
-                            </span>
-                            <Link to={`/chat/${req._id}`}>
-                              <button className="w-full px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition text-sm font-medium">
-                                💬 Chat Room
-                              </button>
-                            </Link>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-            </div>
-          </div>
-        )}
-
-        {/* Available Requests to Fulfill (for donors) */}
-        {user?.isDonor && (
-          <div className="mb-8">
-            <h3 className="text-xl font-semibold mb-4 text-purple-700">
-              🩸 Compatible Requests for {user.bloodGroup} in {user.location}
-            </h3>
-
-            {loading ? (
-              <p>Loading...</p>
-            ) : requests.length === 0 ? (
-              <div className="text-center py-8 bg-gray-50 rounded-lg">
-                <p className="text-gray-500">
-                  No matching requests found at the moment
-                </p>
-                <p className="text-sm text-gray-400 mt-1">
-                  We'll notify you when new requests match your blood type and
-                  location
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {requests.map((req) => (
-                  <div
-                    key={req._id}
-                    className="p-4 rounded-lg border-2 bg-white border-gray-200 shadow-md hover:shadow-lg transition-all"
-                  >
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <strong className="text-lg">{req.bloodGroup}</strong>
-                          <span className="text-gray-600">at</span>
-                          <em className="text-blue-800 font-medium">
-                            {req.hospital || "Hospital not specified"}
-                          </em>
-                          <span className="text-gray-600">in</span>
-                          <em className="text-gray-800">{req.location}</em>
-                          <span className="text-gray-600">–</span>
-                          <span
-                            className={`px-2 py-1 rounded text-xs font-medium ${
-                              req.urgency === "urgent" ||
-                              req.urgency === "Emergency"
-                                ? "bg-red-100 text-red-800"
-                                : req.urgency === "moderate" ||
-                                  req.urgency === "High"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-blue-100 text-blue-800"
-                            }`}
-                          >
-                            {req.urgency}
-                          </span>
-                        </div>
-
-                        {req.description && (
-                          <p className="text-sm text-gray-600 mb-2">
-                            {req.description}
-                          </p>
-                        )}
-
-                        <p className="text-sm text-gray-600 mb-1">
-                          Requested by: {req.requester?.name}
-                        </p>
-
-                        <p className="text-xs text-gray-500">
-                          Requested on:{" "}
-                          {new Date(req.createdAt).toLocaleDateString()}
-                        </p>
-
-                        <div className="text-xs text-blue-600 mt-1">
-                          ✓ Compatible with your blood group ({user.bloodGroup})
-                        </div>
-                      </div>
-
-                      <div className="mt-3 md:mt-0 md:ml-4 flex flex-col gap-2">
-                        <div className="flex gap-2">
-                          {/* Check if user already made an offer */}
-                          {req.fulfillmentOffers &&
-                          req.fulfillmentOffers.some(
-                            (offer) => offer.donor._id === user._id
-                          ) ? (
-                            <span className="px-3 py-2 bg-yellow-100 text-yellow-800 rounded-lg text-sm font-medium">
-                              {req.fulfillmentOffers.find(
-                                (offer) => offer.donor._id === user._id
-                              )?.status === "pending"
-                                ? "🕒 Offer Sent"
-                                : req.fulfillmentOffers.find(
-                                    (offer) => offer.donor._id === user._id
-                                  )?.status === "rejected"
-                                ? "❌ Offer Declined"
-                                : "✅ Offer Accepted"}
-                            </span>
-                          ) : (
-                            <button
-                              className="px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition text-sm font-medium"
-                              onClick={() =>
-                                sendOffer(
-                                  req._id,
-                                  `Hi! I'm ${user.bloodGroup} and available to help with your blood request in ${user.location}.`
-                                )
-                              }
-                            >
-                              🤝 Send Offer
-                            </button>
-                          )}
-                          {/* Only show chat for general open requests (not for accepted offers, those are handled in the accepted offers section) */}
-                          {!req.acceptedOffer && (
-                            <Link to={`/chat/${req._id}`}>
-                              <button className="px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition text-sm font-medium">
-                                💬 Chat Room
-                              </button>
-                            </Link>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Requests Fulfilled by User (for donors) */}
-        {user?.isDonor && fulfilledRequests.length > 0 && (
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold text-green-700">
-                💚 Requests You Have Fulfilled
-                {fulfilledRequests.filter((req) =>
-                  crossedOutRequests.has(req._id)
-                ).length > 0 && (
-                  <span className="ml-2 text-sm text-gray-500">
-                    (
-                    {
-                      fulfilledRequests.filter((req) =>
-                        crossedOutRequests.has(req._id)
-                      ).length
-                    }{" "}
-                    crossed out)
-                  </span>
-                )}
-              </h3>
-              {fulfilledRequests.some((req) =>
-                crossedOutRequests.has(req._id)
-              ) && (
-                <button
-                  onClick={() => setShowCrossedOut(!showCrossedOut)}
-                  className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition"
-                >
-                  {showCrossedOut
-                    ? "🙈 Hide Crossed Out"
-                    : "👀 Show Crossed Out"}
-                </button>
-              )}
-            </div>
-            <div className="space-y-4">
-              {fulfilledRequests
-                .filter(
-                  (req) => showCrossedOut || !crossedOutRequests.has(req._id)
-                )
-                .map((req) => (
-                  <div
-                    key={req._id}
-                    className={`p-4 rounded-lg border-2 bg-green-50 border-green-200 shadow-sm transition-all ${
-                      crossedOutRequests.has(req._id) ? "opacity-60" : ""
-                    }`}
-                  >
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                      <div
-                        className={`flex-1 ${
-                          crossedOutRequests.has(req._id) ? "line-through" : ""
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 mb-1">
-                          <strong className="text-lg">{req.bloodGroup}</strong>
-                          <span className="text-gray-600">at</span>
-                          <em className="text-gray-800">{req.location}</em>
-                          <span className="text-gray-600">–</span>
-                          <span
-                            className={`px-2 py-1 rounded text-xs font-medium ${
-                              req.urgency === "urgent" ||
-                              req.urgency === "Emergency"
-                                ? "bg-red-100 text-red-800"
-                                : req.urgency === "moderate" ||
-                                  req.urgency === "High"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-blue-100 text-blue-800"
-                            }`}
-                          >
-                            {req.urgency}
-                          </span>
-                          <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">
-                            ✓ FULFILLED BY YOU
-                          </span>
-                          <button
-                            onClick={() => toggleCrossOut(req._id)}
-                            className={`ml-2 px-2 py-1 rounded text-xs font-medium transition ${
-                              crossedOutRequests.has(req._id)
-                                ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
-                                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                            }`}
-                            title={
-                              crossedOutRequests.has(req._id)
-                                ? "Restore request"
-                                : "Cross out request"
-                            }
-                          >
-                            {crossedOutRequests.has(req._id)
-                              ? "↶ Restore"
-                              : "✕ Cross Out"}
-                          </button>
-                        </div>
-
-                        <p className="text-sm text-gray-600 mb-1">
-                          Requested by: {req.requester?.name}
-                        </p>
-
-                        <p className="text-xs text-gray-500">
-                          Originally requested:{" "}
-                          {new Date(req.createdAt).toLocaleDateString()}
-                        </p>
-
-                        <p className="text-xs text-green-600 font-medium">
-                          Fulfilled on:{" "}
-                          {new Date(req.fulfilledAt).toLocaleString()}
                         </p>
                       </div>
-
-                      <div className="mt-3 md:mt-0 md:ml-4">
-                        <span className="inline-block px-3 py-2 bg-green-100 text-green-800 rounded-lg font-semibold text-sm">
-                          ✓ Completed
+                      <div className="text-right">
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            req.urgency === "Emergency"
+                              ? "bg-red-100 text-red-800 animate-pulse"
+                              : req.urgency === "High"
+                              ? "bg-orange-100 text-orange-800"
+                              : req.urgency === "Medium"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-green-100 text-green-800"
+                          }`}
+                        >
+                          {req.urgency}
+                          {req.urgency === "Emergency" && " ⚡"}
                         </span>
                       </div>
                     </div>
-                  </div>
-                ))}
-            </div>
-          </div>
-        )}
 
-        {/* Accepted Offers Section (for donors) */}
-        {user?.isDonor && (
-          <div className="mb-8">
-            <h3 className="text-xl font-semibold mb-4 text-blue-700">
-              🤝 Your Accepted Offers
-            </h3>
-            {loading ? (
-              <p>Loading...</p>
-            ) : (
-              <div className="space-y-4">
-                {requests
-                  .concat(myRequests)
-                  .filter(
-                    (req) =>
-                      req.acceptedOffer &&
-                      req.acceptedOffer.toString() === user._id &&
-                      !req.fulfilled
-                  ).length === 0 ? (
-                  <div className="text-center py-6 bg-gray-50 rounded-lg">
-                    <p className="text-gray-500">
-                      No accepted offers requiring action at the moment
-                    </p>
-                  </div>
-                ) : (
-                  requests
-                    .concat(myRequests)
-                    .filter(
-                      (req) =>
-                        req.acceptedOffer &&
-                        req.acceptedOffer.toString() === user._id &&
-                        !req.fulfilled
-                    )
-                    .map((req) => (
-                      <div
-                        key={req._id}
-                        className="p-4 rounded-lg border-2 bg-blue-50 border-blue-200 shadow-md"
-                      >
-                        <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <strong className="text-lg">
-                                {req.bloodGroup}
-                              </strong>
-                              <span className="text-gray-600">at</span>
-                              <em className="text-blue-800 font-medium">
-                                {req.hospital || "Hospital not specified"}
-                              </em>
-                              <span className="text-gray-600">in</span>
-                              <em className="text-gray-800">{req.location}</em>
-                              <span className="text-gray-600">–</span>
-                              <span
-                                className={`px-2 py-1 rounded text-xs font-medium ${
-                                  req.urgency === "urgent" ||
-                                  req.urgency === "Emergency"
-                                    ? "bg-red-100 text-red-800"
-                                    : req.urgency === "moderate" ||
-                                      req.urgency === "High"
-                                    ? "bg-yellow-100 text-yellow-800"
-                                    : "bg-blue-100 text-blue-800"
-                                }`}
-                              >
-                                {req.urgency}
-                              </span>
-                              {req.bloodDonated ? (
-                                <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-medium">
-                                  🩸 Awaiting Confirmation
-                                </span>
-                              ) : (
-                                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium">
-                                  🤝 Your Offer Accepted
-                                </span>
-                              )}
-                            </div>
-
-                            <p className="text-sm text-gray-600 mb-1">
-                              Requested by: {req.requester?.name}
-                            </p>
-
-                            <p className="text-xs text-gray-500">
-                              Request created:{" "}
-                              {new Date(req.createdAt).toLocaleDateString()}
-                            </p>
-                          </div>
-
-                          <div className="mt-3 md:mt-0 md:ml-4 flex flex-col gap-2">
-                            {req.bloodDonated ? (
-                              <div className="flex flex-col gap-2">
-                                <span className="px-3 py-2 bg-yellow-100 text-yellow-800 rounded-lg text-sm font-medium text-center">
-                                  🩸 Waiting for confirmation
-                                </span>
-                                <p className="text-xs text-gray-600 text-center">
-                                  Requester will confirm donation
-                                </p>
-                              </div>
-                            ) : (
-                              <div className="flex flex-col gap-2">
-                                <button
-                                  onClick={() => markBloodDonated(req._id)}
-                                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition text-sm font-medium"
-                                >
-                                  🩸 Mark as Donated
-                                </button>
-                                <p className="text-xs text-gray-600 text-center">
-                                  Click after donating blood
-                                </p>
-                              </div>
-                            )}
-                            <Link to={`/chat/${req._id}`}>
-                              <button className="w-full px-3 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition text-sm font-medium">
-                                💬 Chat with Requester
-                              </button>
-                            </Link>
-                          </div>
-                        </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <p className="text-sm text-gray-600">
+                          <strong>Location:</strong> {req.location}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          <strong>Posted:</strong>{" "}
+                          {new Date(req.createdAt).toLocaleDateString()}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          <strong>Offers:</strong> {req.offers?.length || 0}
+                        </p>
                       </div>
-                    ))
-                )}
-              </div>
-            )}
-          </div>
-        )}
 
-        {/* Hospital Dashboard Section */}
-        {user?.isHospital && (
-          <div className="mb-8">
-            <h3 className="text-xl font-semibold mb-4 text-red-700">
-              🏥 Hospital Dashboard
-            </h3>
-
-            {loading ? (
-              <p>Loading requests...</p>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-                {/* Statistics Cards */}
-                <div className="bg-blue-50 p-4 rounded-lg border-2 border-blue-200">
-                  <h4 className="font-semibold text-blue-700">
-                    Total Requests
-                  </h4>
-                  <p className="text-2xl font-bold text-blue-800">
-                    {requests.length}
-                  </p>
-                </div>
-                <div className="bg-red-50 p-4 rounded-lg border-2 border-red-200">
-                  <h4 className="font-semibold text-red-700">
-                    Urgent Requests
-                  </h4>
-                  <p className="text-2xl font-bold text-red-800">
-                    {
-                      requests.filter(
-                        (r) => r.urgency === "Emergency" || r.urgency === "High"
-                      ).length
-                    }
-                  </p>
-                </div>
-                <div className="bg-green-50 p-4 rounded-lg border-2 border-green-200">
-                  <h4 className="font-semibold text-green-700">Fulfilled</h4>
-                  <p className="text-2xl font-bold text-green-800">
-                    {requests.filter((r) => r.fulfilled).length}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Hospital Blood Requests */}
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="text-lg font-semibold text-gray-700">
-                  🩸 All Blood Requests for {user.hospitalName}
-                  {requests.filter(
-                    (r) =>
-                      r.hospital === user.hospitalName &&
-                      r.fulfilled &&
-                      crossedOutRequests.has(r._id)
-                  ).length > 0 && (
-                    <span className="ml-2 text-sm text-gray-500">
-                      (
-                      {
-                        requests.filter(
-                          (r) =>
-                            r.hospital === user.hospitalName &&
-                            r.fulfilled &&
-                            crossedOutRequests.has(r._id)
-                        ).length
-                      }{" "}
-                      crossed out)
-                    </span>
-                  )}
-                </h4>
-                {requests.filter(
-                  (r) =>
-                    r.hospital === user.hospitalName &&
-                    r.fulfilled &&
-                    crossedOutRequests.has(r._id)
-                ).length > 0 && (
-                  <button
-                    onClick={() => setShowCrossedOut(!showCrossedOut)}
-                    className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition"
-                  >
-                    {showCrossedOut
-                      ? "🙈 Hide Crossed Out"
-                      : "👀 Show Crossed Out"}
-                  </button>
-                )}
-              </div>
-              {requests.filter((r) => r.hospital === user.hospitalName)
-                .length === 0 ? (
-                <div className="text-center py-6 bg-gray-50 rounded-lg">
-                  <p className="text-gray-500">
-                    No requests for your hospital at the moment
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {requests
-                    .filter((r) => r.hospital === user.hospitalName)
-                    .filter(
-                      (req) =>
-                        showCrossedOut || !crossedOutRequests.has(req._id)
-                    )
-                    .slice(0, 5)
-                    .map((req) => (
-                      <div
-                        key={req._id}
-                        className={`p-3 rounded-lg border-2 transition-all ${
-                          req.fulfilled
-                            ? "bg-green-50 border-green-200"
-                            : req.urgency === "Emergency"
-                            ? "bg-red-50 border-red-200"
-                            : "bg-white border-gray-200"
-                        } ${
-                          crossedOutRequests.has(req._id) ? "opacity-60" : ""
-                        }`}
-                      >
-                        <div className="flex justify-between items-start">
-                          <div
-                            className={`flex-1 ${
-                              crossedOutRequests.has(req._id)
-                                ? "line-through"
-                                : ""
-                            }`}
-                          >
-                            <div className="flex items-center gap-2 mb-1">
-                              <strong className="text-lg">
-                                {req.bloodGroup}
-                              </strong>
-                              <span
-                                className={`px-2 py-1 rounded text-xs font-medium ${
-                                  req.urgency === "Emergency"
-                                    ? "bg-red-100 text-red-800"
-                                    : req.urgency === "High"
-                                    ? "bg-yellow-100 text-yellow-800"
-                                    : "bg-blue-100 text-blue-800"
-                                }`}
-                              >
-                                {req.urgency}
-                              </span>
-                              {req.fulfilled && (
-                                <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">
-                                  ✓ Fulfilled
-                                </span>
-                              )}
-                              {req.fulfilled && (
-                                <button
-                                  onClick={() => toggleCrossOut(req._id)}
-                                  className={`ml-2 px-2 py-1 rounded text-xs font-medium transition ${
-                                    crossedOutRequests.has(req._id)
-                                      ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
-                                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                                  }`}
-                                  title={
-                                    crossedOutRequests.has(req._id)
-                                      ? "Restore request"
-                                      : "Cross out request"
-                                  }
-                                >
-                                  {crossedOutRequests.has(req._id)
-                                    ? "↶ Restore"
-                                    : "✕ Cross Out"}
-                                </button>
-                              )}
-                            </div>
-                            <p className="text-sm text-gray-600">
-                              Requested by: {req.requester?.name}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {new Date(req.createdAt).toLocaleDateString()}
-                            </p>
-                          </div>
-                          <div className="flex gap-2">
-                            {req.fulfillmentOffers?.length > 0 && (
-                              <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
-                                {req.fulfillmentOffers.length} offers
-                              </span>
-                            )}
-                            {req.acceptedOffer && !req.fulfilled && (
-                              <button
-                                onClick={() => fulfillAcceptedOffer(req._id)}
-                                className="px-3 py-1 bg-green-500 text-white rounded text-xs hover:bg-green-600 transition"
-                                title="Mark as fulfilled when coordination is complete"
-                              >
-                                ✅ Fulfill
-                              </button>
-                            )}
-                            <Link to={`/chat/${req._id}`}>
-                              <button className="px-3 py-1 bg-purple-500 text-white rounded text-xs hover:bg-purple-600 transition">
-                                💬 Chat
-                              </button>
-                            </Link>
-                          </div>
+                      {distanceInfo && (
+                        <div>
+                          <p className="text-sm text-gray-600 flex items-center">
+                            <span className="mr-1">{distanceInfo.icon}</span>
+                            <strong>Distance:</strong>{" "}
+                            {distanceInfo.distanceText}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            <strong>Travel:</strong> {distanceInfo.description}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            <strong>Est. Time:</strong> ~
+                            {distanceInfo.estimatedTime} min
+                          </p>
                         </div>
-                      </div>
-                    ))}
-                  {requests.filter((r) => r.hospital === user.hospitalName)
-                    .length > 5 && (
-                    <p className="text-center text-gray-500 text-sm">
-                      +{" "}
-                      {requests.filter((r) => r.hospital === user.hospitalName)
-                        .length - 5}{" "}
-                      more requests
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+                      )}
+                    </div>
 
-        {/* Test Section for Regular Users */}
-        {!user?.isDonor && !user?.isHospital && requests.length > 0 && (
-          <div className="mb-8">
-            <h3 className="text-xl font-semibold mb-4 text-gray-700">
-              🩸 Available Blood Requests (Test View)
-            </h3>
-            <div className="space-y-4">
-              {requests.map((req) => (
-                <div
-                  key={req._id}
-                  className="p-4 rounded-lg border-2 bg-white border-gray-200 shadow-md"
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <strong className="text-lg">{req.bloodGroup}</strong>
-                    <span className="text-gray-600">at</span>
-                    <em className="text-blue-800 font-medium">
-                      {req.hospital || "Hospital not specified"}
-                    </em>
-                    <span className="text-gray-600">in</span>
-                    <em className="text-gray-800">{req.location}</em>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleSendOffer(req)}
+                        className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 flex items-center justify-center"
+                      >
+                        <span className="mr-2">💌</span>
+                        Send Offer
+                      </button>
+                      <button
+                        onClick={() => handleOpenChat(req)}
+                        className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-center"
+                      >
+                        <span className="mr-2">💬</span>
+                        Chat
+                      </button>
+                    </div>
                   </div>
-                  <p className="text-sm text-gray-600 mb-1">
-                    Requested by: {req.requester?.name}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Created: {new Date(req.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* For Non-Donors and Non-Hospitals: Show message if no requests */}
-        {!user?.isDonor && !user?.isHospital && myRequests.length === 0 && (
-          <div className="text-center py-8">
-            <h3 className="text-xl font-semibold mb-4 text-gray-600">
-              No Blood Requests Yet
-            </h3>
-            <p className="text-gray-500 mb-4">
-              You haven't made any blood requests yet. Create your first request
-              to get started.
-            </p>
+                );
+              })}
           </div>
         )}
       </div>
+    </div>
+  );
+
+  const renderMyRequests = () => (
+    <div className="bg-white rounded-lg shadow-md">
+      <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-800">
+            My Blood Requests
+          </h2>
+          <p className="text-sm text-gray-600 mt-1">
+            Manage your blood requests and offers
+          </p>
+        </div>
+        <button
+          onClick={() => navigate("/create-request")}
+          className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 flex items-center"
+        >
+          <span className="mr-2">+</span>
+          Create Request
+        </button>
+      </div>
+      <div className="p-6">
+        {myRequests.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="text-6xl mb-4">📋</div>
+            <p className="text-gray-500 mb-4">
+              You haven't created any blood requests yet
+            </p>
+            <button
+              onClick={() => navigate("/create-request")}
+              className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 font-medium"
+            >
+              Create Your First Blood Request
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {myRequests.map((req) => (
+              <div
+                key={req._id}
+                className="border border-gray-200 rounded-lg p-4"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h3 className="font-semibold text-red-600 flex items-center">
+                      <span className="mr-2">🩸</span>
+                      {req.bloodGroup} Blood Request
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Created on: {new Date(req.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      req.fulfilled
+                        ? "bg-green-100 text-green-800"
+                        : "bg-yellow-100 text-yellow-800"
+                    }`}
+                  >
+                    {req.fulfilled ? "Fulfilled" : "Active"}
+                  </span>
+                </div>
+
+                <div className="mb-4">
+                  <p className="text-sm text-gray-600">
+                    <strong>Location:</strong> {req.location}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    <strong>Urgency:</strong> {req.urgency}
+                  </p>
+                </div>
+
+                {/* Chat Button for My Requests */}
+                <div className="mb-4">
+                  <button
+                    onClick={() => handleOpenChat(req)}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center text-sm"
+                  >
+                    <span className="mr-2">💬</span>
+                    Open Chat Room
+                    {req.offers && req.offers.length > 0 && (
+                      <span className="ml-2 bg-blue-500 text-xs px-2 py-1 rounded-full">
+                        {req.offers.length} potential helpers
+                      </span>
+                    )}
+                  </button>
+                </div>
+
+                {req.offers && req.offers.length > 0 && (
+                  <div>
+                    <h4 className="font-medium text-gray-800 mb-3">
+                      Offers Received ({req.offers.length})
+                    </h4>
+                    <div className="space-y-3">
+                      {req.offers.map((offer) => (
+                        <div
+                          key={offer._id}
+                          className="bg-gray-50 rounded-lg p-3"
+                        >
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <p className="font-medium text-gray-800">
+                                {offer.donor?.name}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                Blood Group: {offer.donor?.bloodGroup}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                Location: {offer.donor?.location}
+                              </p>
+                            </div>
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                offer.status === "accepted"
+                                  ? "bg-green-100 text-green-800"
+                                  : offer.status === "rejected"
+                                  ? "bg-red-100 text-red-800"
+                                  : "bg-yellow-100 text-yellow-800"
+                              }`}
+                            >
+                              {offer.status.charAt(0).toUpperCase() +
+                                offer.status.slice(1)}
+                            </span>
+                          </div>
+
+                          <p className="text-sm text-gray-700 italic mb-3">
+                            "{offer.message}"
+                          </p>
+
+                          <p className="text-xs text-gray-500 mb-3">
+                            Sent on:{" "}
+                            {new Date(offer.createdAt).toLocaleDateString()}
+                          </p>
+
+                          {offer.status === "pending" && !req.fulfilled && (
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleAcceptOffer(offer._id)}
+                                className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 flex items-center"
+                              >
+                                <span className="mr-1">✅</span>
+                                Accept Offer
+                              </button>
+                              <button
+                                onClick={() => handleOpenChat(req)}
+                                className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center"
+                              >
+                                <span className="mr-1">💬</span>
+                                Chat
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderMyOffers = () => (
+    <div className="bg-white rounded-lg shadow-md">
+      <div className="px-6 py-4 border-b border-gray-200">
+        <h2 className="text-lg font-semibold text-gray-800">
+          My Donation Offers
+        </h2>
+        <p className="text-sm text-gray-600 mt-1">
+          Track your sent offers and their status
+        </p>
+      </div>
+      <div className="p-6">
+        {myOffers.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="text-6xl mb-4">💌</div>
+            <p className="text-gray-500">
+              You haven't sent any donation offers yet
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {myOffers.map((offer) => (
+              <div
+                key={offer._id}
+                className="border border-gray-200 rounded-lg p-4"
+              >
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <h3 className="font-semibold text-red-600">
+                      {offer.bloodRequest?.bloodGroup} Blood Donation Offer
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      To: {offer.bloodRequest?.location}
+                    </p>
+                  </div>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      offer.status === "accepted"
+                        ? "bg-green-100 text-green-800"
+                        : offer.status === "rejected"
+                        ? "bg-red-100 text-red-800"
+                        : "bg-yellow-100 text-yellow-800"
+                    }`}
+                  >
+                    {offer.status.charAt(0).toUpperCase() +
+                      offer.status.slice(1)}
+                  </span>
+                </div>
+
+                <p className="text-sm text-gray-700 italic mb-3">
+                  "{offer.message}"
+                </p>
+
+                <div className="flex justify-between items-center">
+                  <div className="text-xs text-gray-500">
+                    <p>
+                      Sent: {new Date(offer.createdAt).toLocaleDateString()}
+                    </p>
+                    {offer.respondedAt && (
+                      <p>
+                        Responded:{" "}
+                        {new Date(offer.respondedAt).toLocaleDateString()}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center space-x-2">
+                    {/* Chat Button */}
+                    <button
+                      onClick={() => handleOpenChat(offer.bloodRequest)}
+                      className="bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 flex items-center space-x-1"
+                      title="Chat with requester"
+                    >
+                      <span>💬</span>
+                      <span className="text-sm">Chat</span>
+                    </button>
+
+                    {/* Status-specific action */}
+                    {offer.status === "accepted" && (
+                      <div className="text-xs text-green-600 font-medium">
+                        🎉 Accepted - Please coordinate with the requester
+                      </div>
+                    )}
+                    {offer.status === "pending" && (
+                      <div className="text-xs text-yellow-600 font-medium">
+                        ⏳ Awaiting response
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100">
+        <div className="bg-white shadow-sm border-b">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center py-4">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  Blood Donation Dashboard
+                </h1>
+                <p className="text-sm text-gray-600">
+                  Loading your dashboard...
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <LoadingSpinner
+            size="lg"
+            color="red"
+            message="Loading your blood donation dashboard..."
+          />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-100">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <div className="flex items-center space-x-6">
+              {/* Main Title */}
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  Blood Donation Dashboard
+                </h1>
+                <p className="text-sm text-gray-500 mt-1">
+                  Connecting donors and recipients to save lives
+                </p>
+              </div>
+
+              {/* User Info Card */}
+              <div className="bg-gradient-to-r from-red-50 to-pink-50 border border-red-100 rounded-lg px-4 py-3 shadow-sm">
+                <div className="flex items-center space-x-4">
+                  {/* User Avatar */}
+                  <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                    <span className="text-red-600 font-semibold text-lg">
+                      {user?.name?.charAt(0)?.toUpperCase()}
+                    </span>
+                  </div>
+
+                  {/* User Details */}
+                  <div>
+                    <div className="flex items-center space-x-3">
+                      <span className="text-sm font-medium text-gray-900">
+                        {user?.name}
+                      </span>
+                      <div className="flex items-center space-x-1">
+                        <span className="text-xs text-gray-500">
+                          Blood Group:
+                        </span>
+                        <span className="text-sm font-semibold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">
+                          {user?.bloodGroup}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Location Info */}
+                    {user?.location && (
+                      <div className="flex items-center space-x-1 mt-1">
+                        <span className="text-xs text-gray-400">📍</span>
+                        <span className="text-xs text-gray-500 truncate max-w-48">
+                          {user.location}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Side Actions */}
+            <div className="flex items-center space-x-3">
+              {/* Hospital-specific navigation */}
+              {user?.isHospital && (
+                <button
+                  onClick={() => navigate("/hospital/requests")}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 shadow-sm hover:shadow-md flex items-center space-x-2"
+                  title="Manage hospital blood requests"
+                >
+                  <span>🏥</span>
+                  <span>Hospital Requests</span>
+                </button>
+              )}
+
+              <button
+                onClick={() => setShowShortcutsModal(true)}
+                className="text-xs text-gray-500 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 px-3 py-2 rounded-md transition-colors duration-200"
+                title="Keyboard Shortcuts (Press ?)"
+              >
+                ⌨️ Shortcuts
+              </button>
+              <button
+                onClick={logout}
+                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all duration-200 shadow-sm hover:shadow-md"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation Tabs */}
+      <div className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <nav className="flex space-x-8">
+            {[
+              {
+                id: "browse",
+                label: "Browse Requests",
+                icon: "🔍",
+                shortcut: "1",
+              },
+              {
+                id: "my-requests",
+                label: "My Requests",
+                icon: "📋",
+                shortcut: "2",
+              },
+              {
+                id: "my-offers",
+                label: "My Offers",
+                icon: "💌",
+                shortcut: "3",
+              },
+              {
+                id: "accepted",
+                label: "Accepted Offers",
+                icon: "✅",
+                shortcut: "4",
+              },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center relative ${
+                  activeTab === tab.id
+                    ? "border-red-500 text-red-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+                title={`${tab.label} (Press ${tab.shortcut})`}
+              >
+                <span className="mr-2">{tab.icon}</span>
+                {tab.label}
+                <span className="ml-2 text-xs bg-gray-100 text-gray-600 px-1 py-0.5 rounded opacity-60">
+                  {tab.shortcut}
+                </span>
+              </button>
+            ))}
+          </nav>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Quick Stats */}
+        <QuickStats
+          requests={requests}
+          myRequests={myRequests}
+          myOffers={myOffers}
+        />
+
+        {/* Tab Content */}
+        {activeTab === "browse" && renderBloodRequests()}
+        {activeTab === "my-requests" && renderMyRequests()}
+        {activeTab === "my-offers" && renderMyOffers()}
+        {activeTab === "accepted" && (
+          <AcceptedOffers onOpenChat={handleOpenChat} />
+        )}
+      </div>
+
+      {/* Send Offer Modal */}
+      <SendOfferModal
+        isOpen={showOfferModal}
+        onClose={() => setShowOfferModal(false)}
+        bloodRequest={selectedRequest}
+        onOfferSent={handleOfferSent}
+      />
+
+      {/* Chat Modal */}
+      <ChatComponent
+        bloodRequest={selectedChatRequest}
+        isOpen={showChatModal}
+        onClose={() => setShowChatModal(false)}
+      />
+
+      {/* Keyboard Shortcuts Modal */}
+      <KeyboardShortcutsModal
+        isOpen={showShortcutsModal}
+        onClose={() => setShowShortcutsModal(false)}
+      />
     </div>
   );
 };

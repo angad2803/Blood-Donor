@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import api from "../api/api.js";
 import { useNavigate } from "react-router-dom";
+import LocationCapture from "../components/LocationCapture";
+import gpsLocationService from "../utils/gpsLocationService";
 
 const Register = () => {
   const [form, setForm] = useState({
@@ -17,6 +19,9 @@ const Register = () => {
   });
 
   const [error, setError] = useState("");
+  const [showLocationCapture, setShowLocationCapture] = useState(false);
+  const [locationData, setLocationData] = useState(null);
+  const [registrationStep, setRegistrationStep] = useState("form"); // form, location, complete
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -27,14 +32,156 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    // First, complete the form registration
     try {
-      await api.post("/auth/register", form);
-      navigate("/login");
+      const registrationData = { ...form };
+
+      // If we have location data, include coordinates
+      if (locationData && locationData.coordinates) {
+        registrationData.coordinates = {
+          latitude: locationData.coordinates.latitude,
+          longitude: locationData.coordinates.longitude,
+          accuracy: locationData.coordinates.accuracy,
+        };
+        // Update location field with more precise address if available
+        if (locationData.address) {
+          registrationData.location = locationData.address;
+        }
+      }
+
+      await api.post("/auth/register", registrationData);
+
+      // If no location captured yet, show location capture
+      if (!locationData) {
+        setRegistrationStep("location");
+      } else {
+        // Registration complete
+        setRegistrationStep("complete");
+        setTimeout(() => navigate("/login"), 2000);
+      }
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed");
     }
   };
 
+  const handleLocationCaptured = (capturedLocationData) => {
+    console.log("Location captured during registration:", capturedLocationData);
+    setLocationData(capturedLocationData);
+    setRegistrationStep("complete");
+
+    // Navigate to login after a short delay
+    setTimeout(() => {
+      navigate("/login");
+    }, 2000);
+  };
+
+  const handleLocationSkipped = () => {
+    console.log("Location capture skipped during registration");
+    setRegistrationStep("complete");
+    setTimeout(() => navigate("/login"), 2000);
+  };
+
+  // Auto-capture location when user fills in location field
+  const handleLocationFieldChange = async (e) => {
+    const { name, value } = e.target;
+    handleChange(e);
+
+    // If user is typing location and we don't have GPS coordinates yet
+    if (
+      name === "location" &&
+      value.length > 3 &&
+      !locationData &&
+      gpsLocationService.isSupported()
+    ) {
+      try {
+        // Try to capture location silently in background
+        const result = await gpsLocationService.captureLocationAutomatically(
+          "enhance your registration",
+          false // Don't show prompt
+        );
+        if (result.success) {
+          setLocationData({
+            coordinates: result.position,
+            address: result.address,
+          });
+          console.log(
+            "Background location capture successful during registration"
+          );
+        }
+      } catch (error) {
+        // Silent fail - user can still register without GPS
+        console.log("Background location capture failed:", error.message);
+      }
+    }
+  };
+
+  // Show location capture step
+  if (registrationStep === "location") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-blue-50">
+        <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-md">
+          <h2 className="text-xl font-semibold text-center text-blue-700 mb-4">
+            Almost Done! 🎉
+          </h2>
+          <p className="text-gray-600 text-center mb-6 text-sm">
+            Your account has been created successfully! Now let's enable
+            location access to help you connect with nearby blood requests and
+            donors.
+          </p>
+          <LocationCapture
+            onLocationCaptured={handleLocationCaptured}
+            onSkip={handleLocationSkipped}
+            purpose="find nearby blood requests and donors"
+            showSkipOption={true}
+            autoCapture={false}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Show completion step
+  if (registrationStep === "complete") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-blue-50">
+        <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-md text-center">
+          <div className="mb-4">
+            <svg
+              className="w-16 h-16 text-green-500 mx-auto"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-semibold text-green-700 mb-4">
+            Registration Complete! ✅
+          </h2>
+          <p className="text-gray-600 mb-6">
+            Your account has been successfully created
+            {locationData ? " with location access" : ""}. You can now log in
+            and start{" "}
+            {form.isDonor
+              ? "helping save lives by donating blood"
+              : "finding blood donors in your area"}
+            .
+          </p>
+          <div className="animate-pulse text-blue-600">
+            Redirecting to login...
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show main registration form
   return (
     <div className="min-h-screen flex items-center justify-center bg-blue-50">
       <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-md">
@@ -75,13 +222,44 @@ const Register = () => {
               form.isHospital ? "bg-gray-100 cursor-not-allowed" : ""
             }`}
           />
-          <input
-            name="location"
-            placeholder="Location (e.g., Mumbai)"
-            onChange={handleChange}
-            required
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-          />
+          <div className="relative">
+            <input
+              name="location"
+              placeholder="Location (e.g., Mumbai)"
+              value={form.location}
+              onChange={handleLocationFieldChange}
+              required
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+            {locationData && (
+              <div className="absolute right-2 top-2">
+                <svg
+                  className="w-5 h-5 text-green-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                </svg>
+              </div>
+            )}
+          </div>
+          {locationData && (
+            <div className="text-xs text-green-600 bg-green-50 p-2 rounded">
+              📍 GPS location captured: {locationData.address}
+            </div>
+          )}
 
           {/* User Type Selection */}
           <div className="space-y-3 p-4 border border-gray-200 rounded-md bg-gray-50">

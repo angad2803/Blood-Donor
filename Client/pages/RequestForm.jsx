@@ -30,7 +30,7 @@ const RequestForm = () => {
     setSuccess("");
 
     try {
-      // FIX: Use the correct endpoint for creating a request
+      // Use the correct endpoint (baseURL already includes /api)
       const res = await api.post("/request/create", {
         bloodGroup,
         location,

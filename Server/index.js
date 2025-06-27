@@ -8,6 +8,7 @@ import { Server } from "socket.io";
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/user.js";
 import requestRoutes from "./routes/request.js";
+import offerRoutes from "./routes/offer.js";
 import match from "./routes/match.js";
 import messageRoutes from "./routes/message.js";
 import googleAuthRoutes from "./routes/googleAuth.js";
@@ -29,7 +30,7 @@ import {
 dotenv.config();
 const app = express();
 
-// Create server for socket.io
+// Create server for `socket`.io
 const server = http.createServer(app);
 
 // ✅ Initialize Socket.io
@@ -54,12 +55,36 @@ io.on("connection", (socket) => {
 
   socket.on("join-room", (roomId) => {
     socket.join(roomId);
-    console.log(`User joined room: ${roomId}`);
+    console.log(`User ${socket.id} joined room: ${roomId}`);
+
+    // Get room users and emit to room
+    const room = io.sockets.adapter.rooms.get(roomId);
+    const users = room ? Array.from(room).map((id) => ({ id })) : [];
+    io.to(roomId).emit("room-users", users);
+  });
+
+  socket.on("leave-room", (roomId) => {
+    socket.leave(roomId);
+    console.log(`User ${socket.id} left room: ${roomId}`);
+
+    // Update room users after leaving
+    const room = io.sockets.adapter.rooms.get(roomId);
+    const users = room ? Array.from(room).map((id) => ({ id })) : [];
+    io.to(roomId).emit("room-users", users);
   });
 
   socket.on("send-message", (data) => {
     const { roomId, message } = data;
     socket.to(roomId).emit("receive-message", message);
+    console.log(
+      `Message sent to room ${roomId}:`,
+      message.text?.substring(0, 50) + "..."
+    );
+  });
+
+  socket.on("typing", (data) => {
+    const { roomId, userId, name, isTyping } = data;
+    socket.to(roomId).emit("user-typing", { userId, name, isTyping });
   });
 
   socket.on("disconnect", () => {
@@ -79,6 +104,7 @@ app.use("/admin/queues", bullBoardRouter);
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/request", requestRoutes);
+app.use("/api/offer", offerRoutes);
 app.use("/api/match", match);
 app.use("/api/message", messageRoutes);
 app.use("/api/google-auth", googleAuthRoutes);
@@ -87,10 +113,7 @@ app.use(passport.initialize());
 
 // MongoDB connection
 mongoose
-  .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+  .connect(process.env.MONGO_URI)
   .then(() => {
     console.log("✅ MongoDB connected");
 
