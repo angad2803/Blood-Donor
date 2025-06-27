@@ -41,7 +41,6 @@ class MatchingService {
             maxDistance: Math.min(maxDistance, this.maxSearchRadius),
             spherical: true,
             query: {
-              isDonor: true,
               available: true,
               "locationPreferences.shareRealTimeLocation": true,
             },
@@ -474,7 +473,7 @@ class MatchingService {
   async updateDonorLocation(donorId, latitude, longitude, accuracy = null) {
     try {
       const donor = await User.findById(donorId);
-      if (!donor || !donor.isDonor) throw new Error("Donor not found");
+      if (!donor) throw new Error("User not found");
 
       if (!geolocationService.isValidCoordinates(latitude, longitude)) {
         throw new Error("Invalid coordinates");

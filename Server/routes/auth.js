@@ -146,6 +146,7 @@ router.post("/register", async (req, res) => {
         email: newUser.email,
         bloodGroup: newUser.bloodGroup,
         isDonor: newUser.isDonor,
+        isAdmin: newUser.isAdmin || false,
         location: newUser.location,
       },
     });
@@ -208,6 +209,7 @@ router.post("/login", async (req, res) => {
         email: user.email,
         bloodGroup: user.bloodGroup,
         isDonor: user.isDonor,
+        isAdmin: user.isAdmin || false,
         location: user.location,
       },
     });

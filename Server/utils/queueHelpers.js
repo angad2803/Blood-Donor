@@ -26,8 +26,7 @@ export async function findEligibleDonors(request) {
     // Find users with compatible blood groups
     const donors = await User.find({
       bloodGroup: { $in: eligibleBloodGroups },
-      role: "donor",
-      isActive: true,
+      available: true,
       // Add location-based filtering if needed
       // location: { $regex: location, $options: 'i' }
     }).select("name email phone bloodGroup location");

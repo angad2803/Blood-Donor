@@ -1,6 +1,6 @@
 import React from "react";
 
-const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
+const KeyboardShortcutsModal = ({ isOpen, onClose, user }) => {
   if (!isOpen) return null;
 
   const handleBackdropClick = (e) => {
@@ -10,13 +10,19 @@ const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
   };
 
   const shortcuts = [
-    { key: "1", description: "Browse Blood Requests" },
-    { key: "2", description: "My Requests" },
-    { key: "3", description: "My Offers" },
-    { key: "4", description: "Accepted Offers" },
-    { key: "C", description: "Create New Request" },
-    { key: "?", description: "Show/Hide This Help" },
-    { key: "Esc", description: "Close Modal/Dialog" },
+    { key: "1", description: "Browse Blood Requests", category: "navigation" },
+    { key: "2", description: "My Requests", category: "navigation" },
+    { key: "3", description: "My Offers", category: "navigation" },
+    { key: "4", description: "Accepted Offers", category: "navigation" },
+    ...(user?.isAdmin
+      ? [
+          { key: "5", description: "Manage Users", category: "admin" },
+          { key: "6", description: "Manage Requests", category: "admin" },
+        ]
+      : []),
+    { key: "C", description: "Create New Request", category: "actions" },
+    { key: "?", description: "Show/Hide This Help", category: "actions" },
+    { key: "Esc", description: "Close Modal/Dialog", category: "actions" },
   ];
 
   return (
@@ -50,15 +56,80 @@ const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
           </button>
         </div>
 
-        <div className="space-y-3">
-          {shortcuts.map((shortcut, index) => (
-            <div key={index} className="flex justify-between items-center py-2">
-              <span className="text-gray-700">{shortcut.description}</span>
-              <kbd className="bg-gray-100 text-gray-800 px-2 py-1 rounded text-sm font-mono">
-                {shortcut.key}
-              </kbd>
+        <div className="space-y-4">
+          {/* Navigation Shortcuts */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-600 mb-2">
+              Navigation
+            </h3>
+            {shortcuts
+              .filter((s) => s.category === "navigation")
+              .map((shortcut, index) => (
+                <div
+                  key={index}
+                  className="flex justify-between items-center py-1"
+                >
+                  <span className="text-gray-700 text-sm">
+                    {shortcut.description}
+                  </span>
+                  <kbd
+                    className={`px-2 py-1 rounded text-xs font-mono ${
+                      shortcut.category === "admin"
+                        ? "bg-purple-100 text-purple-800"
+                        : "bg-gray-100 text-gray-800"
+                    }`}
+                  >
+                    {shortcut.key}
+                  </kbd>
+                </div>
+              ))}
+          </div>
+
+          {/* Admin Shortcuts */}
+          {user?.isAdmin && (
+            <div>
+              <h3 className="text-sm font-semibold text-purple-600 mb-2">
+                Admin Controls
+              </h3>
+              {shortcuts
+                .filter((s) => s.category === "admin")
+                .map((shortcut, index) => (
+                  <div
+                    key={index}
+                    className="flex justify-between items-center py-1"
+                  >
+                    <span className="text-gray-700 text-sm">
+                      {shortcut.description}
+                    </span>
+                    <kbd className="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-mono">
+                      {shortcut.key}
+                    </kbd>
+                  </div>
+                ))}
             </div>
-          ))}
+          )}
+
+          {/* Action Shortcuts */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-600 mb-2">
+              Actions
+            </h3>
+            {shortcuts
+              .filter((s) => s.category === "actions")
+              .map((shortcut, index) => (
+                <div
+                  key={index}
+                  className="flex justify-between items-center py-1"
+                >
+                  <span className="text-gray-700 text-sm">
+                    {shortcut.description}
+                  </span>
+                  <kbd className="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs font-mono">
+                    {shortcut.key}
+                  </kbd>
+                </div>
+              ))}
+          </div>
         </div>
 
         <div className="mt-6 pt-4 border-t border-gray-200">

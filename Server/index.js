@@ -13,6 +13,7 @@ import match from "./routes/match.js";
 import messageRoutes from "./routes/message.js";
 import googleAuthRoutes from "./routes/googleAuth.js";
 import emailRoutes from "./routes/email.js";
+import adminRoutes from "./routes/admin.js"; // Add admin routes
 import passport from "passport";
 import "./config/passport.js"; // 👈 initialize passport config
 
@@ -28,6 +29,13 @@ import {
 
 // Config
 dotenv.config();
+console.log("🔄 Starting Blood Donor API...");
+console.log("📊 Environment:", process.env.NODE_ENV || "development");
+console.log(
+  "️ Mongo URI:",
+  process.env.MONGO_URI ? "✅ Configured" : "❌ Missing"
+);
+
 const app = express();
 
 // Create server for `socket`.io
@@ -36,8 +44,9 @@ const server = http.createServer(app);
 // ✅ Initialize Socket.io
 const io = new Server(server, {
   cors: {
-    origin: "*", // Change this to your frontend URL in production
+    origin: ["http://localhost:5173", "http://localhost:3000"],
     methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
   },
 });
 
@@ -93,12 +102,25 @@ io.on("connection", (socket) => {
 });
 
 // Middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: ["http://localhost:5173", "http://localhost:3000"],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 app.use(express.json());
 
 // Mount Bull Board dashboard (before other routes)
-const { router: bullBoardRouter } = createBullBoardRouter();
-app.use("/admin/queues", bullBoardRouter);
+try {
+  const { router: bullBoardRouter } = createBullBoardRouter();
+  app.use("/admin/queues", bullBoardRouter);
+  console.log("✅ Bull Board dashboard mounted at /admin/queues");
+} catch (err) {
+  console.error("❌ Bull Board dashboard error:", err);
+  console.log("⚠️ Continuing without queue dashboard...");
+}
 
 // Routes
 app.use("/api/auth", authRoutes);
@@ -109,19 +131,36 @@ app.use("/api/match", match);
 app.use("/api/message", messageRoutes);
 app.use("/api/google-auth", googleAuthRoutes);
 app.use("/api/email", emailRoutes);
+app.use("/api/admin", adminRoutes); // Add admin routes
 app.use(passport.initialize());
 
 // MongoDB connection
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log("✅ MongoDB connected");
-
-    // Start BullMQ workers after database connection
+const connectDB = async () => {
+  console.log("🔄 Starting database connection...");
+  try {
+    if (process.env.MONGO_URI) {
+      await mongoose.connect(process.env.MONGO_URI);
+      console.log("✅ MongoDB connected");
+    } else {
+      console.log("⚠️ No MONGO_URI provided, running without database");
+    }
+  } catch (err) {
+    console.error("❌ MongoDB connection error:", err);
+    console.log("⚠️ Continuing without database connection...");
+  }
+  // Always try to start workers (even if DB fails)
+  console.log("🔄 Starting queue workers...");
+  try {
     startWorkers();
     console.log("✅ BullMQ workers started");
-  })
-  .catch((err) => console.error("❌ MongoDB connection error:", err));
+  } catch (err) {
+    console.error("❌ BullMQ workers error:", err);
+    console.log("⚠️ Continuing without queue workers...");
+  }
+};
+
+// Connect to database
+connectDB();
 
 // Sample route
 app.get("/", (req, res) =>

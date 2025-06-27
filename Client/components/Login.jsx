@@ -1,9 +1,10 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect, useRef } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 import api from "../api/api";
 import gpsLocationService from "../utils/gpsLocationService";
 import LocationCapture from "./LocationCapture";
+import { gsap } from "gsap";
 
 const Login = () => {
   const { login } = useContext(AuthContext);
@@ -16,14 +17,60 @@ const Login = () => {
   const [showLocationCapture, setShowLocationCapture] = useState(false);
   const [userData, setUserData] = useState(null);
 
+  // GSAP Refs
+  const formRef = useRef(null);
+  const titleRef = useRef(null);
+  const cardRef = useRef(null);
+
+  useEffect(() => {
+    // Entrance animations
+    const tl = gsap.timeline();
+
+    tl.fromTo(
+      titleRef.current,
+      { opacity: 0, y: -30 },
+      { opacity: 1, y: 0, duration: 0.8, ease: "power2.out" }
+    ).fromTo(
+      cardRef.current,
+      { opacity: 0, y: 50, scale: 0.95 },
+      { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: "power2.out" },
+      "-=0.4"
+    );
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
+    // Loading animation
+    gsap.to(formRef.current, {
+      scale: 0.98,
+      opacity: 0.7,
+      duration: 0.3,
+      ease: "power2.out",
+    });
+
     const result = await login(email, password);
 
     if (result.success) {
+      // Success animation
+      gsap.to(cardRef.current, {
+        scale: 1.05,
+        duration: 0.2,
+        ease: "power2.out",
+        yoyo: true,
+        repeat: 1,
+        onComplete: () => {
+          gsap.to(cardRef.current, {
+            x: -window.innerWidth,
+            opacity: 0,
+            duration: 0.5,
+            ease: "power2.in",
+          });
+        },
+      });
+
       const user = result.user;
 
       // Check if user has GPS coordinates
@@ -63,7 +110,27 @@ const Login = () => {
       }
     } else {
       setError(result.message || "Login failed");
+
+      // Error shake animation
+      gsap.to(cardRef.current, {
+        x: -10,
+        duration: 0.1,
+        ease: "power2.out",
+        yoyo: true,
+        repeat: 5,
+        onComplete: () => {
+          gsap.set(cardRef.current, { x: 0 });
+        },
+      });
     }
+
+    // Reset form animation
+    gsap.to(formRef.current, {
+      scale: 1,
+      opacity: 1,
+      duration: 0.3,
+      ease: "power2.out",
+    });
 
     setLoading(false);
   };
@@ -105,11 +172,17 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-blue-50">
-      <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-md">
-        <h2 className="text-2xl font-semibold text-center text-blue-700 mb-6">
+      <div
+        className="w-full max-w-md p-8 bg-white rounded-lg shadow-md"
+        ref={cardRef}
+      >
+        <h2
+          className="text-2xl font-semibold text-center text-blue-700 mb-6"
+          ref={titleRef}
+        >
           Login
         </h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" ref={formRef}>
           <input
             type="email"
             placeholder="Email"

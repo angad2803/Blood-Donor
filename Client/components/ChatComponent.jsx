@@ -4,6 +4,7 @@ import { io } from "socket.io-client";
 import api from "../api/api.js";
 import { toast } from "react-toastify";
 import LoadingSpinner from "./LoadingSpinner";
+import { gsap } from "gsap";
 
 const socket = io("http://localhost:5000");
 
@@ -17,17 +18,50 @@ const ChatComponent = ({ bloodRequest, isOpen, onClose }) => {
   const bottomRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
+  // GSAP Refs
+  const modalRef = useRef(null);
+  const messagesRef = useRef([]);
+  const inputRef = useRef(null);
+
   useEffect(() => {
     if (!isOpen || !bloodRequest) return;
+
+    // Modal entrance animation
+    if (modalRef.current) {
+      gsap.fromTo(
+        modalRef.current,
+        { opacity: 0, scale: 0.9, y: 50 },
+        { opacity: 1, scale: 1, y: 0, duration: 0.4, ease: "power2.out" }
+      );
+    }
 
     const roomId = bloodRequest._id;
 
     // Join the chat room
     socket.emit("join-room", roomId);
 
-    // Listen for incoming messages
+    // Listen for incoming messages with animation
     socket.on("receive-message", (message) => {
-      setMessages((prev) => [...prev, message]);
+      setMessages((prev) => {
+        const newMessages = [...prev, message];
+        // Animate new message
+        setTimeout(() => {
+          const lastMessage =
+            messagesRef.current[messagesRef.current.length - 1];
+          if (lastMessage) {
+            gsap.fromTo(
+              lastMessage,
+              {
+                opacity: 0,
+                x: message.sender === user._id ? 30 : -30,
+                scale: 0.9,
+              },
+              { opacity: 1, x: 0, scale: 1, duration: 0.4, ease: "power2.out" }
+            );
+          }
+        }, 50);
+        return newMessages;
+      });
     });
 
     // Listen for typing indicators
@@ -149,7 +183,10 @@ const ChatComponent = ({ bloodRequest, isOpen, onClose }) => {
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
       onClick={handleBackdropClick}
     >
-      <div className="bg-white rounded-lg w-full max-w-4xl h-5/6 mx-4 flex flex-col">
+      <div
+        ref={modalRef}
+        className="bg-white rounded-lg w-full max-w-4xl h-5/6 mx-4 flex flex-col"
+      >
         {/* Chat Header */}
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 rounded-t-lg">
           <div className="flex items-center justify-between">
@@ -265,6 +302,7 @@ const ChatComponent = ({ bloodRequest, isOpen, onClose }) => {
                   }`}
                 >
                   <div
+                    ref={(el) => (messagesRef.current[index] = el)}
                     className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg shadow-sm ${
                       msg.sender === user._id
                         ? "bg-blue-600 text-white rounded-br-none"
@@ -313,6 +351,7 @@ const ChatComponent = ({ bloodRequest, isOpen, onClose }) => {
         <div className="border-t border-gray-200 p-4 bg-white rounded-b-lg">
           <div className="flex gap-2">
             <input
+              ref={inputRef}
               value={input}
               onChange={handleInputChange}
               onKeyDown={(e) =>

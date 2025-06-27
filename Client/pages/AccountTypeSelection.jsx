@@ -18,10 +18,53 @@ const AccountTypeSelection = () => {
   const [bloodGroup, setBloodGroup] = useState("");
   const [location, setLocation] = useState("");
   const [isDonor, setIsDonor] = useState(false);
+
+  // Override setLocation to prevent coordinates from being displayed
+  const safeSetLocation = (newLocation) => {
+    const coordinatePattern = /^-?\d+\.?\d*,?\s*-?\d+\.?\d*$/;
+    if (
+      typeof newLocation === "string" &&
+      coordinatePattern.test(newLocation.trim())
+    ) {
+      console.log("Blocking coordinate display:", newLocation); // Debug log
+      setLocation("Location captured (coordinates hidden for privacy)");
+    } else {
+      setLocation(newLocation);
+    }
+  };
   const [loading, setLoading] = useState(false);
   const [locationData, setLocationData] = useState(null);
   const [showLocationCapture, setShowLocationCapture] = useState(false);
   const [locationCaptured, setLocationCaptured] = useState(false);
+
+  // Immediate cleanup of coordinates if they exist
+  useEffect(() => {
+    const coordinatePattern = /^-?\d+\.?\d*,?\s*-?\d+\.?\d*$/;
+    if (location && coordinatePattern.test(location.trim())) {
+      console.log("Immediate cleanup of coordinates:", location);
+      setLocation("Location captured (coordinates hidden for privacy)");
+    }
+  }, []); // Run once on mount
+
+  // Initialize form data from user
+  useEffect(() => {
+    if (user) {
+      setBloodGroup(user.bloodGroup || "");
+      // Clean up location if it contains coordinates
+      const userLocation = user.location || "";
+      const coordinatePattern = /^-?\d+\.?\d*,?\s*-?\d+\.?\d*$/;
+
+      console.log("User location:", userLocation); // Debug log
+
+      if (coordinatePattern.test(userLocation.trim())) {
+        console.log("Coordinates detected in user location, cleaning up"); // Debug log
+        safeSetLocation("Location captured (coordinates hidden for privacy)");
+      } else if (userLocation) {
+        safeSetLocation(userLocation);
+      }
+      setIsDonor(user.isDonor || false);
+    }
+  }, [user]);
 
   // Auto-capture location when component mounts
   useEffect(() => {
@@ -38,9 +81,11 @@ const AccountTypeSelection = () => {
 
           if (result.success) {
             setLocationData(result);
-            setLocation(
+            safeSetLocation(
               result.address ||
-                `${result.position.latitude}, ${result.position.longitude}`
+                result.city ||
+                result.region ||
+                "Location captured (coordinates hidden for privacy)"
             );
             setLocationCaptured(true);
             toast.success("Location captured automatically!");
@@ -113,7 +158,9 @@ const AccountTypeSelection = () => {
 
   const handleLocationCaptured = (capturedLocationData) => {
     setLocationData(capturedLocationData);
-    setLocation(capturedLocationData.address || capturedLocationData.formatted);
+    safeSetLocation(
+      capturedLocationData.address || capturedLocationData.formatted
+    );
     setLocationCaptured(true);
     setShowLocationCapture(false);
     toast.success("Location captured successfully!");
@@ -128,7 +175,7 @@ const AccountTypeSelection = () => {
 
   const handleLocationFieldChange = async (e) => {
     const value = e.target.value;
-    setLocation(value);
+    safeSetLocation(value);
 
     // Try to capture location when user starts typing
     if (

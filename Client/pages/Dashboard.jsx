@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import api from "../api/api.js";
@@ -8,8 +8,10 @@ import LoadingSpinner from "../components/LoadingSpinner";
 import QuickStats from "../components/QuickStats";
 import KeyboardShortcutsModal from "../components/KeyboardShortcutsModal";
 import ChatComponent from "../components/ChatComponent";
+import BloodRequestCarousel from "../components/BloodRequestCarousel";
 import mapsDirectionsService from "../utils/mapsDirectionsService";
 import { toast } from "react-toastify";
+import { gsap } from "gsap";
 
 const Dashboard = () => {
   const { user, logout } = useContext(AuthContext);
@@ -26,6 +28,11 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("browse"); // browse, my-requests, my-offers, accepted
   const [loading, setLoading] = useState(true);
   const [requestsWithOffers, setRequestsWithOffers] = useState(new Set()); // Track requests user has sent offers for
+
+  // GSAP Refs
+  const cardsRef = useRef([]);
+  const tabsRef = useRef(null);
+  const mainContentRef = useRef(null);
 
   useEffect(() => {
     fetchData();
@@ -174,128 +181,24 @@ const Dashboard = () => {
     );
   };
 
-  const renderBloodRequests = () => (
-    <div className="bg-white rounded-lg shadow-md">
-      <div className="px-6 py-4 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-800">
-          Available Blood Requests
-        </h2>
-        <p className="text-sm text-gray-600 mt-1">
-          Send offers to help those in need
-        </p>
+  const renderBloodRequests = () => {
+    const availableRequests = requests.filter(
+      (req) => !requestsWithOffers.has(req._id)
+    );
+
+    return (
+      <div className="bg-white rounded-lg shadow-md">
+        <div className="p-6">
+          <BloodRequestCarousel
+            requests={availableRequests}
+            onSendOffer={handleSendOffer}
+            onOpenChat={handleOpenChat}
+            getDistanceInfo={getDistanceInfo}
+          />
+        </div>
       </div>
-      <div className="p-6">
-        {requests.filter((req) => !requestsWithOffers.has(req._id)).length ===
-        0 ? (
-          <div className="text-center py-8">
-            <div className="text-6xl mb-4">🩸</div>
-            <p className="text-gray-500">
-              {requests.length === 0
-                ? "No active blood requests at the moment"
-                : "No new blood requests available - you've already sent offers to all current requests"}
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {requests
-              .filter((req) => !requestsWithOffers.has(req._id))
-              .map((req) => {
-                const distanceInfo = getDistanceInfo(req);
-                return (
-                  <div
-                    key={req._id}
-                    className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <h3 className="font-semibold text-red-600 flex items-center">
-                          <span className="mr-2">🩸</span>
-                          {req.bloodGroup} Blood Needed
-                          {req.urgency === "Emergency" && (
-                            <span className="ml-2 animate-pulse">🚨</span>
-                          )}
-                        </h3>
-                        <p className="text-sm text-gray-600">
-                          Requested by:{" "}
-                          <span className="font-medium">
-                            {req.requester?.name}
-                          </span>
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            req.urgency === "Emergency"
-                              ? "bg-red-100 text-red-800 animate-pulse"
-                              : req.urgency === "High"
-                              ? "bg-orange-100 text-orange-800"
-                              : req.urgency === "Medium"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-green-100 text-green-800"
-                          }`}
-                        >
-                          {req.urgency}
-                          {req.urgency === "Emergency" && " ⚡"}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div>
-                        <p className="text-sm text-gray-600">
-                          <strong>Location:</strong> {req.location}
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          <strong>Posted:</strong>{" "}
-                          {new Date(req.createdAt).toLocaleDateString()}
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          <strong>Offers:</strong> {req.offers?.length || 0}
-                        </p>
-                      </div>
-
-                      {distanceInfo && (
-                        <div>
-                          <p className="text-sm text-gray-600 flex items-center">
-                            <span className="mr-1">{distanceInfo.icon}</span>
-                            <strong>Distance:</strong>{" "}
-                            {distanceInfo.distanceText}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            <strong>Travel:</strong> {distanceInfo.description}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            <strong>Est. Time:</strong> ~
-                            {distanceInfo.estimatedTime} min
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleSendOffer(req)}
-                        className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 flex items-center justify-center"
-                      >
-                        <span className="mr-2">💌</span>
-                        Send Offer
-                      </button>
-                      <button
-                        onClick={() => handleOpenChat(req)}
-                        className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-center"
-                      >
-                        <span className="mr-2">💬</span>
-                        Chat
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-          </div>
-        )}
-      </div>
-    </div>
-  );
+    );
+  };
 
   const renderMyRequests = () => (
     <div className="bg-white rounded-lg shadow-md">
@@ -335,7 +238,12 @@ const Dashboard = () => {
             {myRequests.map((req) => (
               <div
                 key={req._id}
-                className="border border-gray-200 rounded-lg p-4"
+                ref={(el) => {
+                  if (el && !cardsRef.current.includes(el)) {
+                    cardsRef.current.push(el);
+                  }
+                }}
+                className="blood-card border border-gray-200 rounded-lg p-4"
               >
                 <div className="flex justify-between items-start mb-4">
                   <div>
@@ -483,7 +391,12 @@ const Dashboard = () => {
             {myOffers.map((offer) => (
               <div
                 key={offer._id}
-                className="border border-gray-200 rounded-lg p-4"
+                ref={(el) => {
+                  if (el && !cardsRef.current.includes(el)) {
+                    cardsRef.current.push(el);
+                  }
+                }}
+                className="blood-card border border-gray-200 rounded-lg p-4"
               >
                 <div className="flex justify-between items-start mb-3">
                   <div>
@@ -557,6 +470,127 @@ const Dashboard = () => {
       </div>
     </div>
   );
+
+  // GSAP Animation Functions
+  const animateCards = () => {
+    if (cardsRef.current.length > 0) {
+      gsap.fromTo(
+        cardsRef.current,
+        {
+          y: 50,
+          opacity: 0,
+          scale: 0.95,
+        },
+        {
+          y: 0,
+          opacity: 1,
+          scale: 1,
+          duration: 0.6,
+          stagger: 0.1,
+          ease: "power2.out",
+        }
+      );
+    }
+  };
+
+  const animateTabTransition = (newTab) => {
+    gsap.to(mainContentRef.current, {
+      opacity: 0,
+      y: -20,
+      duration: 0.2,
+      ease: "power2.out",
+      onComplete: () => {
+        setActiveTab(newTab);
+        gsap.to(mainContentRef.current, {
+          opacity: 1,
+          y: 0,
+          duration: 0.3,
+          ease: "power2.out",
+          onComplete: () => {
+            // Reset cards ref and animate them
+            cardsRef.current = [];
+            setTimeout(animateCards, 50);
+          },
+        });
+      },
+    });
+  };
+
+  const animateEmergencyPulse = () => {
+    const emergencyElements = document.querySelectorAll(".emergency-pulse");
+    if (emergencyElements.length > 0) {
+      gsap.to(emergencyElements, {
+        scale: 1.1,
+        duration: 0.8,
+        ease: "power2.inOut",
+        yoyo: true,
+        repeat: -1,
+      });
+    }
+  };
+
+  // Enhanced hover effects
+  const addCardHoverEffects = () => {
+    const cardElements = document.querySelectorAll(".blood-card");
+    cardElements.forEach((card) => {
+      card.addEventListener("mouseenter", () => {
+        gsap.to(card, {
+          y: -5,
+          boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
+          duration: 0.3,
+          ease: "power2.out",
+        });
+      });
+
+      card.addEventListener("mouseleave", () => {
+        gsap.to(card, {
+          y: 0,
+          boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+          duration: 0.3,
+          ease: "power2.out",
+        });
+      });
+    });
+  };
+
+  useEffect(() => {
+    // Initial animations
+    gsap.from(mainContentRef.current, {
+      opacity: 0,
+      y: 20,
+      duration: 0.4,
+      ease: "power2.out",
+    });
+
+    // Animate cards on mount
+    animateCards();
+
+    // Add hover effects
+    addCardHoverEffects();
+  }, []);
+
+  // GSAP Animation Effects
+  useEffect(() => {
+    // Animate cards when data loads
+    if (!loading && requests.length > 0) {
+      setTimeout(() => {
+        animateCards();
+        addCardHoverEffects();
+        animateEmergencyPulse();
+      }, 100);
+    }
+  }, [loading, requests, myRequests, myOffers, activeTab]);
+
+  // Initial page load animation
+  useEffect(() => {
+    if (mainContentRef.current) {
+      gsap.fromTo(
+        mainContentRef.current,
+        { opacity: 0, y: 30 },
+        { opacity: 1, y: 0, duration: 0.8, ease: "power2.out" }
+      );
+    }
+  }, []);
 
   if (loading) {
     return (
@@ -659,11 +693,34 @@ const Dashboard = () => {
 
               <button
                 onClick={() => setShowShortcutsModal(true)}
-                className="text-xs text-gray-500 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 px-3 py-2 rounded-md transition-colors duration-200"
-                title="Keyboard Shortcuts (Press ?)"
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200"
+                title="Keyboard shortcuts (?)"
               >
-                ⌨️ Shortcuts
+                <span className="text-lg">⌨️</span>
               </button>
+
+              {/* GSAP Demo Button */}
+              <button
+                onClick={() => navigate("/gsap-demo")}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-3 py-2 rounded-lg hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-200 shadow-sm hover:shadow-md flex items-center space-x-1 text-sm"
+                title="View GSAP Animation Demo"
+              >
+                <span>🎨</span>
+                <span>Animations</span>
+              </button>
+
+              {/* Admin Cleanup Button - Only show for admin users */}
+              {user?.isAdmin && (
+                <button
+                  onClick={() => navigate("/admin-cleanup")}
+                  className="bg-gradient-to-r from-orange-600 to-red-600 text-white px-3 py-2 rounded-lg hover:from-orange-700 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all duration-200 shadow-sm hover:shadow-md flex items-center space-x-1 text-sm"
+                  title="Admin Cleanup Tool"
+                >
+                  <span>🧹</span>
+                  <span>Cleanup</span>
+                </button>
+              )}
+
               <button
                 onClick={logout}
                 className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all duration-200 shadow-sm hover:shadow-md"
@@ -685,41 +742,58 @@ const Dashboard = () => {
                 label: "Browse Requests",
                 icon: "🔍",
                 shortcut: "1",
+                adminOnly: false,
               },
               {
                 id: "my-requests",
                 label: "My Requests",
                 icon: "📋",
                 shortcut: "2",
+                adminOnly: false,
               },
               {
                 id: "my-offers",
                 label: "My Offers",
                 icon: "💌",
                 shortcut: "3",
+                adminOnly: false,
               },
               {
                 id: "accepted",
                 label: "Accepted Offers",
                 icon: "✅",
                 shortcut: "4",
+                adminOnly: false,
               },
             ].map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => animateTabTransition(tab.id)}
                 className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center relative ${
                   activeTab === tab.id
-                    ? "border-red-500 text-red-600"
+                    ? tab.adminOnly
+                      ? "border-purple-500 text-purple-600"
+                      : "border-red-500 text-red-600"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
                 title={`${tab.label} (Press ${tab.shortcut})`}
               >
                 <span className="mr-2">{tab.icon}</span>
                 {tab.label}
-                <span className="ml-2 text-xs bg-gray-100 text-gray-600 px-1 py-0.5 rounded opacity-60">
+                <span
+                  className={`ml-2 text-xs px-1 py-0.5 rounded opacity-60 ${
+                    tab.adminOnly
+                      ? "bg-purple-100 text-purple-600"
+                      : "bg-gray-100 text-gray-600"
+                  }`}
+                >
                   {tab.shortcut}
                 </span>
+                {tab.adminOnly && (
+                  <span className="ml-1 text-xs bg-purple-100 text-purple-600 px-1 py-0.5 rounded">
+                    ADMIN
+                  </span>
+                )}
               </button>
             ))}
           </nav>
@@ -727,7 +801,10 @@ const Dashboard = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+        ref={mainContentRef}
+      >
         {/* Quick Stats */}
         <QuickStats
           requests={requests}
@@ -763,6 +840,7 @@ const Dashboard = () => {
       <KeyboardShortcutsModal
         isOpen={showShortcutsModal}
         onClose={() => setShowShortcutsModal(false)}
+        user={user}
       />
     </div>
   );

@@ -24,9 +24,9 @@ router.get("/donors", async (req, res) => {
     }
 
     const donors = await User.find({
-      isDonor: true,
       bloodGroup,
       location,
+      available: { $ne: false },
     }).select("-password"); // exclude password from result
 
     res.status(200).json({ donors });
@@ -154,7 +154,7 @@ router.get("/all-donors", verifyToken, async (req, res) => {
 
     const { location, bloodGroup } = req.query;
 
-    let filter = { isDonor: true, available: true };
+    let filter = { available: true };
 
     // Filter by location if provided (preferably hospital's location)
     if (location) {
@@ -217,8 +217,9 @@ router.post("/location", verifyToken, async (req, res) => {
       });
     }
 
-    // Simple address format if not provided
-    let formattedAddress = address || `${latitude}, ${longitude}`;
+    // Simple address format if not provided (avoid raw coordinates for privacy)
+    let formattedAddress =
+      address || "Location captured (coordinates hidden for privacy)";
 
     // Update user location
     const updatedUser = await User.findByIdAndUpdate(
@@ -299,8 +300,9 @@ router.put("/location", verifyToken, async (req, res) => {
       });
     }
 
-    // Simple address format if not provided
-    let formattedAddress = address || `${latitude}, ${longitude}`;
+    // Simple address format if not provided (avoid raw coordinates for privacy)
+    let formattedAddress =
+      address || "Location captured (coordinates hidden for privacy)";
 
     // Update user location
     const updatedUser = await User.findByIdAndUpdate(
@@ -392,7 +394,6 @@ router.get("/nearby-donors", verifyToken, async (req, res) => {
 
     // Use $near instead of $geoNear to avoid index conflicts
     const query = {
-      isDonor: true,
       available: { $ne: false },
       _id: { $ne: user._id },
       coordinates: {

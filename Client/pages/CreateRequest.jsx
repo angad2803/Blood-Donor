@@ -1,7 +1,8 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState, useRef } from "react";
 import { AuthContext } from "../context/AuthContext";
 import api from "../api/api.js";
 import { useNavigate } from "react-router-dom";
+import { gsap } from "gsap";
 
 const Dashboard = () => {
   const { user, logout } = useContext(AuthContext);
@@ -16,17 +17,53 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // GSAP Refs
+  const formRef = useRef(null);
+  const headerRef = useRef(null);
+  const cardsRef = useRef([]);
+
   useEffect(() => {
     const fetchRequests = async () => {
       try {
         const res = await api.get("/request");
         setRequests(res.data.requests);
+
+        // Animate cards after data loads
+        setTimeout(() => {
+          if (cardsRef.current.length > 0) {
+            gsap.fromTo(
+              cardsRef.current,
+              { opacity: 0, y: 50, scale: 0.9 },
+              {
+                opacity: 1,
+                y: 0,
+                scale: 1,
+                duration: 0.6,
+                stagger: 0.15,
+                ease: "power2.out",
+              }
+            );
+          }
+        }, 100);
       } catch (err) {
         console.error("Error fetching requests", err);
       }
     };
 
     fetchRequests();
+
+    // Initial page animations
+    const tl = gsap.timeline();
+    tl.fromTo(
+      headerRef.current,
+      { opacity: 0, y: -30 },
+      { opacity: 1, y: 0, duration: 0.8, ease: "power2.out" }
+    ).fromTo(
+      formRef.current,
+      { opacity: 0, x: -50 },
+      { opacity: 1, x: 0, duration: 0.6, ease: "power2.out" },
+      "-=0.4"
+    );
   }, []);
 
   const markFulfilled = async (id) => {
@@ -76,7 +113,7 @@ const Dashboard = () => {
                   Create and manage blood requests
                 </p>
               </div>
-              
+
               {/* User Info Card */}
               <div className="bg-gradient-to-r from-red-50 to-pink-50 border border-red-100 rounded-lg px-4 py-3 shadow-sm">
                 <div className="flex items-center space-x-4">
@@ -86,7 +123,7 @@ const Dashboard = () => {
                       {user?.name?.charAt(0)?.toUpperCase()}
                     </span>
                   </div>
-                  
+
                   {/* User Details */}
                   <div>
                     <div className="flex items-center space-x-3">
@@ -94,13 +131,15 @@ const Dashboard = () => {
                         {user?.name}
                       </span>
                       <div className="flex items-center space-x-1">
-                        <span className="text-xs text-gray-500">Blood Group:</span>
+                        <span className="text-xs text-gray-500">
+                          Blood Group:
+                        </span>
                         <span className="text-sm font-semibold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">
                           {user?.bloodGroup}
                         </span>
                       </div>
                     </div>
-                    
+
                     {/* Location Info */}
                     {user?.location && (
                       <div className="flex items-center space-x-1 mt-1">
@@ -118,7 +157,7 @@ const Dashboard = () => {
             {/* Right Side Actions */}
             <div className="flex items-center space-x-3">
               <button
-                onClick={() => navigate('/dashboard')}
+                onClick={() => navigate("/dashboard")}
                 className="text-sm text-gray-600 hover:text-gray-800 bg-gray-50 hover:bg-gray-100 px-3 py-2 rounded-md transition-colors duration-200"
               >
                 🏠 Dashboard
@@ -139,8 +178,12 @@ const Dashboard = () => {
         {/* Blood Requests Section */}
         <div className="bg-white rounded-lg shadow-md mb-8">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-800">Blood Requests</h3>
-            <p className="text-sm text-gray-600 mt-1">Active blood requests in the system</p>
+            <h3 className="text-lg font-semibold text-gray-800">
+              Blood Requests
+            </h3>
+            <p className="text-sm text-gray-600 mt-1">
+              Active blood requests in the system
+            </p>
           </div>
           <div className="p-6">
             {requests.length === 0 ? (
@@ -150,17 +193,29 @@ const Dashboard = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {requests.map((req) => (
-                  <div key={req._id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                {requests.map((req, index) => (
+                  <div
+                    key={req._id}
+                    className="bg-gray-50 rounded-lg p-4 border border-gray-200"
+                    ref={(el) => (cardsRef.current[index] = el)}
+                  >
                     <div className="flex justify-between items-center">
                       <div>
-                        <span className="text-lg font-semibold text-red-600">{req.bloodGroup}</span>
+                        <span className="text-lg font-semibold text-red-600">
+                          {req.bloodGroup}
+                        </span>
                         <span className="text-gray-600 ml-2">at</span>
-                        <span className="text-gray-800 font-medium ml-2">{req.location}</span>
-                        <span className="text-sm text-gray-500 ml-4">({req.urgency})</span>
+                        <span className="text-gray-800 font-medium ml-2">
+                          {req.location}
+                        </span>
+                        <span className="text-sm text-gray-500 ml-4">
+                          ({req.urgency})
+                        </span>
                       </div>
                       {req.fulfilled ? (
-                        <span className="text-green-600 font-medium">✔ Fulfilled</span>
+                        <span className="text-green-600 font-medium">
+                          ✔ Fulfilled
+                        </span>
                       ) : (
                         <button
                           onClick={() => markFulfilled(req._id)}
@@ -181,13 +236,19 @@ const Dashboard = () => {
         <div className="max-w-2xl mx-auto">
           <div className="bg-white rounded-lg shadow-md">
             <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-blue-700 text-center">Create Blood Request</h2>
-              <p className="text-sm text-gray-600 text-center mt-1">Fill out the form to create a new blood request</p>
+              <h2 className="text-xl font-semibold text-blue-700 text-center">
+                Create Blood Request
+              </h2>
+              <p className="text-sm text-gray-600 text-center mt-1">
+                Fill out the form to create a new blood request
+              </p>
             </div>
-            <div className="p-6">
+            <div className="p-6" ref={formRef}>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Blood Group</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Blood Group
+                  </label>
                   <input
                     name="bloodGroup"
                     placeholder="Blood Group (e.g., A+)"
@@ -198,7 +259,9 @@ const Dashboard = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Location
+                  </label>
                   <input
                     name="location"
                     placeholder="Location (e.g., Mumbai)"
@@ -209,7 +272,9 @@ const Dashboard = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Urgency Level</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Urgency Level
+                  </label>
                   <select
                     name="urgency"
                     value={form.urgency}
@@ -236,7 +301,9 @@ const Dashboard = () => {
                 )}
                 {success && (
                   <div className="bg-green-50 border border-green-200 rounded-md p-3">
-                    <p className="text-green-600 text-sm text-center">{success}</p>
+                    <p className="text-green-600 text-sm text-center">
+                      {success}
+                    </p>
                   </div>
                 )}
               </form>

@@ -29,7 +29,6 @@ const urgentWorker = new Worker(
     try {
       // Find compatible donors in the same location
       const compatibleDonors = await User.find({
-        isDonor: true,
         location: location,
         available: { $ne: false },
         bloodGroup: { $in: getCompatibleBloodGroups(bloodGroup) },
@@ -103,7 +102,6 @@ const donorMatchingWorker = new Worker(
 
     try {
       const compatibleDonors = await User.find({
-        isDonor: true,
         bloodGroup: { $in: getCompatibleBloodGroups(bloodGroup) },
         available: true,
       }).limit(10);

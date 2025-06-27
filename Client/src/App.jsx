@@ -8,6 +8,11 @@ import {
 
 import Login from "../components/Login";
 import { AuthContext } from "../context/AuthContext";
+import "./styles/gsap-animations.css";
+import "./styles/swiper-carousel.css";
+import GSAPDemo from "../components/GSAPDemo";
+import GSAPDemoSimple from "../components/GSAPDemoSimple";
+import GSAPDemoTest from "../components/GSAPDemoTest";
 import Dashboard from "../pages/Dashboard";
 import CreateRequest from "../pages/CreateRequest";
 import DonorList from "../pages/DonorsList";
@@ -25,6 +30,7 @@ import AccountTypeSelection from "../pages/AccountTypeSelection";
 import SessionManager from "../components/SessionManager";
 import GeolocationTest from "../pages/GeolocationTest";
 import ErrorBoundary from "../components/ErrorBoundary";
+import AdminCleanup from "../components/AdminCleanup";
 
 function App() {
   const { token, isLoading } = useContext(AuthContext);
@@ -54,6 +60,9 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/oauth-success" element={<OAuthSuccess />} />
             <Route path="/complete-profile" element={<CompleteProfile />} />
+            <Route path="/gsap-demo" element={<GSAPDemo />} />
+            <Route path="/gsap-simple" element={<GSAPDemoSimple />} />
+            <Route path="/gsap-test" element={<GSAPDemoTest />} />
             <Route
               path="/account-type-selection"
               element={<AccountTypeSelection />}
@@ -114,6 +123,16 @@ function App() {
               element={
                 <PrivateRoute>
                   <GeolocationTest />
+                </PrivateRoute>
+              }
+            />
+
+            {/* Admin Cleanup Tool */}
+            <Route
+              path="/admin-cleanup"
+              element={
+                <PrivateRoute>
+                  <AdminCleanup />
                 </PrivateRoute>
               }
             />

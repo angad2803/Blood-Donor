@@ -5,11 +5,26 @@ import { addEmailJob, urgentNotificationQueue } from "../queues/config.js";
 
 const router = express.Router();
 
+// Helper function to validate that location is not raw coordinates
+function isValidLocationString(location) {
+  // Check if location looks like coordinates (e.g., "30.644634, 76.837683")
+  const coordinatePattern = /^-?\d+\.\d+,?\s*-?\d+\.\d+$/;
+  return !coordinatePattern.test(location.trim());
+}
+
 // Create a new blood request
 router.post("/create", verifyToken, async (req, res) => {
   const { bloodGroup, location, urgency, coordinates } = req.body;
 
   try {
+    // Validate that location is not raw coordinates for privacy
+    if (!isValidLocationString(location)) {
+      return res.status(400).json({
+        message:
+          "Invalid location format. Please provide a descriptive location instead of coordinates for privacy reasons.",
+      });
+    }
+
     const requestData = {
       requester: req.user._id,
       bloodGroup,

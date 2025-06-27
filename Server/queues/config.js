@@ -2,16 +2,13 @@ import { Queue } from "bullmq";
 import Redis from "ioredis";
 
 // Redis connection configuration
-const redisConfig = {
+const connection = new Redis({
   host: process.env.REDIS_HOST || "localhost",
   port: process.env.REDIS_PORT || 6379,
   password: process.env.REDIS_PASSWORD || undefined,
   maxRetriesPerRequest: null, // Required for BullMQ
   lazyConnect: true,
-};
-
-// Create Redis connection
-const connection = new Redis(redisConfig);
+});
 
 // Handle Redis connection events
 connection.on("connect", () => {

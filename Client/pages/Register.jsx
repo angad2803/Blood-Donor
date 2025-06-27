@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import api from "../api/api.js";
 import { useNavigate } from "react-router-dom";
 import LocationCapture from "../components/LocationCapture";
 import gpsLocationService from "../utils/gpsLocationService";
+import { gsap } from "gsap";
 
 const Register = () => {
   const [form, setForm] = useState({
@@ -23,6 +24,35 @@ const Register = () => {
   const [locationData, setLocationData] = useState(null);
   const [registrationStep, setRegistrationStep] = useState("form"); // form, location, complete
   const navigate = useNavigate();
+
+  // GSAP Refs
+  const formRef = useRef(null);
+  const titleRef = useRef(null);
+  const cardRef = useRef(null);
+  const fieldsRef = useRef([]);
+
+  useEffect(() => {
+    // Stagger form field animations
+    const tl = gsap.timeline();
+
+    tl.fromTo(
+      titleRef.current,
+      { opacity: 0, y: -40 },
+      { opacity: 1, y: 0, duration: 0.8, ease: "back.out(1.7)" }
+    )
+      .fromTo(
+        cardRef.current,
+        { opacity: 0, scale: 0.9 },
+        { opacity: 1, scale: 1, duration: 0.6, ease: "power2.out" },
+        "-=0.4"
+      )
+      .fromTo(
+        fieldsRef.current,
+        { opacity: 0, x: -30 },
+        { opacity: 1, x: 0, duration: 0.4, stagger: 0.1, ease: "power2.out" },
+        "-=0.3"
+      );
+  }, []);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -185,10 +215,13 @@ const Register = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-blue-50">
       <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-md">
-        <h2 className="text-2xl font-semibold text-center text-blue-700 mb-6">
+        <h2
+          className="text-2xl font-semibold text-center text-blue-700 mb-6"
+          ref={titleRef}
+        >
           Register
         </h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" ref={formRef}>
           <input
             name="name"
             placeholder="Name"

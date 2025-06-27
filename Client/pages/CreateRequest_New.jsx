@@ -59,7 +59,9 @@ const CreateRequest = () => {
           ...form,
           location:
             result.address ||
-            `${result.position.latitude}, ${result.position.longitude}`,
+            result.city ||
+            result.region ||
+            "Location captured (coordinates hidden for privacy)",
         });
         toast.success("✅ Location captured successfully!");
       }

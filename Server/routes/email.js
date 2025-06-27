@@ -215,7 +215,7 @@ router.post("/request-alert", verifyToken, async (req, res) => {
   }
 });
 
-// Send reminder email
+// Send reminder email - MODIFIED TO USE DIRECT EMAIL
 router.post("/reminder", verifyToken, async (req, res) => {
   try {
     const { to, donorName, reminderType, reminderData } = req.body;
@@ -226,16 +226,17 @@ router.post("/reminder", verifyToken, async (req, res) => {
       });
     }
 
-    await addEmailJob({
-      to,
-      subject: "Reminder: Blood Donation",
-      template: "reminder",
-      templateData: { donorName, reminderType, ...reminderData },
+    // Send email directly instead of using queue
+    const result = await sendEmail(to, "Reminder: Blood Donation", "reminder", {
+      donorName,
+      reminderType,
+      ...reminderData,
     });
 
     res.json({
       success: true,
-      message: "Reminder email queued successfully",
+      message: "Reminder email sent successfully",
+      messageId: result.messageId,
     });
   } catch (error) {
     console.error("Reminder email error:", error);

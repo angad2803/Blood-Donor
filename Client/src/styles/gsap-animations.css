@@ -1,0 +1,306 @@
+/* GSAP Enhanced Animations */
+
+.blood-card {
+  transform-origin: center;
+  will-change: transform, box-shadow;
+}
+
+.emergency-pulse {
+  position: relative;
+}
+
+.emergency-pulse::before {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #ef4444, #dc2626, #b91c1c);
+  border-radius: 12px;
+  z-index: -1;
+  opacity: 0.3;
+  animation: emergency-glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes emergency-glow {
+  0% {
+    box-shadow: 0 0 5px rgba(239, 68, 68, 0.5);
+  }
+  100% {
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.8), 0 0 30px rgba(239, 68, 68, 0.4);
+  }
+}
+
+/* Smooth transitions for tab content */
+.tab-content {
+  transition: all 0.3s ease;
+}
+
+/* Enhanced button hover effects */
+.gsap-button {
+  transition: all 0.2s ease;
+  will-change: transform;
+}
+
+.gsap-button:hover {
+  transform: translateY(-1px);
+}
+
+/* Loading animation enhancements */
+.gsap-loading {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+/* Card stagger animation setup */
+.blood-card {
+  opacity: 0;
+  transform: translateY(30px) scale(0.95);
+}
+
+.blood-card.animated {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* Pulse animation for emergency requests */
+.emergency-pulse {
+  animation: pulse-border 2s infinite;
+}
+
+@keyframes pulse-border {
+  0% {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    border-color: #dc2626;
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0.1);
+  }
+  100% {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+/* Success animation */
+.success-bounce {
+  animation: successBounce 0.6s ease-out;
+}
+
+@keyframes successBounce {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Notification slide-in */
+.notification-slide {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+.notification-slide.show {
+  transform: translateX(0);
+  opacity: 1;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Additional GSAP Enhanced Animations */
+
+/* Hover effects for buttons */
+.gsap-button-bounce {
+  transition: all 0.2s ease;
+}
+
+.gsap-button-bounce:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Form field animations */
+.gsap-form-field {
+  transition: all 0.3s ease;
+}
+
+.gsap-form-field:focus {
+  transform: scale(1.02);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Chat message animations */
+.chat-message-enter {
+  animation: slideInMessage 0.4s ease-out forwards;
+}
+
+@keyframes slideInMessage {
+  from {
+    opacity: 0;
+    transform: translateX(30px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.chat-message-enter.from-left {
+  animation: slideInMessageLeft 0.4s ease-out forwards;
+}
+
+@keyframes slideInMessageLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+/* Blood type badge animation */
+.blood-type-badge {
+  animation: bloodPulse 2s ease-in-out infinite;
+}
+
+@keyframes bloodPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0.1);
+  }
+}
+
+/* Stats counter animation */
+.stats-counter {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Modal backdrop */
+.modal-backdrop {
+  backdrop-filter: blur(4px);
+  transition: all 0.3s ease;
+}
+
+/* Page transition */
+.page-transition-enter {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.page-transition-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+/* Skeleton loading */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Interactive elements */
+.interactive-element {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.interactive-element:hover {
+  transform: translateY(-1px);
+}
+
+.interactive-element:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Toast notification animations */
+.toast-enter {
+  animation: toastSlideIn 0.3s ease-out forwards;
+}
+
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Emergency request special effects */
+.emergency-glow {
+  position: relative;
+  overflow: hidden;
+}
+
+.emergency-glow::before {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #ef4444, #dc2626, #b91c1c, #ef4444);
+  border-radius: inherit;
+  z-index: -1;
+  animation: emergencyRotate 3s linear infinite;
+}
+
+@keyframes emergencyRotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Utility classes for GSAP */
+.gsap-fade-in {
+  opacity: 0;
+}
+
+.gsap-slide-up {
+  transform: translateY(30px);
+  opacity: 0;
+}
+
+.gsap-slide-down {
+  transform: translateY(-30px);
+  opacity: 0;
+}
+
+.gsap-scale-in {
+  transform: scale(0.9);
+  opacity: 0;
+}
+
+.gsap-rotate-in {
+  transform: rotate(-5deg) scale(0.95);
+  opacity: 0;
+}

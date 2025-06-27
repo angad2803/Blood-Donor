@@ -1,12 +1,66 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import api from "../api/api.js";
 import { toast } from "react-toastify";
+import { gsap } from "gsap";
 
 const SendOfferModal = ({ isOpen, onClose, bloodRequest, onOfferSent }) => {
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [includeMessage, setIncludeMessage] = useState(true);
+
+  // GSAP Refs
+  const modalRef = useRef(null);
+  const contentRef = useRef(null);
+  const formRef = useRef(null);
+
+  useEffect(() => {
+    if (isOpen && modalRef.current) {
+      // Modal entrance animation
+      gsap.fromTo(
+        modalRef.current,
+        { opacity: 0 },
+        { opacity: 1, duration: 0.3, ease: "power2.out" }
+      );
+
+      gsap.fromTo(
+        contentRef.current,
+        { opacity: 0, scale: 0.9, y: 30 },
+        {
+          opacity: 1,
+          scale: 1,
+          y: 0,
+          duration: 0.4,
+          ease: "back.out(1.7)",
+          delay: 0.1,
+        }
+      );
+
+      gsap.fromTo(
+        formRef.current,
+        { opacity: 0, y: 20 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.3,
+          ease: "power2.out",
+          delay: 0.3,
+        }
+      );
+    }
+  }, [isOpen]);
+
+  const handleClose = () => {
+    // Exit animation
+    gsap.to(contentRef.current, {
+      opacity: 0,
+      scale: 0.9,
+      y: -30,
+      duration: 0.3,
+      ease: "power2.in",
+      onComplete: onClose,
+    });
+  };
 
   const getDefaultMessage = () => {
     return `Hi! I'm available to donate ${
@@ -56,13 +110,16 @@ const SendOfferModal = ({ isOpen, onClose, bloodRequest, onOfferSent }) => {
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
       onClick={handleBackdropClick}
     >
-      <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+      <div
+        ref={modalRef}
+        className="bg-white rounded-lg p-6 w-full max-w-md mx-4"
+      >
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-gray-800">
             Send Donation Offer
           </h2>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
             aria-label="Close offer modal"
           >
@@ -112,7 +169,7 @@ const SendOfferModal = ({ isOpen, onClose, bloodRequest, onOfferSent }) => {
         </div>
 
         {/* Offer Form */}
-        <form onSubmit={handleSubmit}>
+        <form ref={formRef} onSubmit={handleSubmit}>
           {/* Message Option Checkbox */}
           <div className="mb-4">
             <div className="flex items-center">
@@ -181,7 +238,7 @@ const SendOfferModal = ({ isOpen, onClose, bloodRequest, onOfferSent }) => {
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500"
             >
               Cancel

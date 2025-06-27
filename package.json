@@ -1,10 +1,26 @@
 {
+  "name": "blood-donation-app",
+  "version": "1.0.0",
+  "description": "A comprehensive blood donation management system",
+  "type": "module",
+  "scripts": {
+    "setup": "node setup.js",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd Server && npm start",
+    "client": "cd Client && npm run dev",
+    "build": "cd Client && npm run build",
+    "install-all": "npm install && cd Server && npm install && cd ../Client && npm install"
+  },
   "dependencies": {
     "@chakra-ui/react": "^3.20.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@tailwindcss/vite": "^4.1.8",
+    "dotenv": "^16.6.0",
     "framer-motion": "^12.16.0",
     "mongoose": "^8.15.1"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   }
 }

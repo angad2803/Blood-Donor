@@ -1,0 +1,240 @@
+/* Swiper Blood Request Carousel Styles */
+
+.blood-request-carousel {
+  position: relative;
+  padding: 1rem 0;
+  /* Add subtle background and border for single card focus */
+  background: linear-gradient(135deg, #fef2f2 0%, #f3f4f6 100%);
+  border-radius: 16px;
+  margin: 1rem 0;
+}
+
+.blood-requests-swiper {
+  padding-bottom: 3rem !important;
+  overflow: visible;
+}
+
+.blood-requests-swiper .swiper-slide {
+  height: auto;
+  display: flex;
+  justify-content: center;
+}
+
+.blood-requests-swiper .swiper-slide > div {
+  width: 100%;
+  max-width: 600px; /* Limit width for better readability */
+  display: flex;
+  flex-direction: column;
+  margin: 0 auto;
+}
+
+/* Enhanced single card appearance */
+@media (min-width: 768px) {
+  .blood-requests-swiper .swiper-slide > div {
+    max-width: 700px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .blood-requests-swiper .swiper-slide > div {
+    max-width: 800px;
+  }
+}
+
+/* Custom Navigation Buttons */
+.swiper-button-next-custom,
+.swiper-button-prev-custom {
+  position: static !important;
+  margin: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  color: inherit !important;
+}
+
+.swiper-button-next-custom:after,
+.swiper-button-prev-custom:after {
+  display: none;
+}
+
+.swiper-button-next-custom:hover,
+.swiper-button-prev-custom:hover {
+  background-color: #f8fafc !important;
+}
+
+/* Custom Pagination */
+.swiper-pagination-custom {
+  position: static !important;
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.swiper-pagination-bullet-custom {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #d1d5db;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  opacity: 1;
+}
+
+.swiper-pagination-bullet-custom:hover {
+  background: #9ca3af;
+  transform: scale(1.2);
+}
+
+.swiper-pagination-bullet-active-custom {
+  background: #ef4444 !important;
+  transform: scale(1.4);
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+}
+
+/* Card Animations */
+.blood-requests-swiper .swiper-slide-active {
+  transform: scale(1.02);
+  z-index: 2;
+}
+
+.blood-requests-swiper .swiper-slide-next,
+.blood-requests-swiper .swiper-slide-prev {
+  transform: scale(0.98);
+  opacity: 0.8;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .blood-request-carousel {
+    padding: 0.5rem 0;
+  }
+
+  .blood-requests-swiper {
+    margin: 0 -1rem;
+    padding: 0 1rem 3rem 1rem !important;
+  }
+}
+
+/* Emergency pulse effect for urgent requests */
+@keyframes emergency-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 5px rgba(239, 68, 68, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.6), 0 0 30px rgba(239, 68, 68, 0.3);
+  }
+}
+
+.emergency-card {
+  animation: emergency-glow 2s ease-in-out infinite;
+}
+
+/* Enhanced hover effects */
+.blood-requests-swiper .swiper-slide:hover {
+  z-index: 3;
+}
+
+/* Loading state */
+.carousel-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 300px;
+}
+
+.carousel-loading .spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f4f6;
+  border-top: 4px solid #ef4444;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Swiper override for better mobile experience */
+.blood-requests-swiper.swiper-initialized .swiper-slide {
+  flex-shrink: 0;
+}
+
+/* Focus states for accessibility */
+.swiper-button-next-custom:focus,
+.swiper-button-prev-custom:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.swiper-pagination-bullet-custom:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Blood type badge animations */
+.blood-type-pulse {
+  animation: blood-pulse 2s ease-in-out infinite;
+}
+
+@keyframes blood-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+/* Distance info animations */
+.distance-info {
+  transition: all 0.3s ease;
+}
+
+.distance-info:hover {
+  transform: scale(1.02);
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* Button ripple effect */
+.action-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.action-button::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transition: width 0.6s, height 0.6s, top 0.6s, left 0.6s;
+  transform: translate(-50%, -50%);
+}
+
+.action-button:active::before {
+  width: 300px;
+  height: 300px;
+  top: 50%;
+  left: 50%;
+}
+
+/* Smooth transitions for all interactive elements */
+.blood-request-carousel * {
+  box-sizing: border-box;
+}
+
+.blood-request-carousel button,
+.blood-request-carousel .swiper-slide {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
