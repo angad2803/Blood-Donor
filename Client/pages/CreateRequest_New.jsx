@@ -61,7 +61,7 @@ const CreateRequest = () => {
             result.address ||
             result.city ||
             result.region ||
-            "Location captured (coordinates hidden for privacy)",
+            "Location captured",
         });
         toast.success("✅ Location captured successfully!");
       }

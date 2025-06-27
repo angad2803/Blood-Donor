@@ -32,6 +32,7 @@ const Dashboard = () => {
   // GSAP Refs
   const cardsRef = useRef([]);
   const tabsRef = useRef(null);
+  const ribbonRef = useRef(null);
   const mainContentRef = useRef(null);
 
   useEffect(() => {
@@ -494,6 +495,9 @@ const Dashboard = () => {
   };
 
   const animateTabTransition = (newTab) => {
+    // Animate ribbon tab change
+    animateRibbonTabChange(newTab);
+
     gsap.to(mainContentRef.current, {
       opacity: 0,
       y: -20,
@@ -553,6 +557,167 @@ const Dashboard = () => {
     });
   };
 
+  // Ribbon Animation Functions
+  const animateRibbonOnMount = () => {
+    if (ribbonRef.current && tabsRef.current) {
+      // Gentle ribbon entrance animation
+      gsap.fromTo(
+        ribbonRef.current,
+        {
+          y: -20,
+          opacity: 0,
+        },
+        {
+          y: 0,
+          opacity: 1,
+          duration: 0.6,
+          ease: "power2.out",
+          delay: 0.2,
+        }
+      );
+
+      // Subtle tab entrance
+      const tabButtons = tabsRef.current.querySelectorAll("button");
+      gsap.fromTo(
+        tabButtons,
+        {
+          y: 15,
+          opacity: 0,
+        },
+        {
+          y: 0,
+          opacity: 1,
+          duration: 0.4,
+          ease: "power2.out",
+          stagger: 0.1,
+          delay: 0.4,
+        }
+      );
+
+      // Very subtle shimmer effect
+      gsap.to(ribbonRef.current, {
+        backgroundPosition: "200% center",
+        duration: 12,
+        ease: "none",
+        repeat: -1,
+        delay: 1,
+      });
+    }
+  };
+
+  const animateRibbonTabChange = (newTab) => {
+    if (tabsRef.current) {
+      const tabButtons = tabsRef.current.querySelectorAll("button");
+      const activeButton = Array.from(tabButtons).find(
+        (btn) => btn.getAttribute("data-tab") === newTab
+      );
+
+      if (activeButton) {
+        // Pulse effect on the selected tab
+        gsap.fromTo(
+          activeButton,
+          { scale: 1 },
+          {
+            scale: 1.05,
+            duration: 0.15,
+            ease: "power2.out",
+            yoyo: true,
+            repeat: 1,
+          }
+        );
+
+        // Ripple effect from the clicked tab
+        const ripple = document.createElement("div");
+        ripple.className =
+          "absolute inset-0 bg-red-100 rounded-lg opacity-30 pointer-events-none";
+        activeButton.appendChild(ripple);
+
+        gsap.fromTo(
+          ripple,
+          { scale: 0, opacity: 0.3 },
+          {
+            scale: 2,
+            opacity: 0,
+            duration: 0.6,
+            ease: "power2.out",
+            onComplete: () => ripple.remove(),
+          }
+        );
+      }
+
+      // Subtle wave effect across all tabs
+      gsap.to(tabButtons, {
+        y: -2,
+        duration: 0.2,
+        ease: "power2.out",
+        stagger: 0.05,
+        yoyo: true,
+        repeat: 1,
+      });
+    }
+  };
+
+  const addRibbonHoverEffects = () => {
+    if (tabsRef.current) {
+      const tabButtons = tabsRef.current.querySelectorAll("button");
+
+      tabButtons.forEach((button) => {
+        // Subtle hover enter effect
+        button.addEventListener("mouseenter", () => {
+          if (!button.classList.contains("bg-white")) {
+            // Don't animate active tabs
+            gsap.to(button, {
+              y: -2,
+              scale: 1.02,
+              duration: 0.3,
+              ease: "power2.out",
+            });
+
+            // Gentle glow effect
+            gsap.to(button, {
+              boxShadow: "0 4px 12px rgba(59, 130, 246, 0.15)",
+              duration: 0.3,
+              ease: "power2.out",
+            });
+          }
+        });
+
+        // Subtle hover leave effect
+        button.addEventListener("mouseleave", () => {
+          if (!button.classList.contains("bg-white")) {
+            // Don't animate active tabs
+            gsap.to(button, {
+              y: 0,
+              scale: 1,
+              boxShadow: "0 1px 3px rgba(59, 130, 246, 0.05)",
+              duration: 0.3,
+              ease: "power2.out",
+            });
+          }
+        });
+      });
+    }
+  };
+
+  // Active tab indicator animation
+  const animateActiveTabIndicator = () => {
+    if (tabsRef.current) {
+      const activeTabIndicators = tabsRef.current.querySelectorAll(
+        ".active-tab-indicator"
+      );
+
+      if (activeTabIndicators.length > 0) {
+        gsap.to(activeTabIndicators, {
+          scaleX: 1.05,
+          duration: 2,
+          ease: "sine.inOut",
+          yoyo: true,
+          repeat: -1,
+        });
+      }
+    }
+  };
+
   useEffect(() => {
     // Initial animations
     gsap.from(mainContentRef.current, {
@@ -561,6 +726,12 @@ const Dashboard = () => {
       duration: 0.4,
       ease: "power2.out",
     });
+
+    // Animate ribbon on mount
+    animateRibbonOnMount();
+
+    // Add ribbon hover effects
+    setTimeout(addRibbonHoverEffects, 600); // Add after ribbon animation completes
 
     // Animate cards on mount
     animateCards();
@@ -622,52 +793,62 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      {/* Header - Reduced prominence */}
+      <div className="bg-white/90 shadow-sm border-b border-gray-100 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center space-x-6">
-              {/* Main Title */}
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  Blood Donation Dashboard
-                </h1>
-                <p className="text-sm text-gray-500 mt-1">
-                  Connecting donors and recipients to save lives
-                </p>
+          <div className="flex justify-between items-center py-4 opacity-80 hover:opacity-100 transition-opacity duration-300">
+            <div className="flex items-center space-x-4">
+              {/* Logo Only */}
+              <div
+                className="flex items-center cursor-pointer group"
+                onClick={() => navigate("/")}
+              >
+                {/* Logo - Larger Size */}
+                <div className="w-16 h-16 rounded-lg flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300 group-hover:scale-105 bg-transparent">
+                  <img
+                    src="/ChatGPT-Image-Jun-27_-2025_-10_06_09-PM.svg"
+                    alt="Blood Donation App"
+                    className="w-14 h-14 object-contain"
+                    onError={(e) => {
+                      // Fallback to emoji if image doesn't load
+                      e.target.style.display = "none";
+                      e.target.nextSibling.style.display = "block";
+                    }}
+                  />
+                  <span className="text-red-500 text-4xl font-bold hidden">
+                    🩸
+                  </span>
+                </div>
               </div>
 
-              {/* User Info Card */}
-              <div className="bg-gradient-to-r from-red-50 to-pink-50 border border-red-100 rounded-lg px-4 py-3 shadow-sm">
-                <div className="flex items-center space-x-4">
-                  {/* User Avatar */}
-                  <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                    <span className="text-red-600 font-semibold text-lg">
+              {/* User Info Card - Smaller */}
+              <div className="bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-md px-3 py-2 shadow-sm">
+                <div className="flex items-center space-x-3">
+                  {/* User Avatar - Smaller */}
+                  <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                    <span className="text-gray-600 font-medium text-sm">
                       {user?.name?.charAt(0)?.toUpperCase()}
                     </span>
                   </div>
 
-                  {/* User Details */}
+                  {/* User Details - Smaller */}
                   <div>
-                    <div className="flex items-center space-x-3">
-                      <span className="text-sm font-medium text-gray-900">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs font-medium text-gray-700">
                         {user?.name}
                       </span>
                       <div className="flex items-center space-x-1">
-                        <span className="text-xs text-gray-500">
-                          Blood Group:
-                        </span>
-                        <span className="text-sm font-semibold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">
+                        <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
                           {user?.bloodGroup}
                         </span>
                       </div>
                     </div>
 
-                    {/* Location Info */}
+                    {/* Location Info - Smaller */}
                     {user?.location && (
-                      <div className="flex items-center space-x-1 mt-1">
-                        <span className="text-xs text-gray-400">📍</span>
-                        <span className="text-xs text-gray-500 truncate max-w-48">
+                      <div className="flex items-center space-x-1 mt-0.5">
+                        <span className="text-xs text-gray-300">📍</span>
+                        <span className="text-xs text-gray-400 truncate max-w-32">
                           {user.location}
                         </span>
                       </div>
@@ -677,53 +858,53 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Right Side Actions */}
-            <div className="flex items-center space-x-3">
+            {/* Right Side Actions - Smaller and less prominent */}
+            <div className="flex items-center space-x-2 opacity-70 hover:opacity-100 transition-opacity duration-300">
               {/* Hospital-specific navigation */}
               {user?.isHospital && (
                 <button
                   onClick={() => navigate("/hospital/requests")}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 shadow-sm hover:shadow-md flex items-center space-x-2"
+                  className="bg-blue-500 text-white px-3 py-1.5 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-400 transition-all duration-200 flex items-center space-x-1 text-sm"
                   title="Manage hospital blood requests"
                 >
-                  <span>🏥</span>
-                  <span>Hospital Requests</span>
+                  <span className="text-sm">🏥</span>
+                  <span>Hospital</span>
                 </button>
               )}
 
               <button
                 onClick={() => setShowShortcutsModal(true)}
-                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200"
+                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-all duration-200"
                 title="Keyboard shortcuts (?)"
               >
-                <span className="text-lg">⌨️</span>
+                <span className="text-sm">⌨️</span>
               </button>
 
               {/* GSAP Demo Button */}
               <button
                 onClick={() => navigate("/gsap-demo")}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-3 py-2 rounded-lg hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-200 shadow-sm hover:shadow-md flex items-center space-x-1 text-sm"
+                className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-2 py-1.5 rounded-md hover:from-purple-600 hover:to-pink-600 focus:outline-none focus:ring-1 focus:ring-purple-400 transition-all duration-200 flex items-center space-x-1 text-xs"
                 title="View GSAP Animation Demo"
               >
-                <span>🎨</span>
-                <span>Animations</span>
+                <span className="text-sm">🎨</span>
+                <span>Demos</span>
               </button>
 
               {/* Admin Cleanup Button - Only show for admin users */}
               {user?.isAdmin && (
                 <button
                   onClick={() => navigate("/admin-cleanup")}
-                  className="bg-gradient-to-r from-orange-600 to-red-600 text-white px-3 py-2 rounded-lg hover:from-orange-700 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all duration-200 shadow-sm hover:shadow-md flex items-center space-x-1 text-sm"
+                  className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-2 py-1.5 rounded-md hover:from-orange-600 hover:to-red-600 focus:outline-none focus:ring-1 focus:ring-orange-400 transition-all duration-200 flex items-center space-x-1 text-xs"
                   title="Admin Cleanup Tool"
                 >
-                  <span>🧹</span>
-                  <span>Cleanup</span>
+                  <span className="text-sm">🧹</span>
+                  <span>Admin</span>
                 </button>
               )}
 
               <button
                 onClick={logout}
-                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                className="bg-red-500 text-white px-3 py-1.5 rounded-md hover:bg-red-600 focus:outline-none focus:ring-1 focus:ring-red-400 transition-all duration-200 text-sm"
               >
                 Logout
               </button>
@@ -732,10 +913,23 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="bg-white border-b">
+      {/* Enhanced Navigation Tabs */}
+      <div
+        className="relative bg-gradient-to-r from-blue-50 via-indigo-50 to-blue-50 border-b border-blue-200 shadow-md overflow-hidden"
+        ref={ribbonRef}
+        style={{
+          backgroundSize: "200% 100%",
+          backgroundImage:
+            "linear-gradient(90deg, #eff6ff 0%, #f0f9ff 25%, #e0f2fe 50%, #f0f9ff 75%, #eff6ff 100%)",
+          boxShadow:
+            "0 4px 12px rgba(59, 130, 246, 0.08), 0 2px 6px rgba(99, 102, 241, 0.05)",
+        }}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex space-x-8">
+          <nav
+            className="flex space-x-1 overflow-x-auto scrollbar-hide"
+            ref={tabsRef}
+          >
             {[
               {
                 id: "browse",
@@ -765,39 +959,75 @@ const Dashboard = () => {
                 shortcut: "4",
                 adminOnly: false,
               },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => animateTabTransition(tab.id)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center relative ${
-                  activeTab === tab.id
-                    ? tab.adminOnly
-                      ? "border-purple-500 text-purple-600"
-                      : "border-red-500 text-red-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
-                title={`${tab.label} (Press ${tab.shortcut})`}
-              >
-                <span className="mr-2">{tab.icon}</span>
-                {tab.label}
-                <span
-                  className={`ml-2 text-xs px-1 py-0.5 rounded opacity-60 ${
-                    tab.adminOnly
-                      ? "bg-purple-100 text-purple-600"
-                      : "bg-gray-100 text-gray-600"
+            ].map((tab) => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  data-tab={tab.id}
+                  onClick={() => animateTabTransition(tab.id)}
+                  className={`relative px-6 py-4 font-semibold text-sm flex items-center transition-all duration-300 ease-in-out group rounded-t-lg ${
+                    isActive
+                      ? "bg-white text-blue-600 border border-blue-300 border-b-0 shadow-lg transform -translate-y-0.5 z-10"
+                      : "text-blue-700 hover:text-blue-800 hover:bg-blue-100/60 bg-blue-50/30 rounded-lg mx-1 my-1 border border-blue-200/40 shadow-sm hover:shadow-md"
                   }`}
+                  title={`${tab.label} (Press ${tab.shortcut})`}
                 >
-                  {tab.shortcut}
-                </span>
-                {tab.adminOnly && (
-                  <span className="ml-1 text-xs bg-purple-100 text-purple-600 px-1 py-0.5 rounded">
-                    ADMIN
-                  </span>
-                )}
-              </button>
-            ))}
+                  {/* Background gradient for active tab */}
+                  {isActive && (
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-white rounded-t-lg opacity-60"></div>
+                  )}
+
+                  {/* Content */}
+                  <div className="relative flex items-center space-x-3">
+                    <span
+                      className={`text-lg transition-transform duration-200 ${
+                        isActive ? "scale-110" : "group-hover:scale-105"
+                      }`}
+                    >
+                      {tab.icon}
+                    </span>
+                    <span className="font-semibold whitespace-nowrap">
+                      {tab.label}
+                    </span>
+
+                    {/* Keyboard shortcut badge */}
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full font-medium transition-all duration-200 ${
+                        isActive
+                          ? "bg-blue-100 text-blue-800 shadow-sm"
+                          : "bg-blue-50 text-blue-600 group-hover:bg-blue-100 group-hover:text-blue-700"
+                      }`}
+                    >
+                      {tab.shortcut}
+                    </span>
+                  </div>
+
+                  {/* Active tab bottom indicator */}
+                  {isActive && (
+                    <div className="active-tab-indicator absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600 rounded-b-lg"></div>
+                  )}
+
+                  {/* Hover effect for inactive tabs */}
+                  {!isActive && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-100/20 via-indigo-100/30 to-blue-100/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg"></div>
+                  )}
+
+                  {/* Subtle border for active tab */}
+                  {isActive && (
+                    <div className="absolute inset-0 border border-blue-200 border-b-0 rounded-t-lg"></div>
+                  )}
+                </button>
+              );
+            })}
           </nav>
+
+          {/* Decorative bottom border */}
+          <div className="h-px bg-gradient-to-r from-transparent via-blue-300 to-transparent opacity-50"></div>
         </div>
+
+        {/* Subtle top accent */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-blue-200 via-indigo-300 to-blue-200 opacity-40"></div>
       </div>
 
       {/* Main Content */}

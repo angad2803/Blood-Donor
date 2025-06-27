@@ -27,7 +27,7 @@ const AccountTypeSelection = () => {
       coordinatePattern.test(newLocation.trim())
     ) {
       console.log("Blocking coordinate display:", newLocation); // Debug log
-      setLocation("Location captured (coordinates hidden for privacy)");
+      setLocation("Location captured");
     } else {
       setLocation(newLocation);
     }
@@ -42,7 +42,7 @@ const AccountTypeSelection = () => {
     const coordinatePattern = /^-?\d+\.?\d*,?\s*-?\d+\.?\d*$/;
     if (location && coordinatePattern.test(location.trim())) {
       console.log("Immediate cleanup of coordinates:", location);
-      setLocation("Location captured (coordinates hidden for privacy)");
+      setLocation("Location captured");
     }
   }, []); // Run once on mount
 
@@ -58,7 +58,7 @@ const AccountTypeSelection = () => {
 
       if (coordinatePattern.test(userLocation.trim())) {
         console.log("Coordinates detected in user location, cleaning up"); // Debug log
-        safeSetLocation("Location captured (coordinates hidden for privacy)");
+        safeSetLocation("Location captured");
       } else if (userLocation) {
         safeSetLocation(userLocation);
       }
@@ -85,7 +85,7 @@ const AccountTypeSelection = () => {
               result.address ||
                 result.city ||
                 result.region ||
-                "Location captured (coordinates hidden for privacy)"
+                "Location captured"
             );
             setLocationCaptured(true);
             toast.success("Location captured automatically!");

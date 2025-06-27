@@ -218,8 +218,7 @@ router.post("/location", verifyToken, async (req, res) => {
     }
 
     // Simple address format if not provided (avoid raw coordinates for privacy)
-    let formattedAddress =
-      address || "Location captured (coordinates hidden for privacy)";
+    let formattedAddress = address || "Location captured";
 
     // Update user location
     const updatedUser = await User.findByIdAndUpdate(
@@ -301,8 +300,7 @@ router.put("/location", verifyToken, async (req, res) => {
     }
 
     // Simple address format if not provided (avoid raw coordinates for privacy)
-    let formattedAddress =
-      address || "Location captured (coordinates hidden for privacy)";
+    let formattedAddress = address || "Location captured";
 
     // Update user location
     const updatedUser = await User.findByIdAndUpdate(
