@@ -9,12 +9,13 @@ import QuickStats from "../components/QuickStats";
 import KeyboardShortcutsModal from "../components/KeyboardShortcutsModal";
 import ChatComponent from "../components/ChatComponent";
 import BloodRequestCarousel from "../components/BloodRequestCarousel";
+import ArcGISMapComponent from "../components/ArcGISMapComponent";
 import mapsDirectionsService from "../utils/mapsDirectionsService";
 import { toast } from "react-toastify";
 import { gsap } from "gsap";
 
 const Dashboard = () => {
-  const { user, logout } = useContext(AuthContext);
+  const { user, logout, refreshUserData } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
   const [requests, setRequests] = useState([]);
@@ -28,6 +29,8 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("browse"); // browse, my-requests, my-offers, accepted
   const [loading, setLoading] = useState(true);
   const [requestsWithOffers, setRequestsWithOffers] = useState(new Set()); // Track requests user has sent offers for
+  const [showMapView, setShowMapView] = useState(false); // Toggle between list and map view
+  const arcgisDirectionsRef = useRef(null); // Reference to ArcGIS directions function
 
   // GSAP Refs
   const cardsRef = useRef([]);
@@ -182,6 +185,62 @@ const Dashboard = () => {
     );
   };
 
+  const handleGetDirections = async (request) => {
+    if (!request.requester?.coordinates?.coordinates) {
+      // Fallback to external maps with address search
+      const encodedLocation = encodeURIComponent(request.location);
+      const googleMapsUrl = `https://www.google.com/maps/search/${encodedLocation}`;
+      window.open(googleMapsUrl, "_blank");
+      return;
+    }
+
+    const [reqLng, reqLat] = request.requester.coordinates.coordinates;
+
+    // Helper to try showing directions with retries
+    const tryShowDirections = async (retries = 3, delay = 1000) => {
+      if (arcgisDirectionsRef.current) {
+        try {
+          await arcgisDirectionsRef.current(
+            reqLng,
+            reqLat,
+            request.hospitalName || request.location
+          );
+          toast.success("Directions shown on map!");
+          return true;
+        } catch (error) {
+          if (retries > 0) {
+            setTimeout(() => tryShowDirections(retries - 1, delay), delay);
+          } else {
+            console.warn("Embedded directions failed after retries:", error);
+            toast.error("Could not show directions on map");
+          }
+        }
+      } else if (retries > 0) {
+        setTimeout(() => tryShowDirections(retries - 1, delay), delay);
+      } else {
+        toast.error("Map not ready for directions");
+      }
+    };
+
+    // If not in browse tab, switch to browse tab and map view first
+    if (activeTab !== "browse") {
+      setActiveTab("browse");
+      setShowMapView(true);
+      setTimeout(() => tryShowDirections(3, 1200), 1800);
+      return;
+    }
+
+    // If not in map view, switch to map view first
+    if (!showMapView) {
+      setShowMapView(true);
+      setTimeout(() => tryShowDirections(3, 1000), 1200);
+      return;
+    }
+
+    // Try embedded directions if already in map view
+    tryShowDirections();
+  };
+
   const renderBloodRequests = () => {
     const availableRequests = requests.filter(
       (req) => !requestsWithOffers.has(req._id)
@@ -189,13 +248,85 @@ const Dashboard = () => {
 
     return (
       <div className="bg-white rounded-lg shadow-md">
+        {/* View Toggle Header */}
+        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-800">
+              Blood Requests Near You
+            </h2>
+            <p className="text-sm text-gray-600 mt-1">
+              {availableRequests.length} urgent blood requests in your area
+            </p>
+          </div>
+
+          {/* View Toggle Buttons */}
+          <div className="flex bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setShowMapView(false)}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                !showMapView
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              <span className="mr-2">📋</span>
+              List View
+            </button>
+            <button
+              onClick={() => setShowMapView(true)}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                showMapView
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              <span className="mr-2">🗺️</span>
+              Map View
+            </button>
+          </div>
+        </div>
+
         <div className="p-6">
-          <BloodRequestCarousel
-            requests={availableRequests}
-            onSendOffer={handleSendOffer}
-            onOpenChat={handleOpenChat}
-            getDistanceInfo={getDistanceInfo}
-          />
+          {showMapView ? (
+            <div className="space-y-4">
+              {/* ArcGIS Map Component */}
+              <ArcGISMapComponent
+                bloodRequests={availableRequests}
+                onRequestSelect={handleSendOffer}
+                onOfferSend={handleSendOffer}
+                onGetDirections={arcgisDirectionsRef}
+                showUserLocation={true}
+                height="600px"
+              />
+
+              {/* Map Legend */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h4 className="font-medium text-gray-800 mb-2">Map Legend</h4>
+                <div className="flex flex-wrap gap-4 text-sm">
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 bg-red-500 rounded-full mr-2"></div>
+                    <span>Emergency Requests</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 bg-blue-500 rounded-full mr-2"></div>
+                    <span>Regular Requests</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 bg-green-500 rounded-full mr-2"></div>
+                    <span>Your Location</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <BloodRequestCarousel
+              requests={availableRequests}
+              onSendOffer={handleSendOffer}
+              onOpenChat={handleOpenChat}
+              onGetDirections={handleGetDirections}
+              getDistanceInfo={getDistanceInfo}
+            />
+          )}
         </div>
       </div>
     );
@@ -893,7 +1024,17 @@ const Dashboard = () => {
               {/* Admin Cleanup Button - Only show for admin users */}
               {user?.isAdmin && (
                 <button
-                  onClick={() => navigate("/admin-cleanup")}
+                  onClick={async () => {
+                    // Refresh user data to check current admin status
+                    const freshUser = await refreshUserData();
+                    if (freshUser?.isAdmin) {
+                      navigate("/admin-cleanup");
+                    } else {
+                      toast.error(
+                        "Access denied. Admin privileges have been revoked."
+                      );
+                    }
+                  }}
                   className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-2 py-1.5 rounded-md hover:from-orange-600 hover:to-red-600 focus:outline-none focus:ring-1 focus:ring-orange-400 transition-all duration-200 flex items-center space-x-1 text-xs"
                   title="Admin Cleanup Tool"
                 >
@@ -1047,7 +1188,10 @@ const Dashboard = () => {
         {activeTab === "my-requests" && renderMyRequests()}
         {activeTab === "my-offers" && renderMyOffers()}
         {activeTab === "accepted" && (
-          <AcceptedOffers onOpenChat={handleOpenChat} />
+          <AcceptedOffers
+            onOpenChat={handleOpenChat}
+            onGetDirections={handleGetDirections}
+          />
         )}
       </div>
 

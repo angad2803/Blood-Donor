@@ -1,17 +1,42 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useRef } from "react";
 import { AuthContext } from "../context/AuthContext";
 import api from "../api/api.js";
 import mapsDirectionsService from "../utils/mapsDirectionsService";
+import { gsap } from "gsap";
 
-const AcceptedOffers = ({ onOpenChat }) => {
+const AcceptedOffers = ({ onOpenChat, onGetDirections }) => {
   const { user } = useContext(AuthContext);
   const [acceptedOffers, setAcceptedOffers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const cardsRef = useRef([]);
+
   useEffect(() => {
     fetchAcceptedOffers();
   }, []);
+
+  useEffect(() => {
+    // Animate cards entrance (if you want animation for accepted offers)
+    if (cardsRef.current && cardsRef.current.length > 0) {
+      const validRefs = cardsRef.current.filter((ref) => ref);
+      if (validRefs.length > 0) {
+        gsap.fromTo(
+          validRefs,
+          { opacity: 0, y: 30, scale: 0.95 },
+          {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            duration: 0.6,
+            stagger: 0.1,
+            ease: "power2.out",
+            delay: 0.2,
+          }
+        );
+      }
+    }
+  }, [acceptedOffers]);
 
   const fetchAcceptedOffers = async () => {
     try {
@@ -29,7 +54,7 @@ const AcceptedOffers = ({ onOpenChat }) => {
   const handleGetDirections = (offer) => {
     const userCoords = user.coordinates?.coordinates;
     const requesterCoords =
-      offer.bloodRequest.requester.coordinates?.coordinates;
+      offer.bloodRequest.requester?.coordinates?.coordinates;
 
     if (!userCoords || !requesterCoords) {
       alert("Location information not available for directions");
@@ -39,7 +64,23 @@ const AcceptedOffers = ({ onOpenChat }) => {
     const [userLon, userLat] = userCoords;
     const [reqLon, reqLat] = requesterCoords;
 
-    // Get directions info
+    // Always pass the correct structure for embedded ArcGIS directions
+    if (onGetDirections) {
+      const requestForDirections = {
+        requester: {
+          coordinates: {
+            coordinates: [reqLon, reqLat],
+          },
+        },
+        location: offer.bloodRequest.location,
+        hospitalName:
+          offer.bloodRequest.hospitalName || offer.bloodRequest.location,
+      };
+      onGetDirections(requestForDirections);
+      return;
+    }
+
+    // Fallback to external maps if onGetDirections is not provided
     const directionsInfo = mapsDirectionsService.getDirectionsInfo(
       userLat,
       userLon,
@@ -126,12 +167,13 @@ const AcceptedOffers = ({ onOpenChat }) => {
           </div>
         ) : (
           <div className="space-y-4">
-            {acceptedOffers.map((offer) => {
+            {acceptedOffers.map((offer, index) => {
               const directionsInfo = getDirectionsPreview(offer);
 
               return (
                 <div
                   key={offer._id}
+                  ref={(el) => (cardsRef.current[index] = el)}
                   className="border border-green-200 rounded-lg p-4 bg-green-50"
                 >
                   <div className="flex justify-between items-start mb-3">

@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
 import api from "../api/api.js";
+import { toast } from "react-toastify";
 
 export const AuthContext = createContext();
 
@@ -186,6 +187,76 @@ export const AuthProvider = ({ children }) => {
     sessionStorage.setItem("user", JSON.stringify(updatedUserData));
   };
 
+  // Function to refresh user data from server
+  const refreshUserData = async () => {
+    try {
+      if (token) {
+        const res = await api.get("/user/me");
+        const userData = res.data.user;
+        setUser(userData);
+        // Update storage
+        sessionStorage.setItem("user", JSON.stringify(userData));
+        localStorage.setItem("user", JSON.stringify(userData));
+        return userData;
+      }
+    } catch (error) {
+      console.error("Failed to refresh user data:", error);
+      // If refresh fails, might be due to invalid token
+      if (error.response?.status === 401) {
+        logout();
+      }
+    }
+  };
+
+  // Periodic check for admin status changes (every 30 seconds)
+  useEffect(() => {
+    if (user && token) {
+      const checkAdminStatus = async () => {
+        try {
+          const res = await api.get("/user/me");
+          const freshUserData = res.data.user;
+
+          // Check if admin status changed
+          if (user.isAdmin !== freshUserData.isAdmin) {
+            console.log("Admin status changed, updating user data");
+            setUser(freshUserData);
+            sessionStorage.setItem("user", JSON.stringify(freshUserData));
+            localStorage.setItem("user", JSON.stringify(freshUserData));
+          }
+        } catch (error) {
+          console.error("Admin status check failed:", error);
+          if (error.response?.status === 401) {
+            logout();
+          }
+        }
+      };
+
+      const interval = setInterval(checkAdminStatus, 30000); // Check every 30 seconds
+      return () => clearInterval(interval);
+    }
+  }, [user, token]);
+
+  // Listen for admin privileges revoked or force logout events
+  useEffect(() => {
+    const handleAdminRevoked = (event) => {
+      toast.error(event.detail.message);
+      refreshUserData(); // Refresh to get updated user data
+    };
+
+    const handleForceLogout = (event) => {
+      toast.error(event.detail.message);
+      logout();
+    };
+
+    window.addEventListener("adminPrivilegesRevoked", handleAdminRevoked);
+    window.addEventListener("forceLogout", handleForceLogout);
+
+    return () => {
+      window.removeEventListener("adminPrivilegesRevoked", handleAdminRevoked);
+      window.removeEventListener("forceLogout", handleForceLogout);
+    };
+  }, [refreshUserData, logout]);
+
   return (
     <AuthContext.Provider
       value={{
@@ -198,6 +269,7 @@ export const AuthProvider = ({ children }) => {
         isLoading,
         tabId,
         updateUser,
+        refreshUserData,
       }}
     >
       {children}

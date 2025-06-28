@@ -18,6 +18,7 @@ const BloodRequestCarousel = ({
   requests = [],
   onSendOffer,
   onOpenChat,
+  onGetDirections,
   getDistanceInfo,
   loading = false,
 }) => {
@@ -30,19 +31,23 @@ const BloodRequestCarousel = ({
   useEffect(() => {
     // Animate cards entrance
     if (cardsRef.current.length > 0) {
-      gsap.fromTo(
-        cardsRef.current,
-        { opacity: 0, y: 30, scale: 0.95 },
-        {
-          opacity: 1,
-          y: 0,
-          scale: 1,
-          duration: 0.6,
-          stagger: 0.1,
-          ease: "power2.out",
-          delay: 0.2,
-        }
-      );
+      // Filter out null refs before animating
+      const validRefs = cardsRef.current.filter((ref) => ref !== null);
+      if (validRefs.length > 0) {
+        gsap.fromTo(
+          validRefs,
+          { opacity: 0, y: 30, scale: 0.95 },
+          {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            duration: 0.6,
+            stagger: 0.1,
+            ease: "power2.out",
+            delay: 0.2,
+          }
+        );
+      }
     }
   }, [requests]);
 
@@ -288,20 +293,47 @@ const BloodRequestCarousel = ({
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-3 mt-auto">
+                <div className="flex gap-2 mt-auto">
                   <button
                     onClick={() => onSendOffer && onSendOffer(request)}
-                    className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center shadow-md hover:shadow-lg transform hover:scale-105"
+                    className="flex-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center justify-center shadow-md hover:shadow-lg transform hover:scale-105 text-sm"
                   >
-                    <span className="mr-2">💌</span>
+                    <span className="mr-1">💌</span>
                     Send Offer
                   </button>
                   <button
                     onClick={() => onOpenChat && onOpenChat(request)}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center shadow-md hover:shadow-lg transform hover:scale-105"
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center justify-center shadow-md hover:shadow-lg transform hover:scale-105 text-sm"
                   >
-                    <span className="mr-2">💬</span>
+                    <span className="mr-1">💬</span>
                     Chat
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (onGetDirections) {
+                        onGetDirections(request);
+                      } else {
+                        // Fallback to external maps
+                        if (request.requester?.coordinates?.coordinates) {
+                          const [reqLng, reqLat] =
+                            request.requester.coordinates.coordinates;
+                          const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${reqLat},${reqLng}&travelmode=driving`;
+                          window.open(googleMapsUrl, "_blank");
+                        } else {
+                          const encodedLocation = encodeURIComponent(
+                            request.location
+                          );
+                          const googleMapsUrl = `https://www.google.com/maps/search/${encodedLocation}`;
+                          window.open(googleMapsUrl, "_blank");
+                        }
+                      }
+                    }}
+                    className="bg-green-600 hover:bg-green-700 text-white px-3 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center justify-center shadow-md hover:shadow-lg transform hover:scale-105 text-sm"
+                    title="Get directions to this location"
+                  >
+                    <span className="mr-1">🗺️</span>
+                    <span className="hidden sm:inline">Directions</span>
+                    <span className="sm:hidden">Dir</span>
                   </button>
                 </div>
               </div>
