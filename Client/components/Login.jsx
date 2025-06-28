@@ -2,7 +2,6 @@ import React, { useState, useContext, useEffect, useRef } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 import api from "../api/api";
-import gpsLocationService from "../utils/gpsLocationService";
 import LocationCapture from "./LocationCapture";
 import { gsap } from "gsap";
 
@@ -80,14 +79,23 @@ const Login = () => {
         user.coordinates.coordinates[0] !== 0 &&
         user.coordinates.coordinates[1] !== 0;
 
-      if (!hasLocation && gpsLocationService.isSupported()) {
+      if (!hasLocation && navigator.geolocation) {
         // Try to capture location automatically first
         try {
-          const locationResult =
-            await gpsLocationService.captureLocationAutomatically(
-              "find nearby blood requests and donors",
-              false // Don't show prompt initially
+          const locationResult = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(
+              (position) => {
+                const coordinates = [
+                  position.coords.longitude,
+                  position.coords.latitude,
+                ];
+                resolve({ success: true, coordinates });
+              },
+              (error) => {
+                reject(error);
+              }
             );
+          });
 
           if (locationResult.success) {
             console.log("Location captured automatically for existing user");
@@ -211,7 +219,7 @@ const Login = () => {
             <p className="text-red-500 text-sm text-center mt-2">{error}</p>
           )}
           <p className="text-center text-sm mt-4">
-            Don’t have an account?{" "}
+            Don't have an account?{" "}
             <Link to="/register" className="text-blue-600 hover:underline">
               Register
             </Link>

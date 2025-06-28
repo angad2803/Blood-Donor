@@ -29,6 +29,7 @@ import CompleteProfile from "../pages/CompleteProfile";
 import AccountTypeSelection from "../pages/AccountTypeSelection";
 import SessionManager from "../components/SessionManager";
 import GeolocationTest from "../pages/GeolocationTest";
+import ArcGISMapTestPage from "../pages/ArcGISMapTestPage";
 import ErrorBoundary from "../components/ErrorBoundary";
 import AdminCleanup from "../components/AdminCleanup";
 
@@ -123,6 +124,16 @@ function App() {
               element={
                 <PrivateRoute>
                   <GeolocationTest />
+                </PrivateRoute>
+              }
+            />
+
+            {/* ArcGIS Map Test Page */}
+            <Route
+              path="/arcgis-map-test"
+              element={
+                <PrivateRoute>
+                  <ArcGISMapTestPage />
                 </PrivateRoute>
               }
             />

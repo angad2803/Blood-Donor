@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import api from "../api/api.js";
 import { useNavigate } from "react-router-dom";
 import LocationCapture from "../components/LocationCapture";
-import gpsLocationService from "../utils/gpsLocationService";
 import { gsap } from "gsap";
 
 const Register = () => {
@@ -122,19 +121,40 @@ const Register = () => {
       name === "location" &&
       value.length > 3 &&
       !locationData &&
-      gpsLocationService.isSupported()
+      navigator.geolocation
     ) {
       try {
         // Try to capture location silently in background
-        const result = await gpsLocationService.captureLocationAutomatically(
-          "enhance your registration",
-          false // Don't show prompt
-        );
+        const result = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              const coordinates = {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+                accuracy: position.coords.accuracy,
+              };
+              const address = new google.maps.Geocoder()
+                .geocode({
+                  location: coordinates,
+                })
+                .then((results) => {
+                  if (results.length > 0) {
+                    resolve({
+                      coordinates,
+                      address: results[0].formatted_address,
+                    });
+                  } else {
+                    reject(new Error("No results found"));
+                  }
+                });
+            },
+            (error) => {
+              reject(error);
+            }
+          );
+        });
         if (result.success) {
-          setLocationData({
-            coordinates: result.position,
-            address: result.address,
-          });
+          setLocationData(result);
           console.log(
             "Background location capture successful during registration"
           );

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import gpsLocationService from "../utils/gpsLocationService";
 
 const LocationCapture = ({
   onLocationCaptured,
@@ -25,18 +24,39 @@ const LocationCapture = ({
     setError("");
 
     try {
-      const result = await gpsLocationService.captureLocationAutomatically(
-        purpose,
-        showPrompt
-      );
+      const result = await new Promise((resolve, reject) => {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              const latitude = position.coords.latitude;
+              const longitude = position.coords.longitude;
+              const coords = { latitude, longitude };
+
+              // Replace gpsLocationService.captureLocationAutomatically with navigator.geolocation equivalent if needed
+              // const result = await gpsLocationService.captureLocationAutomatically(purpose, showPrompt);
+
+              // Replace gpsLocationService.storeLocation with navigator.geolocation equivalent if needed
+              // gpsLocationService.storeLocation(coords);
+
+              resolve({
+                success: true,
+                position: coords,
+                address: "Unknown", // Replace with actual address if available
+              });
+            },
+            (error) => {
+              reject(new Error("Geolocation error: " + error.message));
+            }
+          );
+        } else {
+          reject(new Error("Geolocation is not supported by this browser."));
+        }
+      });
 
       if (result.success) {
         setStatus("success");
         setLocation(result.position);
         setAddress(result.address);
-
-        // Store location locally
-        gpsLocationService.storeLocation(result.position);
 
         // Notify parent component
         if (onLocationCaptured) {

@@ -2,7 +2,6 @@ import React, { useContext, useState } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import api from "../api/api.js";
-import gpsLocationService from "../utils/gpsLocationService";
 import { toast } from "react-toastify";
 
 const CreateRequest = () => {
@@ -29,18 +28,30 @@ const CreateRequest = () => {
     setForm({ ...form, location: value });
 
     // Try to capture location when user starts typing
-    if (value.length > 3 && !locationData && gpsLocationService.isSupported()) {
+    if (value.length > 3 && !locationData && navigator.geolocation) {
       try {
-        const result = await gpsLocationService.captureLocationAutomatically(
-          "enhance location accuracy for your blood request",
-          false
-        );
+        const result = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              const coordinates = {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+                accuracy: position.coords.accuracy,
+              };
+              resolve({ success: true, coordinates });
+            },
+            (error) => {
+              console.error("Geolocation error:", error);
+              reject(error);
+            }
+          );
+        });
 
         if (result.success) {
           setLocationData(result);
         }
       } catch (error) {
-        console.log("Background location capture failed:", error);
+        console.log("Geolocation capture failed:", error);
       }
     }
   };
@@ -48,19 +59,31 @@ const CreateRequest = () => {
   const handleCaptureLocation = async () => {
     try {
       toast.info("📍 Capturing your location...");
-      const result = await gpsLocationService.captureLocationAutomatically(
-        "get precise location for your blood request",
-        true
-      );
+      const result = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const coordinates = {
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+              accuracy: position.coords.accuracy,
+            };
+            resolve({ success: true, coordinates });
+          },
+          (error) => {
+            console.error("Geolocation error:", error);
+            reject(error);
+          }
+        );
+      });
 
       if (result.success) {
         setLocationData(result);
         setForm({
           ...form,
           location:
-            result.address ||
-            result.city ||
-            result.region ||
+            result.coordinates.address ||
+            result.coordinates.city ||
+            result.coordinates.region ||
             "Location captured",
         });
         toast.success("✅ Location captured successfully!");

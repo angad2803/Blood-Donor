@@ -3,13 +3,15 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import api from "../api/api.js";
 import SendOfferModal from "../components/SendOfferModal";
-import AcceptedOffers from "../components/AcceptedOffers";
+import AcceptedOffersCarousel from "../components/AcceptedOffersCarousel";
+import MyRequestsCarousel from "../components/MyRequestsCarousel";
+import MyOffersCarousel from "../components/MyOffersCarousel";
 import LoadingSpinner from "../components/LoadingSpinner";
 import QuickStats from "../components/QuickStats";
 import KeyboardShortcutsModal from "../components/KeyboardShortcutsModal";
 import ChatComponent from "../components/ChatComponent";
 import BloodRequestCarousel from "../components/BloodRequestCarousel";
-import ArcGISMapComponent from "../components/ArcGISMapComponent";
+import LeafletMap from "../components/LeafletMap";
 import mapsDirectionsService from "../utils/mapsDirectionsService";
 import { toast } from "react-toastify";
 import { gsap } from "gsap";
@@ -21,6 +23,7 @@ const Dashboard = () => {
   const [requests, setRequests] = useState([]);
   const [myRequests, setMyRequests] = useState([]);
   const [myOffers, setMyOffers] = useState([]);
+  const [acceptedOffers, setAcceptedOffers] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [showOfferModal, setShowOfferModal] = useState(false);
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
@@ -31,6 +34,7 @@ const Dashboard = () => {
   const [requestsWithOffers, setRequestsWithOffers] = useState(new Set()); // Track requests user has sent offers for
   const [showMapView, setShowMapView] = useState(false); // Toggle between list and map view
   const arcgisDirectionsRef = useRef(null); // Reference to ArcGIS directions function
+  const [isMapReady, setIsMapReady] = useState(false); // Track if ArcGIS map is ready
 
   // GSAP Refs
   const cardsRef = useRef([]);
@@ -97,7 +101,12 @@ const Dashboard = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      await Promise.all([fetchRequests(), fetchMyRequests(), fetchMyOffers()]);
+      await Promise.all([
+        fetchRequests(),
+        fetchMyRequests(),
+        fetchMyOffers(),
+        fetchAcceptedOffers(),
+      ]);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -138,6 +147,15 @@ const Dashboard = () => {
     }
   };
 
+  const fetchAcceptedOffers = async () => {
+    try {
+      const res = await api.get("/offer/accepted");
+      setAcceptedOffers(res.data.acceptedOffers);
+    } catch (err) {
+      console.error("Error fetching accepted offers", err);
+    }
+  };
+
   const handleSendOffer = (request) => {
     setSelectedRequest(request);
     setShowOfferModal(true);
@@ -150,6 +168,7 @@ const Dashboard = () => {
 
   const handleOfferSent = () => {
     fetchMyOffers(); // Refresh offers and update requestsWithOffers
+    fetchAcceptedOffers(); // Refresh accepted offers
     fetchRequests(); // Refresh available requests to reflect the change
     setShowOfferModal(false);
   };
@@ -158,6 +177,7 @@ const Dashboard = () => {
     try {
       await api.post(`/offer/accept/${offerId}`);
       fetchMyRequests(); // Refresh requests
+      fetchAcceptedOffers(); // Refresh accepted offers
       toast.success(
         "🎉 Offer accepted successfully! The donor has been notified and will contact you soon."
       );
@@ -197,8 +217,8 @@ const Dashboard = () => {
     const [reqLng, reqLat] = request.requester.coordinates.coordinates;
 
     // Helper to try showing directions with retries
-    const tryShowDirections = async (retries = 3, delay = 1000) => {
-      if (arcgisDirectionsRef.current) {
+    const tryShowDirections = async (retries = 10, delay = 800) => {
+      if (isMapReady && arcgisDirectionsRef.current) {
         try {
           await arcgisDirectionsRef.current(
             reqLng,
@@ -211,7 +231,6 @@ const Dashboard = () => {
           if (retries > 0) {
             setTimeout(() => tryShowDirections(retries - 1, delay), delay);
           } else {
-            console.warn("Embedded directions failed after retries:", error);
             toast.error("Could not show directions on map");
           }
         }
@@ -226,14 +245,14 @@ const Dashboard = () => {
     if (activeTab !== "browse") {
       setActiveTab("browse");
       setShowMapView(true);
-      setTimeout(() => tryShowDirections(3, 1200), 1800);
+      setTimeout(() => tryShowDirections(10, 1200), 1800);
       return;
     }
 
     // If not in map view, switch to map view first
     if (!showMapView) {
       setShowMapView(true);
-      setTimeout(() => tryShowDirections(3, 1000), 1200);
+      setTimeout(() => tryShowDirections(10, 1000), 1200);
       return;
     }
 
@@ -243,7 +262,8 @@ const Dashboard = () => {
 
   const renderBloodRequests = () => {
     const availableRequests = requests.filter(
-      (req) => !requestsWithOffers.has(req._id)
+      (req) =>
+        !requestsWithOffers.has(req._id) && req.requester?._id !== user?._id // Filter out user's own requests
     );
 
     return (
@@ -258,7 +278,6 @@ const Dashboard = () => {
               {availableRequests.length} urgent blood requests in your area
             </p>
           </div>
-
           {/* View Toggle Buttons */}
           <div className="flex bg-gray-100 rounded-lg p-1">
             <button
@@ -285,20 +304,11 @@ const Dashboard = () => {
             </button>
           </div>
         </div>
-
         <div className="p-6">
           {showMapView ? (
             <div className="space-y-4">
-              {/* ArcGIS Map Component */}
-              <ArcGISMapComponent
-                bloodRequests={availableRequests}
-                onRequestSelect={handleSendOffer}
-                onOfferSend={handleSendOffer}
-                onGetDirections={arcgisDirectionsRef}
-                showUserLocation={true}
-                height="600px"
-              />
-
+              {/* Leaflet Map Component */}
+              <LeafletMap requests={availableRequests} height="600px" />
               {/* Map Legend */}
               <div className="bg-gray-50 rounded-lg p-4">
                 <h4 className="font-medium text-gray-800 mb-2">Map Legend</h4>
@@ -333,274 +343,14 @@ const Dashboard = () => {
   };
 
   const renderMyRequests = () => (
-    <div className="bg-white rounded-lg shadow-md">
-      <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-        <div>
-          <h2 className="text-lg font-semibold text-gray-800">
-            My Blood Requests
-          </h2>
-          <p className="text-sm text-gray-600 mt-1">
-            Manage your blood requests and offers
-          </p>
-        </div>
-        <button
-          onClick={() => navigate("/create-request")}
-          className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 flex items-center"
-        >
-          <span className="mr-2">+</span>
-          Create Request
-        </button>
-      </div>
-      <div className="p-6">
-        {myRequests.length === 0 ? (
-          <div className="text-center py-8">
-            <div className="text-6xl mb-4">📋</div>
-            <p className="text-gray-500 mb-4">
-              You haven't created any blood requests yet
-            </p>
-            <button
-              onClick={() => navigate("/create-request")}
-              className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 font-medium"
-            >
-              Create Your First Blood Request
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {myRequests.map((req) => (
-              <div
-                key={req._id}
-                ref={(el) => {
-                  if (el && !cardsRef.current.includes(el)) {
-                    cardsRef.current.push(el);
-                  }
-                }}
-                className="blood-card border border-gray-200 rounded-lg p-4"
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="font-semibold text-red-600 flex items-center">
-                      <span className="mr-2">🩸</span>
-                      {req.bloodGroup} Blood Request
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      Created on: {new Date(req.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      req.fulfilled
-                        ? "bg-green-100 text-green-800"
-                        : "bg-yellow-100 text-yellow-800"
-                    }`}
-                  >
-                    {req.fulfilled ? "Fulfilled" : "Active"}
-                  </span>
-                </div>
-
-                <div className="mb-4">
-                  <p className="text-sm text-gray-600">
-                    <strong>Location:</strong> {req.location}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    <strong>Urgency:</strong> {req.urgency}
-                  </p>
-                </div>
-
-                {/* Chat Button for My Requests */}
-                <div className="mb-4">
-                  <button
-                    onClick={() => handleOpenChat(req)}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center text-sm"
-                  >
-                    <span className="mr-2">💬</span>
-                    Open Chat Room
-                    {req.offers && req.offers.length > 0 && (
-                      <span className="ml-2 bg-blue-500 text-xs px-2 py-1 rounded-full">
-                        {req.offers.length} potential helpers
-                      </span>
-                    )}
-                  </button>
-                </div>
-
-                {req.offers && req.offers.length > 0 && (
-                  <div>
-                    <h4 className="font-medium text-gray-800 mb-3">
-                      Offers Received ({req.offers.length})
-                    </h4>
-                    <div className="space-y-3">
-                      {req.offers.map((offer) => (
-                        <div
-                          key={offer._id}
-                          className="bg-gray-50 rounded-lg p-3"
-                        >
-                          <div className="flex justify-between items-start mb-2">
-                            <div>
-                              <p className="font-medium text-gray-800">
-                                {offer.donor?.name}
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                Blood Group: {offer.donor?.bloodGroup}
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                Location: {offer.donor?.location}
-                              </p>
-                            </div>
-                            <span
-                              className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                offer.status === "accepted"
-                                  ? "bg-green-100 text-green-800"
-                                  : offer.status === "rejected"
-                                  ? "bg-red-100 text-red-800"
-                                  : "bg-yellow-100 text-yellow-800"
-                              }`}
-                            >
-                              {offer.status.charAt(0).toUpperCase() +
-                                offer.status.slice(1)}
-                            </span>
-                          </div>
-
-                          <p className="text-sm text-gray-700 italic mb-3">
-                            "{offer.message}"
-                          </p>
-
-                          <p className="text-xs text-gray-500 mb-3">
-                            Sent on:{" "}
-                            {new Date(offer.createdAt).toLocaleDateString()}
-                          </p>
-
-                          {offer.status === "pending" && !req.fulfilled && (
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => handleAcceptOffer(offer._id)}
-                                className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 flex items-center"
-                              >
-                                <span className="mr-1">✅</span>
-                                Accept Offer
-                              </button>
-                              <button
-                                onClick={() => handleOpenChat(req)}
-                                className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center"
-                              >
-                                <span className="mr-1">💬</span>
-                                Chat
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
-  const renderMyOffers = () => (
-    <div className="bg-white rounded-lg shadow-md">
-      <div className="px-6 py-4 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-800">
-          My Donation Offers
-        </h2>
-        <p className="text-sm text-gray-600 mt-1">
-          Track your sent offers and their status
-        </p>
-      </div>
-      <div className="p-6">
-        {myOffers.length === 0 ? (
-          <div className="text-center py-8">
-            <div className="text-6xl mb-4">💌</div>
-            <p className="text-gray-500">
-              You haven't sent any donation offers yet
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {myOffers.map((offer) => (
-              <div
-                key={offer._id}
-                ref={(el) => {
-                  if (el && !cardsRef.current.includes(el)) {
-                    cardsRef.current.push(el);
-                  }
-                }}
-                className="blood-card border border-gray-200 rounded-lg p-4"
-              >
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <h3 className="font-semibold text-red-600">
-                      {offer.bloodRequest?.bloodGroup} Blood Donation Offer
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      To: {offer.bloodRequest?.location}
-                    </p>
-                  </div>
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      offer.status === "accepted"
-                        ? "bg-green-100 text-green-800"
-                        : offer.status === "rejected"
-                        ? "bg-red-100 text-red-800"
-                        : "bg-yellow-100 text-yellow-800"
-                    }`}
-                  >
-                    {offer.status.charAt(0).toUpperCase() +
-                      offer.status.slice(1)}
-                  </span>
-                </div>
-
-                <p className="text-sm text-gray-700 italic mb-3">
-                  "{offer.message}"
-                </p>
-
-                <div className="flex justify-between items-center">
-                  <div className="text-xs text-gray-500">
-                    <p>
-                      Sent: {new Date(offer.createdAt).toLocaleDateString()}
-                    </p>
-                    {offer.respondedAt && (
-                      <p>
-                        Responded:{" "}
-                        {new Date(offer.respondedAt).toLocaleDateString()}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex items-center space-x-2">
-                    {/* Chat Button */}
-                    <button
-                      onClick={() => handleOpenChat(offer.bloodRequest)}
-                      className="bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 flex items-center space-x-1"
-                      title="Chat with requester"
-                    >
-                      <span>💬</span>
-                      <span className="text-sm">Chat</span>
-                    </button>
-
-                    {/* Status-specific action */}
-                    {offer.status === "accepted" && (
-                      <div className="text-xs text-green-600 font-medium">
-                        🎉 Accepted - Please coordinate with the requester
-                      </div>
-                    )}
-                    {offer.status === "pending" && (
-                      <div className="text-xs text-yellow-600 font-medium">
-                        ⏳ Awaiting response
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+    <MyRequestsCarousel
+      myRequests={myRequests}
+      onOpenChat={handleOpenChat}
+      onAcceptOffer={handleAcceptOffer}
+      navigate={navigate}
+      allowMultipleRequests={true}
+      user={user}
+    />
   );
 
   // GSAP Animation Functions
@@ -1186,9 +936,16 @@ const Dashboard = () => {
         {/* Tab Content */}
         {activeTab === "browse" && renderBloodRequests()}
         {activeTab === "my-requests" && renderMyRequests()}
-        {activeTab === "my-offers" && renderMyOffers()}
+        {activeTab === "my-offers" && (
+          <MyOffersCarousel
+            myOffers={myOffers}
+            onOpenChat={handleOpenChat}
+            navigate={navigate}
+          />
+        )}
         {activeTab === "accepted" && (
-          <AcceptedOffers
+          <AcceptedOffersCarousel
+            acceptedOffers={acceptedOffers}
             onOpenChat={handleOpenChat}
             onGetDirections={handleGetDirections}
           />

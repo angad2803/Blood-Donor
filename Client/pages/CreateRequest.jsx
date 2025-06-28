@@ -25,7 +25,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchRequests = async () => {
       try {
-        const res = await api.get("/request");
+        const res = await api.get("/request/all");
         setRequests(res.data.requests);
 
         // Animate cards after data loads

@@ -265,7 +265,7 @@ router.get("/my-offers", verifyToken, async (req, res) => {
         "bloodRequest",
         "bloodGroup location urgency fulfilled createdAt"
       )
-      .populate("bloodRequest.requester", "name location")
+      .populate("bloodRequest.requester", "name location coordinates")
       .sort({ createdAt: -1 });
 
     res.json({ offers });

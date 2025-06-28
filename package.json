@@ -18,7 +18,9 @@
     "@tailwindcss/vite": "^4.1.8",
     "dotenv": "^16.6.0",
     "framer-motion": "^12.16.0",
-    "mongoose": "^8.15.1"
+    "leaflet": "^1.9.4",
+    "mongoose": "^8.15.1",
+    "react-leaflet": "^5.0.0"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

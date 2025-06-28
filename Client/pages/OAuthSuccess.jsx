@@ -2,7 +2,6 @@ import { useEffect, useContext, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import api from "../api/api";
-import gpsLocationService from "../utils/gpsLocationService";
 import LocationCapture from "../components/LocationCapture";
 
 const OAuthSuccess = () => {
@@ -41,20 +40,24 @@ const OAuthSuccess = () => {
             if (!hasLocation) {
               // Try automatic location capture first
               try {
-                const locationResult =
-                  await gpsLocationService.captureLocationAutomatically(
-                    "complete your profile and find nearby blood requests",
-                    false // Don't show prompt initially
-                  );
-
-                if (locationResult.success) {
-                  console.log("Location captured automatically for OAuth user");
-                  // Continue with normal flow
-                  navigateBasedOnUserStatus(user);
-                } else {
-                  // Show location capture UI
-                  setShowLocationCapture(true);
-                }
+                navigator.geolocation.getCurrentPosition(
+                  (position) => {
+                    const location = {
+                      latitude: position.coords.latitude,
+                      longitude: position.coords.longitude,
+                    };
+                    console.log("Location captured manually for OAuth user");
+                    // Continue with normal flow
+                    navigateBasedOnUserStatus(user);
+                  },
+                  (error) => {
+                    console.log(
+                      "Manual location capture failed, showing UI:",
+                      error.message
+                    );
+                    setShowLocationCapture(true);
+                  }
+                );
               } catch (error) {
                 console.log(
                   "Auto location capture failed, showing UI:",

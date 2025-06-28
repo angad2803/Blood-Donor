@@ -4,7 +4,6 @@ import api from "../api/api";
 import { AuthContext } from "../context/AuthContext";
 import { toast } from "react-toastify";
 import LocationCapture from "../components/LocationCapture";
-import gpsLocationService from "../utils/gpsLocationService";
 
 const AccountTypeSelection = () => {
   const { user, updateUser } = useContext(AuthContext);
@@ -69,10 +68,7 @@ const AccountTypeSelection = () => {
   // Auto-capture location when component mounts
   useEffect(() => {
     const autoCapturLocation = async () => {
-      if (
-        gpsLocationService.isSupported() &&
-        !user?.coordinates?.coordinates?.[0]
-      ) {
+      if (!user?.coordinates?.coordinates?.[0]) {
         try {
           const result = await gpsLocationService.captureLocationAutomatically(
             "complete your profile setup",
