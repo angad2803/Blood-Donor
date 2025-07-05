@@ -18,29 +18,33 @@ const QuickStats = ({ requests, myRequests, myOffers }) => {
       label: "Active Requests",
       value: activeRequests,
       icon: "🩸",
-      color: "text-red-600",
-      bgColor: "bg-red-50",
+      color: "text-red-300",
+      bgGradient: "from-red-500/10 to-pink-500/10",
+      glowColor: "red",
     },
     {
       label: "My Requests",
       value: myActiveRequests,
       icon: "📋",
-      color: "text-blue-600",
-      bgColor: "bg-blue-50",
+      color: "text-blue-300",
+      bgGradient: "from-blue-500/10 to-cyan-500/10",
+      glowColor: "blue",
     },
     {
       label: "Pending Offers",
       value: pendingOffers,
       icon: "⏳",
-      color: "text-yellow-600",
-      bgColor: "bg-yellow-50",
+      color: "text-yellow-300",
+      bgGradient: "from-yellow-500/10 to-orange-500/10",
+      glowColor: "yellow",
     },
     {
       label: "Accepted Offers",
       value: acceptedOffers,
       icon: "✅",
-      color: "text-green-600",
-      bgColor: "bg-green-50",
+      color: "text-green-300",
+      bgGradient: "from-green-500/10 to-emerald-500/10",
+      glowColor: "green",
     },
   ];
 
@@ -78,21 +82,34 @@ const QuickStats = ({ requests, myRequests, myOffers }) => {
   }, [requests, myRequests, myOffers]);
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
       {stats.map((stat, index) => (
         <div
           key={index}
           ref={(el) => (statsRef.current[index] = el)}
-          className={`${stat.bgColor} rounded-lg p-4 text-center transform hover:scale-105 transition-transform duration-200 cursor-pointer`}
+          className={`glass-card glass-interactive p-6 text-center bg-gradient-to-br ${stat.bgGradient} relative overflow-hidden group`}
         >
-          <div className="text-2xl mb-2">{stat.icon}</div>
+          {/* Glow effect on hover */}
           <div
-            ref={(el) => (numberRefs.current[index] = el)}
-            className={`text-2xl font-bold ${stat.color}`}
-          >
-            0
+            className={`absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-300 bg-gradient-to-br ${stat.bgGradient}`}
+          />
+
+          <div className="relative z-10">
+            <div
+              className={`text-3xl mb-3 transform group-hover:scale-110 transition-transform duration-200 ${stat.glowColor === "red" ? "neon-glow text-red-300" : stat.glowColor === "blue" ? "neon-glow text-blue-300" : stat.glowColor === "yellow" ? "neon-glow text-yellow-300" : "neon-glow text-green-300"}`}
+            >
+              {stat.icon}
+            </div>
+            <div
+              ref={(el) => (numberRefs.current[index] = el)}
+              className={`text-3xl font-bold ${stat.color} mb-2`}
+            >
+              0
+            </div>
+            <div className="text-sm text-white/70 font-medium">
+              {stat.label}
+            </div>
           </div>
-          <div className="text-sm text-gray-600">{stat.label}</div>
         </div>
       ))}
     </div>

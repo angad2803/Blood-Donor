@@ -1,4 +1,10 @@
-import React, { useContext, useEffect, useState, useRef } from "react";
+import React, {
+  useContext,
+  useEffect,
+  useState,
+  useRef,
+  useCallback,
+} from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import api from "../api/api.js";
@@ -17,7 +23,7 @@ import { toast } from "react-toastify";
 import { gsap } from "gsap";
 
 const Dashboard = () => {
-  const { user, logout, refreshUserData } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
   const [requests, setRequests] = useState([]);
@@ -34,16 +40,151 @@ const Dashboard = () => {
   const [requestsWithOffers, setRequestsWithOffers] = useState(new Set()); // Track requests user has sent offers for
   const [showMapView, setShowMapView] = useState(false); // Toggle between list and map view
   const arcgisDirectionsRef = useRef(null); // Reference to ArcGIS directions function
-  const [isMapReady, setIsMapReady] = useState(false); // Track if ArcGIS map is ready
+  const [isMapReady] = useState(false); // Track if ArcGIS map is ready
 
-  // GSAP Refs
+  // Enhanced GSAP Refs
   const cardsRef = useRef([]);
   const tabsRef = useRef(null);
   const ribbonRef = useRef(null);
   const mainContentRef = useRef(null);
+  const headerRef = useRef(null);
+  const quickStatsRef = useRef(null);
+  const containerRef = useRef(null);
+  const plasmaContainerRef = useRef(null);
+
+  // Data fetching functions
+  const fetchRequests = async () => {
+    try {
+      const res = await api.get("/request/all");
+      setRequests(res.data.requests);
+    } catch (err) {
+      console.error("Error fetching requests", err);
+    }
+  };
+
+  const fetchMyRequests = async () => {
+    try {
+      const res = await api.get("/request/my-requests");
+      setMyRequests(res.data.requests);
+    } catch (err) {
+      console.error("Error fetching my requests", err);
+    }
+  };
+
+  const fetchMyOffers = async () => {
+    try {
+      const res = await api.get("/offer/my-offers");
+      setMyOffers(res.data.offers);
+
+      // Extract request IDs that the user has already sent offers for
+      const offeredRequestIds = new Set(
+        res.data.offers.map((offer) => offer.bloodRequest._id)
+      );
+      setRequestsWithOffers(offeredRequestIds);
+    } catch (err) {
+      console.error("Error fetching my offers", err);
+    }
+  };
+
+  const fetchAcceptedOffers = async () => {
+    try {
+      const res = await api.get("/offer/accepted");
+      setAcceptedOffers(res.data.acceptedOffers);
+    } catch (err) {
+      console.error("Error fetching accepted offers", err);
+    }
+  };
+
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      await Promise.all([
+        fetchRequests(),
+        fetchMyRequests(),
+        fetchMyOffers(),
+        fetchAcceptedOffers(),
+      ]);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    fetchData();
+    // Enhanced page entrance animations
+    const tl = gsap.timeline();
+
+    // Initialize elements for animation
+    if (containerRef.current) {
+      gsap.set(containerRef.current, { opacity: 0 });
+    }
+
+    // Animate page entrance
+    tl.to(containerRef.current, {
+      opacity: 1,
+      duration: 0.6,
+      ease: "power2.out",
+    });
+
+    if (headerRef.current) {
+      tl.fromTo(
+        headerRef.current,
+        { y: -50, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.8, ease: "power2.out" },
+        "-=0.4"
+      );
+    }
+
+    if (ribbonRef.current) {
+      tl.fromTo(
+        ribbonRef.current,
+        { y: -30, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.6, ease: "power2.out" },
+        "-=0.4"
+      );
+    }
+
+    if (mainContentRef.current) {
+      tl.fromTo(
+        mainContentRef.current,
+        { y: 30, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.8, ease: "power2.out" },
+        "-=0.6"
+      );
+    }
+
+    // Animate plasma particles
+    if (plasmaContainerRef.current) {
+      const particles =
+        plasmaContainerRef.current.querySelectorAll(".plasma-particle");
+      particles.forEach((particle) => {
+        gsap.set(particle, {
+          x: Math.random() * window.innerWidth,
+          y: Math.random() * window.innerHeight,
+        });
+
+        gsap.to(particle, {
+          x: `+=${Math.random() * 300 + 150}`,
+          y: `+=${(Math.random() - 0.5) * 150}`,
+          rotation: 360,
+          scale: Math.random() * 0.3 + 0.7,
+          duration: Math.random() * 15 + 20,
+          repeat: -1,
+          ease: "none",
+          delay: Math.random() * 10,
+        });
+
+        gsap.to(particle, {
+          opacity: Math.random() * 0.2 + 0.05,
+          duration: Math.random() * 4 + 3,
+          repeat: -1,
+          yoyo: true,
+          ease: "power2.inOut",
+          delay: Math.random() * 3,
+        });
+      });
+    }
 
     // Handle success messages from navigation state
     if (location.state?.message) {
@@ -54,6 +195,9 @@ const Dashboard = () => {
       // Clear the state to prevent showing message on refresh
       window.history.replaceState({}, document.title);
     }
+
+    // Fetch initial data
+    fetchData();
 
     // Add keyboard shortcuts
     const handleKeyPress = (event) => {
@@ -96,65 +240,7 @@ const Dashboard = () => {
 
     window.addEventListener("keydown", handleKeyPress);
     return () => window.removeEventListener("keydown", handleKeyPress);
-  }, [location.state, navigate]);
-
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      await Promise.all([
-        fetchRequests(),
-        fetchMyRequests(),
-        fetchMyOffers(),
-        fetchAcceptedOffers(),
-      ]);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchRequests = async () => {
-    try {
-      const res = await api.get("/request/all");
-      setRequests(res.data.requests);
-    } catch (err) {
-      console.error("Error fetching requests", err);
-    }
-  };
-
-  const fetchMyRequests = async () => {
-    try {
-      const res = await api.get("/request/my-requests");
-      setMyRequests(res.data.requests);
-    } catch (err) {
-      console.error("Error fetching my requests", err);
-    }
-  };
-
-  const fetchMyOffers = async () => {
-    try {
-      const res = await api.get("/offer/my-offers");
-      setMyOffers(res.data.offers);
-
-      // Extract request IDs that the user has already sent offers for
-      const offeredRequestIds = new Set(
-        res.data.offers.map((offer) => offer.bloodRequest._id)
-      );
-      setRequestsWithOffers(offeredRequestIds);
-    } catch (err) {
-      console.error("Error fetching my offers", err);
-    }
-  };
-
-  const fetchAcceptedOffers = async () => {
-    try {
-      const res = await api.get("/offer/accepted");
-      setAcceptedOffers(res.data.acceptedOffers);
-    } catch (err) {
-      console.error("Error fetching accepted offers", err);
-    }
-  };
+  }, [navigate, fetchData, location.state?.message, location.state?.activeTab]);
 
   const handleSendOffer = (request) => {
     setSelectedRequest(request);
@@ -227,7 +313,7 @@ const Dashboard = () => {
           );
           toast.success("Directions shown on map!");
           return true;
-        } catch (error) {
+        } catch {
           if (retries > 0) {
             setTimeout(() => tryShowDirections(retries - 1, delay), delay);
           } else {
@@ -267,76 +353,151 @@ const Dashboard = () => {
     );
 
     return (
-      <div className="bg-white rounded-lg shadow-md">
-        {/* View Toggle Header */}
-        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-800">
-              Blood Requests Near You
-            </h2>
-            <p className="text-sm text-gray-600 mt-1">
-              {availableRequests.length} urgent blood requests in your area
-            </p>
-          </div>
-          {/* View Toggle Buttons */}
-          <div className="flex bg-gray-100 rounded-lg p-1">
-            <button
-              onClick={() => setShowMapView(false)}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                !showMapView
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              <span className="mr-2">📋</span>
-              List View
-            </button>
-            <button
-              onClick={() => setShowMapView(true)}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                showMapView
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              <span className="mr-2">🗺️</span>
-              Map View
-            </button>
+      <div className="relative super-visible">
+        {/* Clear and Prominent Alert Banner */}
+        <div className="relative mb-8 bg-white/95 backdrop-blur-xl border-2 border-red-500/80 rounded-2xl shadow-xl overflow-hidden">
+          {/* Subtle accent overlay */}
+          <div className="absolute inset-0 bg-gradient-to-r from-red-50/50 to-pink-50/50"></div>
+
+          <div className="relative px-8 py-6">
+            <div className="text-center">
+              {/* Clear Header */}
+              <div className="flex justify-center items-center mb-4">
+                <div className="flex items-center space-x-3 bg-red-500/10 border-2 border-red-500/30 rounded-xl px-6 py-3">
+                  <span className="text-3xl">🚨</span>
+                  <h2 className="text-2xl font-bold text-red-800">
+                    URGENT BLOOD REQUESTS
+                  </h2>
+                  <span className="text-3xl">🩸</span>
+                </div>
+              </div>
+
+              {/* Clear Stats */}
+              <div className="flex justify-center items-center space-x-6 mb-4">
+                <div className="bg-red-100 border-2 border-red-300 rounded-lg px-6 py-3">
+                  <div className="text-2xl font-black text-red-800">
+                    {availableRequests.length}
+                  </div>
+                  <div className="text-red-700 font-semibold">
+                    Urgent Requests
+                  </div>
+                </div>
+                {availableRequests.length > 0 && (
+                  <div className="flex items-center bg-green-100 border-2 border-green-300 rounded-lg px-6 py-3">
+                    <div className="w-3 h-3 bg-green-500 rounded-full mr-3 animate-pulse"></div>
+                    <span className="text-green-700 font-semibold">
+                      Live Updates
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Clear Call to Action */}
+              <div className="bg-blue-50 border-2 border-blue-300 rounded-lg px-6 py-4">
+                <p className="text-lg font-bold text-blue-800 mb-2">
+                  Heroes Needed - Lives Depend on You! 🦸‍♀️🦸‍♂️
+                </p>
+                <p className="text-blue-700 font-medium">
+                  People are counting on donors like you. Every donation saves
+                  lives!
+                </p>
+              </div>
+            </div>
           </div>
         </div>
-        <div className="p-6">
-          {showMapView ? (
-            <div className="space-y-4">
-              {/* Leaflet Map Component */}
-              <LeafletMap requests={availableRequests} height="600px" />
-              {/* Map Legend */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="font-medium text-gray-800 mb-2">Map Legend</h4>
-                <div className="flex flex-wrap gap-4 text-sm">
-                  <div className="flex items-center">
-                    <div className="w-4 h-4 bg-red-500 rounded-full mr-2"></div>
-                    <span>Emergency Requests</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-4 h-4 bg-blue-500 rounded-full mr-2"></div>
-                    <span>Regular Requests</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-4 h-4 bg-green-500 rounded-full mr-2"></div>
-                    <span>Your Location</span>
+
+        {/* Clear Request Cards Container */}
+        <div className="relative bg-white/95 backdrop-blur-xl border-2 border-gray-300 rounded-2xl shadow-lg overflow-hidden">
+          {/* Subtle background */}
+          <div className="absolute inset-0 bg-gradient-to-r from-gray-50/50 to-blue-50/50"></div>
+
+          {/* Clear View Toggle Header */}
+          <div className="relative px-6 py-4 border-b-2 border-gray-300 bg-gray-100/90">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-xl font-bold text-gray-800 flex items-center mb-2">
+                  <span className="mr-3 text-2xl">📍</span>
+                  Available Blood Requests Near You
+                </h3>
+                <p className="text-gray-600 font-medium">
+                  Choose your preferred view to find requests you can help with
+                </p>
+              </div>
+              {/* Clear View Toggle Buttons */}
+              <div className="flex bg-white border-2 border-gray-300 rounded-lg p-1 shadow-sm">
+                <button
+                  onClick={() => setShowMapView(false)}
+                  className={`px-4 py-2 rounded-md text-sm font-semibold transition-all duration-300 ${
+                    !showMapView
+                      ? "bg-blue-500 text-white shadow-md"
+                      : "text-gray-600 hover:text-gray-800 hover:bg-gray-100"
+                  }`}
+                >
+                  <span className="mr-2 text-lg">📋</span>
+                  List View
+                </button>
+                <button
+                  onClick={() => setShowMapView(true)}
+                  className={`px-4 py-2 rounded-md text-sm font-semibold transition-all duration-300 ${
+                    showMapView
+                      ? "bg-blue-500 text-white shadow-md"
+                      : "text-gray-600 hover:text-gray-800 hover:bg-gray-100"
+                  }`}
+                >
+                  <span className="mr-2 text-lg">🗺️</span>
+                  Map View
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6">
+            {showMapView ? (
+              <div className="space-y-4">
+                {/* Clear Map Component */}
+                <div className="bg-white border-2 border-gray-300 rounded-lg overflow-hidden shadow-sm">
+                  <LeafletMap requests={availableRequests} height="600px" />
+                </div>
+                {/* Clear Map Legend */}
+                <div className="bg-white border-2 border-gray-300 rounded-lg p-4 shadow-sm">
+                  <h4 className="font-bold text-gray-800 mb-3 flex items-center text-lg">
+                    <span className="mr-2 text-xl">🗺️</span>
+                    Map Legend
+                  </h4>
+                  <div className="flex flex-wrap gap-6 text-base">
+                    <div className="flex items-center">
+                      <div className="w-4 h-4 bg-red-500 rounded-full mr-3"></div>
+                      <span className="text-gray-700 font-medium">
+                        Emergency Requests
+                      </span>
+                    </div>
+                    <div className="flex items-center">
+                      <div className="w-4 h-4 bg-blue-500 rounded-full mr-3"></div>
+                      <span className="text-gray-700 font-medium">
+                        Regular Requests
+                      </span>
+                    </div>
+                    <div className="flex items-center">
+                      <div className="w-4 h-4 bg-green-500 rounded-full mr-3"></div>
+                      <span className="text-gray-700 font-medium">
+                        Your Location
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ) : (
-            <BloodRequestCarousel
-              requests={availableRequests}
-              onSendOffer={handleSendOffer}
-              onOpenChat={handleOpenChat}
-              onGetDirections={handleGetDirections}
-              getDistanceInfo={getDistanceInfo}
-            />
-          )}
+            ) : (
+              <div className="bg-white border-2 border-gray-300 rounded-lg p-6 shadow-sm">
+                <BloodRequestCarousel
+                  requests={availableRequests}
+                  onSendOffer={handleSendOffer}
+                  onOpenChat={handleOpenChat}
+                  onGetDirections={handleGetDirections}
+                  getDistanceInfo={getDistanceInfo}
+                />
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -580,25 +741,6 @@ const Dashboard = () => {
     }
   };
 
-  // Active tab indicator animation
-  const animateActiveTabIndicator = () => {
-    if (tabsRef.current) {
-      const activeTabIndicators = tabsRef.current.querySelectorAll(
-        ".active-tab-indicator"
-      );
-
-      if (activeTabIndicators.length > 0) {
-        gsap.to(activeTabIndicators, {
-          scaleX: 1.05,
-          duration: 2,
-          ease: "sine.inOut",
-          yoyo: true,
-          repeat: -1,
-        });
-      }
-    }
-  };
-
   useEffect(() => {
     // Initial animations
     gsap.from(mainContentRef.current, {
@@ -646,313 +788,372 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100">
-        <div className="bg-white shadow-sm border-b">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-4">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  Blood Donation Dashboard
-                </h1>
-                <p className="text-sm text-gray-600">
-                  Loading your dashboard...
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-gradient-to-br from-[#1e1b4b] via-[#3730a3] to-[#5b21b6] flex items-center justify-center">
+        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 text-center shadow-2xl">
           <LoadingSpinner
             size="lg"
             color="red"
             message="Loading your blood donation dashboard..."
           />
+          <p className="mt-4 text-white/80 font-medium">
+            Preparing your personalized dashboard...
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Header - Reduced prominence */}
-      <div className="bg-white/90 shadow-sm border-b border-gray-100 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4 opacity-80 hover:opacity-100 transition-opacity duration-300">
-            <div className="flex items-center space-x-4">
-              {/* Logo Only */}
-              <div
-                className="flex items-center cursor-pointer group"
-                onClick={() => navigate("/")}
-              >
-                {/* Logo - Larger Size */}
-                <div className="w-16 h-16 rounded-lg flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300 group-hover:scale-105 bg-transparent">
+    <div
+      className="min-h-screen bg-gradient-to-br from-[#1e1b4b] via-[#3730a3] to-[#5b21b6] relative overflow-hidden"
+      ref={containerRef}
+    >
+      {/* Clear Floating Alert Banner */}
+      {activeTab === "browse" &&
+        requests.filter(
+          (req) =>
+            !requestsWithOffers.has(req._id) && req.requester?._id !== user?._id
+        ).length > 0 && (
+          <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50">
+            <div className="bg-red-500 text-white border-2 border-red-600 rounded-lg px-4 py-2 shadow-lg max-w-md">
+              <div className="text-center">
+                <div className="flex items-center justify-center space-x-2 mb-1">
+                  <span className="text-lg">🚨</span>
+                  <h3 className="font-bold text-sm">URGENT BLOOD REQUESTS</h3>
+                  <span className="text-lg">🩸</span>
+                </div>
+                <div className="flex items-center justify-center space-x-3">
+                  <div className="bg-white/20 rounded px-2 py-1">
+                    <span className="font-bold text-sm">
+                      {
+                        requests.filter(
+                          (req) =>
+                            !requestsWithOffers.has(req._id) &&
+                            req.requester?._id !== user?._id
+                        ).length
+                      }
+                    </span>
+                    <span className="text-xs ml-1">waiting</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const browseSectionElement =
+                        document.querySelector(".bg-white\\/95");
+                      if (browseSectionElement) {
+                        browseSectionElement.scrollIntoView({
+                          behavior: "smooth",
+                        });
+                      }
+                    }}
+                    className="bg-white/20 hover:bg-white/30 text-white font-semibold text-xs px-3 py-1 rounded transition-all duration-300"
+                  >
+                    VIEW ⬇️
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+      {/* Clear Floating Action Button */}
+      {activeTab === "browse" &&
+        requests.filter(
+          (req) =>
+            !requestsWithOffers.has(req._id) && req.requester?._id !== user?._id
+        ).length > 0 && (
+          <div className="fixed bottom-6 right-6 z-50">
+            <button
+              onClick={() => {
+                const browseSectionElement =
+                  document.querySelector(".bg-white\\/95");
+                if (browseSectionElement) {
+                  browseSectionElement.scrollIntoView({ behavior: "smooth" });
+                }
+              }}
+              className="bg-red-500 hover:bg-red-600 text-white font-bold px-4 py-3 rounded-full shadow-lg transition-all duration-300 border-2 border-red-600"
+              title="Quick access to blood requests"
+            >
+              <div className="flex items-center space-x-2">
+                <span className="text-lg">🩸</span>
+                <div className="text-left">
+                  <div className="text-xs font-bold">BLOOD NEEDED</div>
+                  <div className="text-xs">
+                    {
+                      requests.filter(
+                        (req) =>
+                          !requestsWithOffers.has(req._id) &&
+                          req.requester?._id !== user?._id
+                      ).length
+                    }{" "}
+                    Requests
+                  </div>
+                </div>
+              </div>
+            </button>
+          </div>
+        )}
+
+      {/* Subtle Background Elements */}
+      <div
+        ref={plasmaContainerRef}
+        className="absolute inset-0 pointer-events-none opacity-30"
+      >
+        {[...Array(8)].map((_, i) => (
+          <div
+            key={`plasma-${i}`}
+            className="absolute rounded-full"
+            style={{
+              width: Math.random() * 200 + 50 + "px",
+              height: Math.random() * 200 + 50 + "px",
+              background: `radial-gradient(circle, rgba(139, 92, 246, 0.1), transparent)`,
+              left: Math.random() * 100 + "%",
+              top: Math.random() * 100 + "%",
+              animation: `float ${Math.random() * 30 + 40}s infinite linear`,
+            }}
+          />
+        ))}
+
+        {/* Subtle floating elements */}
+        {[...Array(4)].map((_, i) => (
+          <div
+            key={`blood-cell-${i}`}
+            className="absolute opacity-10 text-2xl"
+            style={{
+              left: Math.random() * 100 + "%",
+              top: Math.random() * 100 + "%",
+              animation: `float ${Math.random() * 25 + 30}s infinite linear`,
+              animationDelay: Math.random() * 10 + "s",
+            }}
+          >
+            🩸
+          </div>
+        ))}
+      </div>
+
+      {/* Header Section */}
+      <div className="relative z-10">
+        <div
+          className="glass-header backdrop-blur-xl border-b border-white/20"
+          ref={headerRef}
+        >
+          <div className="max-w-7xl mx-auto px-6 py-6">
+            <div className="flex items-center justify-between">
+              {/* User Welcome Section */}
+              <div className="flex items-center space-x-4">
+                <div
+                  className="glass-card w-16 h-16 rounded-full flex items-center justify-center glass-interactive cursor-pointer hover:scale-105 transition-transform"
+                  onClick={() => navigate("/dashboard")}
+                  title="Go to Dashboard"
+                >
                   <img
                     src="/ChatGPT-Image-Jun-27_-2025_-10_06_09-PM.svg"
                     alt="Blood Donation App"
-                    className="w-14 h-14 object-contain"
+                    className="w-12 h-12 object-contain"
                     onError={(e) => {
-                      // Fallback to emoji if image doesn't load
                       e.target.style.display = "none";
                       e.target.nextSibling.style.display = "block";
                     }}
                   />
-                  <span className="text-red-500 text-4xl font-bold hidden">
+                  <span className="text-red-300 text-2xl font-bold hidden">
                     🩸
                   </span>
                 </div>
-              </div>
-
-              {/* User Info Card - Smaller */}
-              <div className="bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-md px-3 py-2 shadow-sm">
-                <div className="flex items-center space-x-3">
-                  {/* User Avatar - Smaller */}
-                  <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                    <span className="text-gray-600 font-medium text-sm">
-                      {user?.name?.charAt(0)?.toUpperCase()}
-                    </span>
-                  </div>
-
-                  {/* User Details - Smaller */}
-                  <div>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-xs font-medium text-gray-700">
-                        {user?.name}
-                      </span>
-                      <div className="flex items-center space-x-1">
-                        <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                          {user?.bloodGroup}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Location Info - Smaller */}
-                    {user?.location && (
-                      <div className="flex items-center space-x-1 mt-0.5">
-                        <span className="text-xs text-gray-300">📍</span>
-                        <span className="text-xs text-gray-400 truncate max-w-32">
-                          {user.location}
-                        </span>
-                      </div>
-                    )}
-                  </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-white mb-1">
+                    Welcome back, {user?.name}!
+                    <span className="ml-2 animate-pulse">👋</span>
+                  </h1>
+                  <p className="text-white/70 text-sm font-medium">
+                    {user?.userType === "hospital"
+                      ? "Hospital Dashboard"
+                      : "Donor Dashboard"}
+                  </p>
                 </div>
               </div>
-            </div>
 
-            {/* Right Side Actions - Smaller and less prominent */}
-            <div className="flex items-center space-x-2 opacity-70 hover:opacity-100 transition-opacity duration-300">
-              {/* Hospital-specific navigation */}
-              {user?.isHospital && (
+              {/* Action Buttons */}
+              <div className="flex items-center space-x-3">
+                {/* Admin Button - only show for admin users */}
+                {user?.email === "angad.28.03.2005@gmail.com" && (
+                  <button
+                    onClick={() => navigate("/admin")}
+                    className="glass-button px-4 py-2 text-orange-300 hover:text-orange-200 transition-colors border border-orange-400/50"
+                    title="Admin Panel"
+                  >
+                    <span className="mr-2">👨‍💼</span>
+                    Admin
+                  </button>
+                )}
+
                 <button
-                  onClick={() => navigate("/hospital/requests")}
-                  className="bg-blue-500 text-white px-3 py-1.5 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-400 transition-all duration-200 flex items-center space-x-1 text-sm"
-                  title="Manage hospital blood requests"
+                  onClick={() => setShowShortcutsModal(true)}
+                  className="glass-button px-4 py-2 text-white/80 hover:text-white transition-colors"
+                  title="Keyboard Shortcuts (H)"
                 >
-                  <span className="text-sm">🏥</span>
-                  <span>Hospital</span>
+                  <span className="mr-2">⌨️</span>
+                  Shortcuts
                 </button>
-              )}
 
-              <button
-                onClick={() => setShowShortcutsModal(true)}
-                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-all duration-200"
-                title="Keyboard shortcuts (?)"
-              >
-                <span className="text-sm">⌨️</span>
-              </button>
-
-              {/* GSAP Demo Button */}
-              <button
-                onClick={() => navigate("/gsap-demo")}
-                className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-2 py-1.5 rounded-md hover:from-purple-600 hover:to-pink-600 focus:outline-none focus:ring-1 focus:ring-purple-400 transition-all duration-200 flex items-center space-x-1 text-xs"
-                title="View GSAP Animation Demo"
-              >
-                <span className="text-sm">🎨</span>
-                <span>Demos</span>
-              </button>
-
-              {/* Admin Cleanup Button - Only show for admin users */}
-              {user?.isAdmin && (
                 <button
-                  onClick={async () => {
-                    // Refresh user data to check current admin status
-                    const freshUser = await refreshUserData();
-                    if (freshUser?.isAdmin) {
-                      navigate("/admin-cleanup");
-                    } else {
-                      toast.error(
-                        "Access denied. Admin privileges have been revoked."
-                      );
-                    }
-                  }}
-                  className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-2 py-1.5 rounded-md hover:from-orange-600 hover:to-red-600 focus:outline-none focus:ring-1 focus:ring-orange-400 transition-all duration-200 flex items-center space-x-1 text-xs"
-                  title="Admin Cleanup Tool"
+                  onClick={() => navigate("/profile")}
+                  className="glass-button px-4 py-2 text-white/80 hover:text-white transition-colors"
                 >
-                  <span className="text-sm">🧹</span>
-                  <span>Admin</span>
+                  <span className="mr-2">⚙️</span>
+                  Settings
                 </button>
-              )}
 
-              <button
-                onClick={logout}
-                className="bg-red-500 text-white px-3 py-1.5 rounded-md hover:bg-red-600 focus:outline-none focus:ring-1 focus:ring-red-400 transition-all duration-200 text-sm"
-              >
-                Logout
-              </button>
+                <button
+                  onClick={logout}
+                  className="glass-button px-4 py-2 text-red-300 hover:text-red-200 transition-colors"
+                >
+                  <span className="mr-2">🚪</span>
+                  Logout
+                </button>
+              </div>
             </div>
+          </div>
+        </div>
+
+        {/* Navigation Ribbon */}
+        <div
+          className="relative bg-gradient-to-r from-blue-400/20 via-purple-400/20 to-pink-400/20 backdrop-blur-md border-b border-white/10"
+          ref={ribbonRef}
+        >
+          <div className="max-w-7xl mx-auto px-6">
+            <nav className="flex space-x-1" ref={tabsRef}>
+              {[
+                {
+                  id: "browse",
+                  label: "Browse Requests",
+                  icon: "🔍",
+                  shortcut: "1",
+                  color: "from-blue-500/20 to-cyan-500/20",
+                },
+                {
+                  id: "my-requests",
+                  label: "My Requests",
+                  icon: "📋",
+                  shortcut: "2",
+                  color: "from-purple-500/20 to-pink-500/20",
+                },
+                {
+                  id: "my-offers",
+                  label: "My Offers",
+                  icon: "💌",
+                  shortcut: "3",
+                  color: "from-green-500/20 to-teal-500/20",
+                },
+                {
+                  id: "accepted",
+                  label: "Accepted Offers",
+                  icon: "✅",
+                  shortcut: "4",
+                  color: "from-orange-500/20 to-red-500/20",
+                },
+              ].map((tab) => {
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    data-tab={tab.id}
+                    onClick={() => animateTabTransition(tab.id)}
+                    className={`relative px-6 py-4 font-semibold text-sm flex items-center transition-all duration-300 ease-out group rounded-t-xl ${
+                      isActive
+                        ? "glass-card-primary text-white transform -translate-y-1 scale-105 shadow-xl"
+                        : "glass-card text-white/70 hover:text-white hover:scale-102 glass-interactive"
+                    }`}
+                    title={`${tab.label} (Press ${tab.shortcut})`}
+                  >
+                    {/* Active Tab Glow */}
+                    {isActive && (
+                      <div
+                        className={`absolute inset-0 bg-gradient-to-br ${tab.color} rounded-t-xl opacity-30`}
+                      />
+                    )}
+
+                    {/* Content */}
+                    <div className="relative flex items-center space-x-3 z-10">
+                      <span
+                        className={`text-lg transition-all duration-200 ${
+                          isActive
+                            ? "scale-110 neon-glow"
+                            : "group-hover:scale-105"
+                        }`}
+                      >
+                        {tab.icon}
+                      </span>
+                      <span className="font-semibold whitespace-nowrap">
+                        {tab.label}
+                      </span>
+
+                      {/* Keyboard Shortcut Badge */}
+                      <span
+                        className={`text-xs px-2 py-1 rounded-full font-medium transition-all duration-200 ${
+                          isActive
+                            ? "glass-card-primary text-white shadow-lg"
+                            : "glass-card text-white/60 group-hover:text-white/80"
+                        }`}
+                      >
+                        {tab.shortcut}
+                      </span>
+                    </div>
+
+                    {/* Active Tab Indicator */}
+                    {isActive && (
+                      <div className="active-tab-indicator absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 rounded-b-xl neon-glow" />
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
           </div>
         </div>
       </div>
 
-      {/* Enhanced Navigation Tabs */}
-      <div
-        className="relative bg-gradient-to-r from-blue-50 via-indigo-50 to-blue-50 border-b border-blue-200 shadow-md overflow-hidden"
-        ref={ribbonRef}
-        style={{
-          backgroundSize: "200% 100%",
-          backgroundImage:
-            "linear-gradient(90deg, #eff6ff 0%, #f0f9ff 25%, #e0f2fe 50%, #f0f9ff 75%, #eff6ff 100%)",
-          boxShadow:
-            "0 4px 12px rgba(59, 130, 246, 0.08), 0 2px 6px rgba(99, 102, 241, 0.05)",
-        }}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav
-            className="flex space-x-1 overflow-x-auto scrollbar-hide"
-            ref={tabsRef}
-          >
-            {[
-              {
-                id: "browse",
-                label: "Browse Requests",
-                icon: "🔍",
-                shortcut: "1",
-                adminOnly: false,
-              },
-              {
-                id: "my-requests",
-                label: "My Requests",
-                icon: "📋",
-                shortcut: "2",
-                adminOnly: false,
-              },
-              {
-                id: "my-offers",
-                label: "My Offers",
-                icon: "💌",
-                shortcut: "3",
-                adminOnly: false,
-              },
-              {
-                id: "accepted",
-                label: "Accepted Offers",
-                icon: "✅",
-                shortcut: "4",
-                adminOnly: false,
-              },
-            ].map((tab) => {
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  data-tab={tab.id}
-                  onClick={() => animateTabTransition(tab.id)}
-                  className={`relative px-6 py-4 font-semibold text-sm flex items-center transition-all duration-300 ease-in-out group rounded-t-lg ${
-                    isActive
-                      ? "bg-white text-blue-600 border border-blue-300 border-b-0 shadow-lg transform -translate-y-0.5 z-10"
-                      : "text-blue-700 hover:text-blue-800 hover:bg-blue-100/60 bg-blue-50/30 rounded-lg mx-1 my-1 border border-blue-200/40 shadow-sm hover:shadow-md"
-                  }`}
-                  title={`${tab.label} (Press ${tab.shortcut})`}
-                >
-                  {/* Background gradient for active tab */}
-                  {isActive && (
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-white rounded-t-lg opacity-60"></div>
-                  )}
-
-                  {/* Content */}
-                  <div className="relative flex items-center space-x-3">
-                    <span
-                      className={`text-lg transition-transform duration-200 ${
-                        isActive ? "scale-110" : "group-hover:scale-105"
-                      }`}
-                    >
-                      {tab.icon}
-                    </span>
-                    <span className="font-semibold whitespace-nowrap">
-                      {tab.label}
-                    </span>
-
-                    {/* Keyboard shortcut badge */}
-                    <span
-                      className={`text-xs px-2 py-1 rounded-full font-medium transition-all duration-200 ${
-                        isActive
-                          ? "bg-blue-100 text-blue-800 shadow-sm"
-                          : "bg-blue-50 text-blue-600 group-hover:bg-blue-100 group-hover:text-blue-700"
-                      }`}
-                    >
-                      {tab.shortcut}
-                    </span>
-                  </div>
-
-                  {/* Active tab bottom indicator */}
-                  {isActive && (
-                    <div className="active-tab-indicator absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600 rounded-b-lg"></div>
-                  )}
-
-                  {/* Hover effect for inactive tabs */}
-                  {!isActive && (
-                    <div className="absolute inset-0 bg-gradient-to-r from-blue-100/20 via-indigo-100/30 to-blue-100/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg"></div>
-                  )}
-
-                  {/* Subtle border for active tab */}
-                  {isActive && (
-                    <div className="absolute inset-0 border border-blue-200 border-b-0 rounded-t-lg"></div>
-                  )}
-                </button>
-              );
-            })}
-          </nav>
-
-          {/* Decorative bottom border */}
-          <div className="h-px bg-gradient-to-r from-transparent via-blue-300 to-transparent opacity-50"></div>
-        </div>
-
-        {/* Subtle top accent */}
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-blue-200 via-indigo-300 to-blue-200 opacity-40"></div>
-      </div>
-
       {/* Main Content */}
       <div
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+        className="relative z-10 max-w-7xl mx-auto px-6 py-8"
         ref={mainContentRef}
       >
-        {/* Quick Stats */}
-        <QuickStats
-          requests={requests}
-          myRequests={myRequests}
-          myOffers={myOffers}
-        />
-
-        {/* Tab Content */}
-        {activeTab === "browse" && renderBloodRequests()}
-        {activeTab === "my-requests" && renderMyRequests()}
-        {activeTab === "my-offers" && (
-          <MyOffersCarousel
+        {/* Quick Stats with Enhanced Glass Design */}
+        <div className="mb-8" ref={quickStatsRef}>
+          <QuickStats
+            requests={requests}
+            myRequests={myRequests}
             myOffers={myOffers}
-            onOpenChat={handleOpenChat}
-            navigate={navigate}
           />
-        )}
-        {activeTab === "accepted" && (
-          <AcceptedOffersCarousel
-            acceptedOffers={acceptedOffers}
-            onOpenChat={handleOpenChat}
-            onGetDirections={handleGetDirections}
-          />
-        )}
+        </div>
+
+        {/* Tab Content with Glass Container */}
+        <div className="glass-card rounded-2xl overflow-hidden">
+          {activeTab === "browse" && (
+            <div className="p-6">{renderBloodRequests()}</div>
+          )}
+          {activeTab === "my-requests" && (
+            <div className="p-6">{renderMyRequests()}</div>
+          )}
+          {activeTab === "my-offers" && (
+            <div className="p-6">
+              <MyOffersCarousel
+                myOffers={myOffers}
+                onOpenChat={handleOpenChat}
+                navigate={navigate}
+              />
+            </div>
+          )}
+          {activeTab === "accepted" && (
+            <div className="p-6">
+              <AcceptedOffersCarousel
+                acceptedOffers={acceptedOffers}
+                onOpenChat={handleOpenChat}
+                onGetDirections={handleGetDirections}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Send Offer Modal */}
+      {/* Enhanced Modals */}
       <SendOfferModal
         isOpen={showOfferModal}
         onClose={() => setShowOfferModal(false)}
@@ -960,14 +1161,12 @@ const Dashboard = () => {
         onOfferSent={handleOfferSent}
       />
 
-      {/* Chat Modal */}
       <ChatComponent
         bloodRequest={selectedChatRequest}
         isOpen={showChatModal}
         onClose={() => setShowChatModal(false)}
       />
 
-      {/* Keyboard Shortcuts Modal */}
       <KeyboardShortcutsModal
         isOpen={showShortcutsModal}
         onClose={() => setShowShortcutsModal(false)}

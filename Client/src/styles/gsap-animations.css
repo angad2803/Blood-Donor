@@ -28,7 +28,9 @@
     box-shadow: 0 0 5px rgba(239, 68, 68, 0.5);
   }
   100% {
-    box-shadow: 0 0 20px rgba(239, 68, 68, 0.8), 0 0 30px rgba(239, 68, 68, 0.4);
+    box-shadow:
+      0 0 20px rgba(239, 68, 68, 0.8),
+      0 0 30px rgba(239, 68, 68, 0.4);
   }
 }
 
@@ -203,7 +205,9 @@
 .page-transition-enter-active {
   opacity: 1;
   transform: translateY(0);
-  transition: opacity 0.6s ease, transform 0.6s ease;
+  transition:
+    opacity 0.6s ease,
+    transform 0.6s ease;
 }
 
 /* Skeleton loading */
@@ -303,4 +307,240 @@
 .gsap-rotate-in {
   transform: rotate(-5deg) scale(0.95);
   opacity: 0;
+}
+
+/* Advanced GSAP Animation Utilities */
+
+/* Page entrance animations */
+.page-enter {
+  opacity: 0;
+  transform: translateY(50px);
+}
+
+.page-enter-stagger {
+  opacity: 0;
+  transform: translateY(30px) scale(0.95);
+}
+
+/* Enhanced card animations */
+.card-float {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-float:hover {
+  transform: translateY(-8px) rotateX(5deg);
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+/* Magnetic effect for interactive elements */
+.magnetic {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Parallax layers */
+.parallax-slow {
+  will-change: transform;
+}
+
+.parallax-medium {
+  will-change: transform;
+}
+
+.parallax-fast {
+  will-change: transform;
+}
+
+/* Loading states */
+.loading-pulse {
+  animation: loadingPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes loadingPulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.05);
+  }
+}
+
+/* Morphing shapes */
+.morph-shape {
+  transition: border-radius 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.morph-shape:hover {
+  border-radius: 50px;
+}
+
+/* Text reveal animations */
+.text-reveal {
+  overflow: hidden;
+  position: relative;
+}
+
+.text-reveal-char {
+  opacity: 0;
+  transform: translateY(100%);
+  display: inline-block;
+}
+
+/* Stagger animation classes */
+.stagger-item {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.stagger-item-scale {
+  opacity: 0;
+  transform: scale(0.8);
+}
+
+.stagger-item-rotate {
+  opacity: 0;
+  transform: rotate(10deg) scale(0.9);
+}
+
+/* Smooth scroll indicators */
+.scroll-indicator {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  z-index: 9999;
+  transform-origin: left;
+  transform: scaleX(0);
+}
+
+/* Enhanced emergency animations */
+.emergency-shake {
+  animation: emergencyShake 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes emergencyShake {
+  0% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-2px);
+  }
+  75% {
+    transform: translateX(2px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+/* Blood drop animation */
+.blood-drop {
+  position: relative;
+}
+
+.blood-drop::after {
+  content: "💧";
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  animation: bloodDrop 3s ease-in-out infinite;
+  opacity: 0;
+}
+
+@keyframes bloodDrop {
+  0% {
+    transform: translateX(-50%) translateY(-20px);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-50%) translateY(100px);
+    opacity: 0;
+  }
+}
+
+/* Heartbeat animation for urgent requests */
+.heartbeat {
+  animation: heartbeat 1.5s ease-in-out infinite;
+}
+
+@keyframes heartbeat {
+  0% {
+    transform: scale(1);
+  }
+  14% {
+    transform: scale(1.1);
+  }
+  28% {
+    transform: scale(1);
+  }
+  42% {
+    transform: scale(1.1);
+  }
+  70% {
+    transform: scale(1);
+  }
+}
+
+/* Smooth reveal masks */
+.reveal-mask {
+  overflow: hidden;
+  position: relative;
+}
+
+.reveal-mask::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, white, transparent);
+  transform: translateX(-100%);
+}
+
+/* Performance optimizations */
+.gpu-accelerated {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Dark mode variants */
+@media (prefers-color-scheme: dark) {
+  .glass-card {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .emergency-glow::before {
+    background: linear-gradient(45deg, #dc2626, #991b1b, #7f1d1d, #dc2626);
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .emergency-pulse,
+  .emergency-shake,
+  .heartbeat,
+  .loading-pulse,
+  .blood-drop {
+    animation: none;
+  }
+
+  .card-float:hover,
+  .magnetic {
+    transform: none;
+  }
 }
