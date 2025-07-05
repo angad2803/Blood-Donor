@@ -1,6 +1,8 @@
+version: "3.8"
+
 services:
   redis:
-    image: redis:latest
+    image: redis:7-alpine
     container_name: redis-blooddonor
     ports:
       - "6379:6379"
@@ -8,6 +10,45 @@ services:
     command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  backend:
+    build: ./Server
+    container_name: blooddonor-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - REDIS_URL=redis://redis:6379
+      - MONGODB_URI=${MONGODB_URI:-mongodb://host.docker.internal:27017/blooddonor}
+      - JWT_SECRET=${JWT_SECRET:-change-this-secret}
+      - PORT=5000
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      - ./Server/.env:/app/.env:ro
+
+  frontend:
+    build: ./nextjs-app
+    container_name: blooddonor-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://localhost:5000
+      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-change-this-secret}
+    depends_on:
+      - backend
+    restart: unless-stopped
+    volumes:
+      - ./nextjs-app/.env.local:/app/.env.local:ro
 
 volumes:
   redis_data:
