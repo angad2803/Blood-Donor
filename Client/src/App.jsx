@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -8,6 +8,7 @@ import {
 
 import Login from "../components/Login";
 import { AuthContext } from "../context/AuthContext";
+import useThemeStore from "../stores/themeStore";
 import "./styles/gsap-animations.css";
 import "./styles/swiper-carousel.css";
 import "./styles/glassmorphism.css";
@@ -37,6 +38,12 @@ import Admin from "../pages/Admin";
 
 function App() {
   const { token, isLoading } = useContext(AuthContext);
+  const { initializeTheme } = useThemeStore();
+
+  // Initialize theme on app start
+  useEffect(() => {
+    initializeTheme();
+  }, [initializeTheme]);
 
   // Show loading while checking authentication state
   if (isLoading) {

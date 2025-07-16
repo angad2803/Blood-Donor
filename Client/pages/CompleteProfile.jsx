@@ -154,7 +154,9 @@ const CompleteProfile = () => {
           );
 
           if (response.data.success) {
-            const location = response.data.data.address || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+            const location =
+              response.data.data.address ||
+              `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
             setFormData({ ...formData, location });
           } else {
             // Fallback to coordinates
@@ -206,7 +208,7 @@ const CompleteProfile = () => {
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center relative overflow-hidden">
         {/* Background Elements */}
         <div className="absolute inset-0 bg-gradient-to-br from-purple-100/40 via-blue-100/40 to-pink-100/40"></div>
-        
+
         <div className="relative max-w-md w-full space-y-8">
           {/* Header */}
           <div ref={headerRef} className="text-center">
@@ -309,7 +311,9 @@ const CompleteProfile = () => {
                   <p className="text-red-500 text-sm mt-2">{locationError}</p>
                 )}
                 {locationLoading && (
-                  <p className="text-blue-500 text-sm mt-2">📍 Detecting your location...</p>
+                  <p className="text-blue-500 text-sm mt-2">
+                    📍 Detecting your location...
+                  </p>
                 )}
               </div>
 

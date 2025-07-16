@@ -16,9 +16,11 @@ import AnimationStyles from "../components/AnimationStyles";
 import { useDashboardData } from "../hooks/useDashboardData";
 import { useDashboardState } from "../hooks/useDashboardState";
 import { useGSAPAnimations } from "../hooks/useGSAPAnimations";
+import useThemeStore from "../stores/themeStore";
 
 const Dashboard = () => {
   const { user, logout, refreshUserData } = useContext(AuthContext);
+  const { isDarkMode } = useThemeStore();
 
   // Custom hooks for data and state management
   const {
@@ -181,10 +183,10 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 relative overflow-hidden transition-colors duration-300">
       {/* Dynamic Background */}
       <div
-        className="fixed inset-0 z-0"
+        className="fixed inset-0 z-0 transition-opacity duration-300"
         style={{
           background: `
             radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
@@ -195,6 +197,7 @@ const Dashboard = () => {
           backgroundSize: "100% 100%, 100% 100%, 100% 100%, 100% 100%",
           backgroundPosition: "0% 0%, 100% 100%, 50% 50%, 0% 0%",
           animation: "pulseGradient 15s ease-in-out infinite",
+          opacity: isDarkMode ? "0.2" : "1",
         }}
       />
 

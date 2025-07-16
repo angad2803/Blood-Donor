@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import ThemeToggle from "./ThemeToggle";
 
 const DashboardHeader = ({
   user,
@@ -12,7 +13,7 @@ const DashboardHeader = ({
 
   return (
     <div
-      className="relative z-10 bg-white/80 backdrop-blur-lg shadow-lg border-b border-white/20"
+      className="relative z-10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg shadow-lg border-b border-white/20 dark:border-gray-700/30 transition-colors duration-300"
       style={{
         boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
       }}
@@ -56,11 +57,11 @@ const DashboardHeader = ({
                 {/* User Details - Smaller */}
                 <div>
                   <div className="flex items-center space-x-2">
-                    <span className="text-xs font-medium text-gray-700">
+                    <span className="text-xs font-medium text-gray-700 dark:text-gray-200">
                       {user?.name}
                     </span>
                     <div className="flex items-center space-x-1">
-                      <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                      <span className="text-xs font-medium text-gray-500 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">
                         {user?.bloodGroup}
                       </span>
                     </div>
@@ -82,6 +83,9 @@ const DashboardHeader = ({
 
           {/* Right Side Actions - Smaller and less prominent */}
           <div className="flex items-center space-x-2 opacity-70 hover:opacity-100 transition-opacity duration-300">
+            {/* Theme Toggle */}
+            <ThemeToggle className="mr-1" />
+
             {/* Hospital-specific navigation */}
             {user?.isHospital && (
               <button

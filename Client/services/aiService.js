@@ -1,7 +1,7 @@
 import api from "../api/api.js";
 
 const aiService = {
-  serverEndpoint: "/api/ai",
+  serverEndpoint: "/ai",
 
   async generateResponse(userMessage, userContext = {}) {
     console.log("🤖 Client AI Service - Calling server...");

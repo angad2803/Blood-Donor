@@ -66,7 +66,7 @@ class AIService {
     }
 
     const genAI = new GoogleGenerativeAI(this.geminiApiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const systemPrompt = this.buildSystemPrompt(userContext);
     const fullPrompt = `${systemPrompt}\n\nUser: ${message}\n\nAssistant:`;

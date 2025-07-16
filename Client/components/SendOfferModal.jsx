@@ -9,7 +9,7 @@ const SendOfferModal = ({ isOpen, onClose, bloodRequest, onOfferSent }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [includeMessage, setIncludeMessage] = useState(true);
-  
+
   // AI Enhancement States
   const [isPolishing, setIsPolishing] = useState(false);
   const [showAITools, setShowAITools] = useState(false);
@@ -151,9 +151,9 @@ Please provide 3 different message options, each on a new line starting with "Op
       const response = await aiService.generateResponse(suggestionPrompt);
       const suggestions = response.message
         .split(/Option [1-3]:/)
-        .filter(s => s.trim())
-        .map(s => s.trim());
-      
+        .filter((s) => s.trim())
+        .map((s) => s.trim());
+
       setAiSuggestions(suggestions);
       setShowSuggestions(true);
       toast.success("💡 Generated message suggestions!");
@@ -210,20 +210,20 @@ Please provide 3 different message options, each on a new line starting with "Op
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      className="fixed inset-0 bg-black bg-opacity-50 dark:bg-black dark:bg-opacity-70 flex items-center justify-center z-50"
       onClick={handleBackdropClick}
     >
       <div
         ref={modalRef}
-        className="bg-white rounded-lg p-6 w-full max-w-lg mx-4"
+        className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-lg mx-4 transition-colors duration-300"
       >
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-gray-800">
+          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
             Send Donation Offer
           </h2>
           <button
             onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100 transition-colors"
             aria-label="Close offer modal"
           >
             <svg
@@ -243,11 +243,11 @@ Please provide 3 different message options, each on a new line starting with "Op
         </div>
 
         {/* Blood Request Details */}
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-4 mb-4">
           <div className="flex items-center mb-2">
             <span className="text-2xl mr-2">🩸</span>
             <div>
-              <h3 className="font-semibold text-red-800">
+              <h3 className="font-semibold text-red-800 dark:text-red-300">
                 {bloodRequest.bloodGroup} Blood Needed
               </h3>
               <p className="text-sm text-red-600">
@@ -392,7 +392,7 @@ Please provide 3 different message options, each on a new line starting with "Op
                         )}
                         <span className="ml-1">Polish</span>
                       </button>
-                      
+
                       <button
                         type="button"
                         onClick={translateMessage}
@@ -406,7 +406,7 @@ Please provide 3 different message options, each on a new line starting with "Op
                         )}
                         <span className="ml-1">Translate</span>
                       </button>
-                      
+
                       <button
                         type="button"
                         onClick={generateSuggestions}
@@ -440,7 +440,9 @@ Please provide 3 different message options, each on a new line starting with "Op
                                 Option {index + 1}:
                               </span>
                               <br />
-                              <span className="text-gray-700">{suggestion}</span>
+                              <span className="text-gray-700">
+                                {suggestion}
+                              </span>
                             </button>
                           ))}
                         </div>
@@ -455,7 +457,9 @@ Please provide 3 different message options, each on a new line starting with "Op
                     )}
 
                     <p className="text-xs text-blue-600">
-                      💡 <strong>Tip:</strong> Use AI to polish your message, change the tone, or translate to different languages for better communication!
+                      💡 <strong>Tip:</strong> Use AI to polish your message,
+                      change the tone, or translate to different languages for
+                      better communication!
                     </p>
                   </div>
                 )}
