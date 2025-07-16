@@ -43,12 +43,6 @@ if [ ! -f "Server/.env" ]; then
     echo "📝 Please edit Server/.env with your actual configuration values"
 fi
 
-if [ ! -f "nextjs-app/.env.local" ]; then
-    echo "⚠️  nextjs-app/.env.local not found. Copying from example..."
-    cp nextjs-app/.env.example nextjs-app/.env.local
-    echo "📝 Please edit nextjs-app/.env.local with your actual configuration values"
-fi
-
 # Install dependencies
 echo "📦 Installing dependencies..."
 
@@ -57,14 +51,14 @@ cd Server
 npm install --production
 
 echo "🔄 Installing frontend dependencies..."
-cd ../nextjs-app
+cd ../Client
 npm install
 
 cd ..
 
 # Build frontend
 echo "🏗️  Building frontend..."
-cd nextjs-app
+cd Client
 npm run build
 
 cd ..
@@ -84,8 +78,8 @@ if command_exists pm2; then
         pm2 start index.js --name "blooddonor-backend" --env production
         
         # Start frontend
-        cd ../nextjs-app
-        pm2 start npm --name "blooddonor-frontend" -- start
+        cd ../Client
+        pm2 start npm --name "blooddonor-frontend" -- run dev
         
         # Save PM2 configuration
         pm2 save
@@ -97,7 +91,7 @@ if command_exists pm2; then
     else
         echo "ℹ️  To start manually:"
         echo "   Backend: cd Server && npm start"
-        echo "   Frontend: cd nextjs-app && npm start"
+        echo "   Frontend: cd Client && npm run dev"
     fi
 else
     echo "ℹ️  PM2 not installed. To install: npm install -g pm2"
@@ -109,12 +103,12 @@ else
     BACKEND_PID=$!
     
     # Start frontend in background
-    cd ../nextjs-app
-    npm start &
+    cd ../Client
+    npm run dev &
     FRONTEND_PID=$!
     
     echo "✅ Application started!"
-    echo "🔗 Frontend: http://localhost:3000"
+    echo "🔗 Frontend: http://localhost:5173"
     echo "🔗 Backend: http://localhost:5000"
     echo "⚠️  Press Ctrl+C to stop both services"
     
@@ -126,7 +120,7 @@ fi
 echo "🎉 Deployment completed successfully!"
 echo ""
 echo "📱 Access your application:"
-echo "   🌐 Frontend: http://localhost:3000"
+echo "   🌐 Frontend: http://localhost:5173"
 echo "   🔧 Backend API: http://localhost:5000"
 echo ""
 echo "📚 Useful commands:"

@@ -36,12 +36,6 @@ if not exist "Server\.env" (
     echo 📝 Please edit Server\.env with your actual configuration values
 )
 
-if not exist "nextjs-app\.env.local" (
-    echo ⚠️  nextjs-app\.env.local not found. Copying from example...
-    copy "nextjs-app\.env.example" "nextjs-app\.env.local"
-    echo 📝 Please edit nextjs-app\.env.local with your actual configuration values
-)
-
 REM Install dependencies
 echo 📦 Installing dependencies...
 
@@ -54,7 +48,7 @@ if %errorlevel% neq 0 (
 )
 
 echo 🔄 Installing frontend dependencies...
-cd ..\nextjs-app
+cd ..\Client
 npm install
 if %errorlevel% neq 0 (
     echo ❌ Failed to install frontend dependencies
@@ -65,7 +59,7 @@ cd ..
 
 REM Build frontend
 echo 🏗️  Building frontend...
-cd nextjs-app
+cd Client
 npm run build
 if %errorlevel% neq 0 (
     echo ❌ Failed to build frontend
@@ -87,9 +81,8 @@ if %errorlevel% equ 0 (
         cd Server
         pm2 start index.js --name "blooddonor-backend" --env production
         
-        REM Start frontend
-        cd ..\nextjs-app
-        pm2 start npm --name "blooddonor-frontend" -- start
+        REM Start frontend        cd ..\Client
+        pm2 start npm --name "blooddonor-frontend" -- run dev
         
         REM Save PM2 configuration
         pm2 save
@@ -101,19 +94,19 @@ if %errorlevel% equ 0 (
     ) else (
         echo ℹ️  To start manually:
         echo    Backend: cd Server ^&^& npm start
-        echo    Frontend: cd nextjs-app ^&^& npm start
+        echo    Frontend: cd Client ^&^& npm run dev
     )
 ) else (
     echo ℹ️  PM2 not installed. To install: npm install -g pm2
     echo 🚀 You can now start the application manually:
     echo    1. Open terminal 1: cd Server ^&^& npm start
-    echo    2. Open terminal 2: cd nextjs-app ^&^& npm start
+    echo    2. Open terminal 2: cd Client ^&^& npm run dev
 )
 
 echo 🎉 Deployment completed successfully!
 echo.
 echo 📱 Access your application:
-echo    🌐 Frontend: http://localhost:3000
+    echo    🌐 Frontend: http://localhost:5173
 echo    🔧 Backend API: http://localhost:5000
 echo.
 echo 📚 Useful commands:

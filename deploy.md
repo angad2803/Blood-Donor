@@ -2,21 +2,47 @@
 
 ## 🎯 Deployment Strategy
 
-**IMPORTANT:** This app deploys as a **SINGLE Next.js project** on Vercel. The Next.js app contains:
+**IMPORTANT:** This app uses a **Client-Server architecture** with separate frontend and backend:
 
-- ✅ Frontend pages and components (`src/app/`, `src/components/`)
-- ✅ API routes (`src/app/api/`) that replace the separate Express server
-- ✅ Authentication, database, and all backend logic via Next.js API routes
+- ✅ Frontend: React with Vite (`Client/` directory)
+- ✅ Backend: Node.js with Express (`Server/` directory)
+- ✅ Database: MongoDB + Redis
+- ✅ Real-time: Socket.io
+- ✅ AI: Gemini API integration
 
-**Deploy ONLY the `nextjs-app/` directory** - no separate backend needed!
+**Deploy both `Client/` and `Server/` directories separately**
 
 ## 📋 Pre-Deployment Checklist
 
 ### ✅ 1. Environment Setup
 
-#### Next.js App Environment Variables
+#### Backend Environment Variables
 
-Create `nextjs-app/.env.local` (the ONLY .env file needed):
+Create `Server/.env`:
+
+```env
+NODE_ENV=production
+PORT=5000
+MONGODB_URI=your_mongodb_connection_string
+REDIS_URL=your_redis_connection_string
+JWT_SECRET=your_jwt_secret
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GEMINI_API_KEY=your_gemini_api_key
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASS=your_app_password
+CLIENT_URL=https://your-frontend-url.vercel.app
+```
+
+#### Frontend Environment Variables
+
+Create `Client/.env.production`:
+
+```env
+VITE_API_URL=https://your-backend-url.railway.app
+VITE_GOOGLE_CLIENT_ID=your_google_client_id
+VITE_SOCKET_URL=https://your-backend-url.railway.app
+```
 
 ```env
 # MongoDB Configuration

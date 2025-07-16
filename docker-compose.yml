@@ -35,20 +35,19 @@ services:
       - ./Server/.env:/app/.env:ro
 
   frontend:
-    build: ./nextjs-app
+    build: ./Client
     container_name: blooddonor-frontend
     ports:
-      - "3000:3000"
+      - "5173:5173"
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=http://localhost:5000
-      - NEXTAUTH_URL=http://localhost:3000
-      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-change-this-secret}
+      - VITE_API_URL=http://localhost:5000
+      - VITE_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
     depends_on:
       - backend
     restart: unless-stopped
     volumes:
-      - ./nextjs-app/.env.local:/app/.env.local:ro
+      - ./Client/.env.production:/app/.env.production:ro
 
 volumes:
   redis_data:
