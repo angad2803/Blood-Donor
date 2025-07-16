@@ -1,4 +1,5 @@
 import React, { useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Swiper, SwiperSlide } from "swiper/react";
 import {
   Navigation,
@@ -16,9 +17,9 @@ const MyRequestsCarousel = ({
   myRequests = [],
   onOpenChat,
   onAcceptOffer,
-  navigate,
   user,
 }) => {
+  const navigate = useNavigate();
   const swiperRef = useRef(null);
   const cardsRef = useRef([]);
 

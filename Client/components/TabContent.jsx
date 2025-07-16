@@ -11,7 +11,6 @@ const TabContent = ({
   handleAcceptOffer,
   handleOpenChat,
   handleGetDirections,
-  navigate,
   user,
 }) => {
   const renderTabContent = () => {
@@ -23,7 +22,6 @@ const TabContent = ({
             onAcceptOffer={handleAcceptOffer}
             onOpenChat={handleOpenChat}
             onGetDirections={handleGetDirections}
-            navigate={navigate}
             user={user}
           />
         );

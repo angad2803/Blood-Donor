@@ -265,6 +265,7 @@ const Dashboard = () => {
             handleAcceptOffer={handleAcceptOffer}
             handleOpenChat={handleOpenChat}
             handleGetDirections={handleDirectionsClick}
+            user={user}
           />
         </div>
       </div>
