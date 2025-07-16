@@ -141,6 +141,63 @@ router.put("/profile", verifyToken, async (req, res) => {
   }
 });
 
+// Complete user profile (simplified endpoint for initial profile completion)
+router.put("/complete-profile", verifyToken, async (req, res) => {
+  try {
+    const { bloodGroup, location, isDonor } = req.body;
+
+    // Validate required fields
+    if (!bloodGroup || !location) {
+      return res.status(400).json({
+        message: "Blood group and location are required",
+      });
+    }
+
+    // Prepare update object
+    const updateData = {
+      bloodGroup,
+      location,
+      isDonor: isDonor || false,
+      profileComplete: true, // Mark profile as complete
+    };
+
+    const updatedUser = await User.findByIdAndUpdate(req.user.id, updateData, {
+      new: true,
+    }).select("-password");
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Queue welcome email for profile completion
+    try {
+      await addEmailJob({
+        to: updatedUser.email,
+        template: "profile-completed",
+        data: {
+          name: updatedUser.name,
+          bloodGroup: updatedUser.bloodGroup,
+          location: updatedUser.location,
+          isDonor: updatedUser.isDonor,
+        },
+      });
+      console.log(
+        `📧 Profile completion welcome email queued for ${updatedUser.email}`
+      );
+    } catch (emailError) {
+      console.error("❌ Failed to queue welcome email:", emailError);
+    }
+
+    res.json({
+      message: "Profile completed successfully",
+      user: updatedUser,
+    });
+  } catch (err) {
+    console.error("Error completing profile:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
 // GET ALL DONORS (for hospitals)
 router.get("/all-donors", verifyToken, async (req, res) => {
   try {
