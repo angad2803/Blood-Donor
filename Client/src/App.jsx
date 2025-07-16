@@ -6,35 +6,35 @@ import {
   Navigate,
 } from "react-router-dom";
 
-import Login from "../components/Login";
+import Login from "../components/auth/Login";
 import { AuthContext } from "../context/AuthContext";
 import useThemeStore from "../stores/themeStore";
 import "./styles/gsap-animations.css";
 import "./styles/swiper-carousel.css";
 import "./styles/glassmorphism.css";
-import GSAPDemo from "../components/GSAPDemo";
-import GSAPDemoSimple from "../components/GSAPDemoSimple";
-import GSAPDemoTest from "../components/GSAPDemoTest";
-import Dashboard from "../pages/Dashboard";
-import CreateRequest from "../pages/CreateRequest";
-import DonorList from "../pages/DonorsList";
-import Register from "../pages/Register";
-import RequestForm from "../pages/RequestForm";
-import NearbyRequests from "../pages/NearbyRequests";
-import HospitalRequests from "../pages/HospitalRequests";
+import GSAPDemo from "../components/ui/GSAPDemo";
+import GSAPDemoSimple from "../components/ui/GSAPDemoSimple";
+import GSAPDemoTest from "../components/ui/GSAPDemoTest";
+import Dashboard from "../pages/dashboard/Dashboard";
+import CreateRequest from "../pages/requests/CreateRequest";
+import DonorList from "../pages/requests/DonorsList";
+import Register from "../pages/auth/Register";
+import RequestForm from "../pages/requests/RequestForm";
+import NearbyRequests from "../pages/requests/NearbyRequests";
+import HospitalRequests from "../pages/requests/HospitalRequests";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import MatchedRequests from "../pages/MatchedRequests";
-import ChatPage from "../pages/ChatPage";
-import OAuthSuccess from "../pages/OAuthSuccess";
-import CompleteProfile from "../pages/CompleteProfile";
-import AccountTypeSelection from "../pages/AccountTypeSelection";
-import SessionManager from "../components/SessionManager";
-import GeolocationTest from "../pages/GeolocationTest";
-import ArcGISMapTestPage from "../pages/ArcGISMapTestPage";
-import ErrorBoundary from "../components/ErrorBoundary";
-import AdminCleanup from "../components/AdminCleanup";
-import Admin from "../pages/Admin";
+import MatchedRequests from "../pages/requests/MatchedRequests";
+import ChatPage from "../pages/chat/ChatPage";
+import OAuthSuccess from "../pages/auth/OAuthSuccess";
+import CompleteProfile from "../pages/auth/CompleteProfile";
+import AccountTypeSelection from "../pages/auth/AccountTypeSelection";
+import SessionManager from "../components/auth/SessionManager";
+import GeolocationTest from "../pages/testing/GeolocationTest";
+import ArcGISMapTestPage from "../pages/testing/ArcGISMapTestPage";
+import ErrorBoundary from "../components/ui/ErrorBoundary";
+import AdminCleanup from "../components/admin/AdminCleanup";
+import Admin from "../pages/admin/Admin";
 
 function App() {
   const { token, isLoading } = useContext(AuthContext);

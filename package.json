@@ -4,12 +4,12 @@
   "description": "A comprehensive blood donation management system",
   "type": "module",
   "scripts": {
-    "setup": "node setup.js",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "server": "cd Server && npm start",
     "client": "cd Client && npm run dev",
     "build": "cd Client && npm run build",
-    "install-all": "npm install && cd Server && npm install && cd ../Client && npm install"
+    "install-all": "npm install && cd Server && npm install && cd ../Client && npm install",
+    "deploy": "bash scripts/deploy.sh"
   },
   "dependencies": {
     "@chakra-ui/react": "^3.20.0",

@@ -1,7 +1,7 @@
 import React, { useContext } from "react";
 import { Navigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
-import Dashboard from "../pages/Dashboard";
+import Dashboard from "../../pages/dashboard/Dashboard";
 
 export default function ProtectedRoute({ children }) {
   const { user, isLoading } = useContext(AuthContext);

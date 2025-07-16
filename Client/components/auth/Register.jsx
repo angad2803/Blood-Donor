@@ -1,6 +1,6 @@
 import React, { useState, useContext } from "react";
 import { AuthContext } from "./AuthContext";
-import Dashboard from "../pages/Dashboard";
+import Dashboard from "../../pages/dashboard/Dashboard";
 
 export default function RegisterForm() {
   const { register } = useContext(AuthContext);

@@ -5,18 +5,38 @@
 ```
 Blood_Donor/
 ├── 📋 Project Files
-│   ├── .gitignore              # Git ignore rules (updated)
+│   ├── .gitignore              # Git ignore rules
 │   ├── docker-compose.yml      # Docker configuration
 │   ├── package.json           # Root package configuration
+│   ├── deploy.md              # Deployment guide
 │   └── README.md              # Main project documentation
 │
 ├── 🌐 Client/ (Frontend - React/Vite)
-│   ├── components/            # Reusable React components
-│   ├── pages/                # Page components
+│   ├── components/            # Feature-organized components
+│   │   ├── admin/            # Admin management components
+│   │   ├── auth/             # Authentication components
+│   │   ├── chat/             # Chat & messaging components
+│   │   ├── dashboard/        # Dashboard components
+│   │   ├── maps/             # Location & mapping components
+│   │   ├── requests/         # Blood request components
+│   │   └── ui/               # Reusable UI components
+│   ├── pages/                # Feature-organized pages
+│   │   ├── admin/            # Admin pages
+│   │   ├── auth/             # Authentication pages
+│   │   ├── chat/             # Chat pages
+│   │   ├── dashboard/        # Dashboard pages
+│   │   ├── requests/         # Request management pages
+│   │   └── testing/          # Development testing pages
+│   ├── config/               # Configuration files
+│   │   ├── eslint.config.js  # ESLint configuration
+│   │   ├── tailwind.config.js # Tailwind CSS configuration
+│   │   └── vite.config.js    # Vite build configuration
 │   ├── src/                  # Main source files
-│   ├── utils/                # Utility functions
+│   ├── services/             # API and external services
+│   ├── stores/               # Zustand state management
 │   ├── context/              # React context providers
 │   ├── hooks/                # Custom React hooks
+│   ├── utils/                # Utility functions
 │   └── package.json          # Client dependencies
 │
 ├── 🖥️ Server/ (Backend - Node.js/Express)
@@ -27,9 +47,14 @@ Blood_Donor/
 │   ├── routes/               # API route handlers
 │   ├── queues/               # Message queue configuration (BullMQ/Redis)
 │   ├── utils/                # Server utility functions
+│   ├── scripts/              # Development & maintenance scripts
 │   └── package.json          # Server dependencies
 │
-├── 📚 docs/ (Documentation - NOT in Git)
+├── 🎯 scripts/ (Deployment Scripts)
+│   ├── deploy.sh             # Linux/Mac deployment script
+│   └── deploy.bat            # Windows deployment script
+│
+├── 📚 docs/ (Documentation)
 │   ├── ArcGIS-Setup-Guide.md
 │   ├── CHAT_INTEGRATION_SUMMARY.md
 │   ├── docker-troubleshoot.md
@@ -39,40 +64,36 @@ Blood_Donor/
 │   ├── MESSAGE_QUEUE_INTEGRATION_SUMMARY.md
 │   ├── MODAL_FIXES_SUMMARY.md
 │   ├── POLISH_IMPROVEMENTS_SUMMARY.md
+│   ├── AI_CHATBOT_INTEGRATION_FINAL.md
 │   └── QUICK_OFFER_FEATURE.md
-│
-├── 🔧 Server/scripts/ (Development Scripts - NOT in Git)
-│   ├── test-data/            # Test data creation scripts
-│   │   ├── create-test-blood-request.js
-│   │   ├── create-test-chandigarh-donor.js
-│   │   └── create-test-donors.js
-│   ├── debug/                # Debugging utilities
-│   │   ├── debug-coordinate-parsing.js
-│   │   ├── debug-matching-issue.js
-│   │   ├── debug-nearby-donors.js
-│   │   └── debug-user-queries.js
-│   ├── calculate-distance.js
-│   ├── cleanup-and-test.js
-│   ├── check-blood-request-indexes.js
-│   ├── check-indexes.js
-│   ├── fix-angad-role.js
-│   ├── fix-indexes.js
-│   ├── fix-user-types.js
-│   └── update-main-users.js
+```
+
+│ │ ├── debug-matching-issue.js
+│ │ ├── debug-nearby-donors.js
+│ │ └── debug-user-queries.js
+│ ├── calculate-distance.js
+│ ├── cleanup-and-test.js
+│ ├── check-blood-request-indexes.js
+│ ├── check-indexes.js
+│ ├── fix-angad-role.js
+│ ├── fix-indexes.js
+│ ├── fix-user-types.js
+│ └── update-main-users.js
 │
 └── 🧪 Server/tests/ (Test Files - NOT in Git)
-    ├── quick-email-test.js
-    ├── README.md
-    ├── test-api.js
-    ├── test-bullmq.js
-    ├── test-email-system.js
-    ├── test-end-to-end.js
-    ├── test-exact-scenario.js
-    ├── test-geolocation-quick.js
-    ├── test-location-endpoints.js
-    ├── test-matching-service.js
-    ├── test-near-query.js
-    └── test-request-creation.js
+├── quick-email-test.js
+├── README.md
+├── test-api.js
+├── test-bullmq.js
+├── test-email-system.js
+├── test-end-to-end.js
+├── test-exact-scenario.js
+├── test-geolocation-quick.js
+├── test-location-endpoints.js
+├── test-matching-service.js
+├── test-near-query.js
+└── test-request-creation.js
+
 ```
 
 ## 🚫 **Files Excluded from Git (.gitignore)**
@@ -173,3 +194,4 @@ After this organization:
 ## ✨ **Repository is now clean and organized!**
 
 The Blood Donor Platform now has a professional, clean structure with proper separation between production code and development utilities.
+```

@@ -44,104 +44,57 @@ VITE_GOOGLE_CLIENT_ID=your_google_client_id
 VITE_SOCKET_URL=https://your-backend-url.railway.app
 ```
 
-```env
-# MongoDB Configuration
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/blooddonor?retryWrites=true&w=majority
-# Local MongoDB: mongodb://localhost:27017/blooddonor
-
-# JWT Configuration
-JWT_SECRET=your-super-secure-jwt-secret-here
-JWT_EXPIRES_IN=7d
-
-# Email Configuration (SendGrid)
-SENDGRID_API_KEY=your-sendgrid-api-key
-FROM_EMAIL=noreply@yourapp.com
-
-# Google OAuth (Optional)
-GOOGLE_CLIENT_ID=your-google-client-id
-GOOGLE_CLIENT_SECRET=your-google-client-secret
-
-# Redis Configuration
-REDIS_URL=redis://localhost:6379
-# Production Redis: redis://username:password@host:port
-
-# Server Configuration
-PORT=5000
-NODE_ENV=production
-CORS_ORIGIN=https://yourapp.com
-
-# ArcGIS Configuration (Optional)
-ARCGIS_API_KEY=your-arcgis-api-key
-```
-
-#### Frontend Environment Variables
-
-Create `nextjs-app/.env.local`:
-
-```env
-# NextAuth Configuration
-NEXTAUTH_URL=https://yourapp.com
-NEXTAUTH_SECRET=your-nextauth-secret-here
-
-# API Configuration
-NEXT_PUBLIC_API_URL=https://api.yourapp.com
-NEXT_PUBLIC_SOCKET_URL=https://api.yourapp.com
-
-# Google OAuth
-GOOGLE_CLIENT_ID=your-google-client-id
-GOOGLE_CLIENT_SECRET=your-google-client-secret
-
-# ArcGIS Configuration
-NEXT_PUBLIC_ARCGIS_API_KEY=your-arcgis-api-key
-```
-
 ### ✅ 2. Production Build Setup
 
-#### Update Next.js Configuration
+#### Update Vite Configuration
 
-Update `nextjs-app/next.config.js`:
+Update `Client/config/vite.config.js`:
 
 ```javascript
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  images: {
-    domains: ["localhost", "yourapp.com"],
-  },
-  env: {
-    CUSTOM_KEY: process.env.CUSTOM_KEY,
-  },
-  // Production optimizations
-  compress: true,
-  poweredByHeader: false,
-  generateEtags: false,
-  // Static export if needed
-  // output: 'export',
-  // trailingSlash: true,
-  // images: { unoptimized: true }
-};
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 
-module.exports = nextConfig;
+export default defineConfig({
+  plugins: [react(), tailwindcss()],
+  build: {
+    outDir: "dist",
+    sourcemap: false,
+    minify: "terser",
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ["react", "react-dom"],
+          utils: ["axios", "socket.io-client"],
+        },
+      },
+    },
+  },
+  server: {
+    port: 5173,
+    host: true,
+  },
+});
 ```
 
 #### Update Package.json Scripts
 
-Add to `nextjs-app/package.json`:
+Add to `Client/package.json`:
 
 ```json
 {
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
-    "export": "next build && next export"
+    "dev": "vite --config config/vite.config.js",
+    "build": "vite build --config config/vite.config.js",
+    "preview": "vite preview --config config/vite.config.js",
+    "lint": "eslint . --config config/eslint.config.js"
   }
 }
 ```
 
-## 🚀 Vercel Deployment (Recommended)
+## 🚀 Vercel Deployment (Frontend Only)
 
-### 🎯 Single Next.js App Deployment
+### 🎯 React + Vite App Deployment
 
 #### 1. Install Vercel CLI
 
@@ -149,27 +102,29 @@ Add to `nextjs-app/package.json`:
 npm i -g vercel
 ```
 
-#### 2. Deploy the Next.js App
+#### 2. Deploy the React App
 
 ```bash
-cd nextjs-app
+cd Client
 vercel --prod
 ```
 
 #### 3. Configure Environment Variables in Vercel Dashboard
 
 - Go to your Vercel project settings
-- Add all environment variables from your `.env.local`
-- **Critical variables:** `MONGODB_URI`, `NEXTAUTH_SECRET`, `JWT_SECRET`
+- Add all environment variables from your `.env.production`
+- **Critical variables:** `VITE_API_URL`, `VITE_GOOGLE_CLIENT_ID`
 
-#### 4. Vercel Automatically Handles:
+#### 4. Build Settings for Vercel:
 
-- ✅ Frontend pages and components
-- ✅ API routes (`/api/*`) as serverless functions
-- ✅ Authentication, database, email, all backend logic
-- ✅ Optimized builds and CDN distribution
+- **Framework Preset:** Vite
+- **Build Command:** `npm run build`
+- **Output Directory:** `dist`
+- **Install Command:** `npm install`
 
 ## 🔧 Alternative Deployment Options
+
+### Option 1: Railway Deployment (Recommended for Full-Stack)
 
 #### 1. Install Railway CLI
 
@@ -182,7 +137,6 @@ npm install -g @railway/cli
 ```bash
 railway login
 railway init
-railway up
 ```
 
 #### 3. Create `railway.toml`:
@@ -196,14 +150,14 @@ railway up
 
 [[services]]
   name = "frontend"
-  source = "nextjs-app"
+  source = "Client"
 
 [[services]]
   name = "backend"
   source = "Server"
 ```
 
-### Option 3: Docker Deployment
+### Option 2: Docker Deployment
 
 #### 1. Create Dockerfile for Backend
 
@@ -226,7 +180,7 @@ CMD ["npm", "start"]
 
 #### 2. Create Dockerfile for Frontend
 
-Create `nextjs-app/Dockerfile`:
+Create `Client/Dockerfile`:
 
 ```dockerfile
 FROM node:18-alpine AS builder
@@ -238,25 +192,15 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-FROM node:18-alpine AS runner
-WORKDIR /app
+FROM nginx:alpine AS runner
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-ENV NODE_ENV production
+# Copy custom nginx config if needed
+COPY nginx.conf /etc/nginx/nginx.conf
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+EXPOSE 80
 
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-USER nextjs
-
-EXPOSE 3000
-
-ENV PORT 3000
-
-CMD ["node", "server.js"]
+CMD ["nginx", "-g", "daemon off;"]
 ```
 
 #### 3. Update Docker Compose
@@ -288,12 +232,12 @@ services:
     restart: unless-stopped
 
   frontend:
-    build: ./nextjs-app
+    build: ./Client
     container_name: blooddonor-frontend
     ports:
-      - "3000:3000"
+      - "5173:80"
     environment:
-      - NEXT_PUBLIC_API_URL=http://backend:5000
+      - VITE_API_URL=http://backend:5000
     depends_on:
       - backend
     restart: unless-stopped
@@ -340,10 +284,10 @@ npm install --production
 pm2 start index.js --name "blooddonor-backend"
 
 # Setup frontend
-cd ../nextjs-app
+cd ../Client
 npm install
 npm run build
-pm2 start npm --name "blooddonor-frontend" -- start
+pm2 start "npm run preview" --name "blooddonor-frontend"
 
 # Save PM2 configuration
 pm2 save
@@ -361,7 +305,7 @@ server {
 
     # Frontend
     location / {
-        proxy_pass http://localhost:3000;
+        proxy_pass http://localhost:5173;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -424,42 +368,22 @@ pm2 install pm2-server-monit
 
 ### 3. Security Headers
 
-Add to Next.js configuration:
+Add to Vite configuration or use middleware:
 
 ```javascript
-const securityHeaders = [
-  {
-    key: "X-DNS-Prefetch-Control",
-    value: "on",
+// vite.config.js
+export default defineConfig({
+  // ... other config
+  server: {
+    headers: {
+      "X-DNS-Prefetch-Control": "on",
+      "X-XSS-Protection": "1; mode=block",
+      "X-Frame-Options": "SAMEORIGIN",
+      "X-Content-Type-Options": "nosniff",
+      "Referrer-Policy": "origin-when-cross-origin",
+    },
   },
-  {
-    key: "X-XSS-Protection",
-    value: "1; mode=block",
-  },
-  {
-    key: "X-Frame-Options",
-    value: "SAMEORIGIN",
-  },
-  {
-    key: "X-Content-Type-Options",
-    value: "nosniff",
-  },
-  {
-    key: "Referrer-Policy",
-    value: "origin-when-cross-origin",
-  },
-];
-
-module.exports = {
-  async headers() {
-    return [
-      {
-        source: "/(.*)",
-        headers: securityHeaders,
-      },
-    ];
-  },
-};
+});
 ```
 
 ## 🚀 Quick Deploy Commands
@@ -471,7 +395,7 @@ module.exports = {
 cd Server && npm run dev
 
 # Frontend
-cd nextjs-app && npm run dev
+cd Client && npm run dev
 ```
 
 ### For Production:
@@ -481,7 +405,7 @@ cd nextjs-app && npm run dev
 cd Server && npm start
 
 # Build and start frontend
-cd nextjs-app && npm run build && npm start
+cd Client && npm run build && npm run preview
 ```
 
 ## 📞 Support

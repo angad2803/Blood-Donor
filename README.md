@@ -214,14 +214,27 @@ A comprehensive blood donation management system connecting donors with hospital
 ```
 Blood_Donor/
 ├── Client/                     # React frontend application
-│   ├── components/            # Reusable React components
-│   ├── pages/                 # Page components
+│   ├── components/            # Organized feature-based components
+│   │   ├── admin/            # Admin management components
+│   │   ├── auth/             # Authentication components
+│   │   ├── chat/             # Chat & messaging components
+│   │   ├── dashboard/        # Dashboard components
+│   │   ├── maps/             # Location & mapping components
+│   │   ├── requests/         # Blood request components
+│   │   └── ui/               # Reusable UI components
+│   ├── pages/                # Organized feature-based pages
+│   │   ├── admin/            # Admin pages
+│   │   ├── auth/             # Authentication pages
+│   │   ├── chat/             # Chat pages
+│   │   ├── dashboard/        # Dashboard pages
+│   │   ├── requests/         # Request management pages
+│   │   └── testing/          # Development testing pages
+│   ├── config/               # Configuration files
 │   ├── context/              # React context providers
 │   ├── hooks/                # Custom React hooks
 │   ├── stores/               # Zustand state stores
 │   ├── services/             # API and external services
 │   ├── utils/                # Utility functions
-│   ├── api/                  # API service functions
 │   └── public/               # Static assets
 ├── Server/                    # Express backend application
 │   ├── routes/               # API route handlers
@@ -232,6 +245,7 @@ Blood_Donor/
 │   ├── utils/                # Server utility functions
 │   ├── scripts/              # Development & maintenance scripts
 │   └── tests/                # Test files
+├── scripts/                  # Deployment & build scripts
 ├── docs/                     # Project documentation
 ├── docker-compose.yml        # Docker services configuration
 └── README.md                 # This file
