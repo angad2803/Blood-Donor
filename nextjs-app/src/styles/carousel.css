@@ -1,0 +1,299 @@
+/* Enhanced Swiper Carousel Styles */
+
+.blood-card {
+  transition: all 0.3s ease;
+  border: 2px solid #e5e7eb;
+  background: #ffffff;
+  color: #1f2937;
+  font-weight: 500;
+}
+
+.blood-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  border-color: #dc2626;
+}
+
+/* Text Enhancement for Legibility */
+.blood-card h3 {
+  color: #991b1b !important;
+  font-size: 1.125rem !important;
+  font-weight: 700 !important;
+  line-height: 1.4 !important;
+}
+
+.blood-card p,
+.blood-card span {
+  color: #374151 !important;
+  font-weight: 500 !important;
+  line-height: 1.5 !important;
+}
+
+.blood-card strong {
+  color: #111827 !important;
+  font-weight: 700 !important;
+}
+
+/* Badge and Status Text Enhancement */
+.blood-card .status-badge {
+  font-weight: 700 !important;
+  font-size: 0.875rem !important;
+  text-shadow: none !important;
+  border-width: 2px !important;
+}
+
+.blood-card .urgency-badge {
+  font-weight: 800 !important;
+  font-size: 0.875rem !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Button Text Enhancement */
+.blood-card button {
+  font-weight: 600 !important;
+  font-size: 1rem !important;
+  letter-spacing: 0.025em !important;
+  text-shadow: none !important;
+}
+
+/* Background Section Enhancement */
+.blood-card .info-section {
+  background-color: #f9fafb !important;
+  border: 1px solid #e5e7eb !important;
+}
+
+.blood-card .offer-card {
+  background-color: #f3f4f6 !important;
+  border: 1px solid #d1d5db !important;
+}
+
+.blood-card .offer-message {
+  background-color: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  color: #374151 !important;
+  font-style: italic !important;
+  font-weight: 500 !important;
+}
+
+/* Swiper Container Enhancements */
+.my-requests-swiper,
+.my-offers-swiper,
+.accepted-offers-swiper,
+.blood-requests-swiper {
+  padding: 10px 0 50px 0;
+  margin: 0 -10px;
+}
+
+.my-requests-swiper .swiper-slide,
+.my-offers-swiper .swiper-slide,
+.accepted-offers-swiper .swiper-slide,
+.blood-requests-swiper .swiper-slide {
+  height: auto;
+  padding: 0 10px;
+}
+
+.my-requests-swiper .swiper-slide .blood-card,
+.my-offers-swiper .swiper-slide .blood-card,
+.accepted-offers-swiper .swiper-slide .blood-card,
+.blood-requests-swiper .swiper-slide .blood-card {
+  height: 100%;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Navigation Buttons */
+.swiper-button-next,
+.swiper-button-prev {
+  color: #ef4444 !important;
+  font-weight: bold;
+  background: white;
+  border-radius: 50%;
+  width: 40px !important;
+  height: 40px !important;
+  margin-top: -20px !important;
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2);
+  transition: all 0.3s ease;
+}
+
+.swiper-button-next::after,
+.swiper-button-prev::after {
+  font-size: 16px !important;
+  font-weight: 900;
+}
+
+.swiper-button-next:hover,
+.swiper-button-prev:hover {
+  background: #ef4444;
+  color: white !important;
+  transform: scale(1.1);
+}
+
+/* Pagination */
+.swiper-pagination {
+  bottom: 10px !important;
+}
+
+.swiper-pagination-bullet {
+  background: #ef4444 !important;
+  opacity: 0.3;
+  width: 10px;
+  height: 10px;
+  transition: all 0.3s ease;
+}
+
+.swiper-pagination-bullet-active {
+  opacity: 1;
+  transform: scale(1.2);
+}
+
+/* Responsive Design */
+@media (min-width: 768px) {
+  .my-requests-swiper,
+  .my-offers-swiper,
+  .accepted-offers-swiper,
+  .blood-requests-swiper {
+    padding: 20px 0 60px 0;
+  }
+
+  .swiper-button-next,
+  .swiper-button-prev {
+    width: 50px !important;
+    height: 50px !important;
+    margin-top: -25px !important;
+  }
+
+  .swiper-button-next::after,
+  .swiper-button-prev::after {
+    font-size: 20px !important;
+  }
+}
+
+/* Glass Card Effect */
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+}
+
+/* Animation Enhancements */
+.blood-card {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: slideInUp 0.6s ease forwards;
+}
+
+@keyframes slideInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Stagger Animation Delay */
+.blood-card:nth-child(1) {
+  animation-delay: 0.1s;
+}
+.blood-card:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.blood-card:nth-child(3) {
+  animation-delay: 0.3s;
+}
+.blood-card:nth-child(4) {
+  animation-delay: 0.4s;
+}
+.blood-card:nth-child(5) {
+  animation-delay: 0.5s;
+}
+
+/* Additional Global Text Enhancement */
+.blood-card * {
+  color: inherit !important;
+}
+
+/* Enhanced Contrast for All Elements */
+.blood-card .text-gray-500,
+.blood-card .text-gray-400 {
+  color: #374151 !important;
+  font-weight: 600 !important;
+}
+
+.blood-card .text-gray-600 {
+  color: #1f2937 !important;
+  font-weight: 600 !important;
+}
+
+.blood-card .text-gray-700 {
+  color: #111827 !important;
+  font-weight: 700 !important;
+}
+
+.blood-card .text-gray-800 {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+
+.blood-card .text-gray-900 {
+  color: #0f172a !important;
+  font-weight: 800 !important;
+}
+
+/* Enhanced Button Contrast */
+.blood-card .bg-red-600,
+.blood-card .bg-red-700 {
+  background-color: #991b1b !important;
+}
+
+.blood-card .bg-red-600:hover,
+.blood-card .bg-red-700:hover {
+  background-color: #7f1d1d !important;
+}
+
+.blood-card .bg-blue-600,
+.blood-card .bg-blue-700 {
+  background-color: #1e3a8a !important;
+}
+
+.blood-card .bg-blue-600:hover,
+.blood-card .bg-blue-700:hover {
+  background-color: #1e40af !important;
+}
+
+.blood-card .bg-green-600,
+.blood-card .bg-green-700 {
+  background-color: #166534 !important;
+}
+
+.blood-card .bg-green-600:hover,
+.blood-card .bg-green-700:hover {
+  background-color: #14532d !important;
+}
+
+/* Enhanced Link Contrast */
+.blood-card a {
+  color: #1e40af !important;
+  font-weight: 700 !important;
+  text-decoration: underline !important;
+}
+
+.blood-card a:hover {
+  color: #1e3a8a !important;
+}
+
+/* Enhanced Input and Form Contrast */
+.blood-card input,
+.blood-card textarea,
+.blood-card select {
+  color: #111827 !important;
+  font-weight: 600 !important;
+  border-color: #374151 !important;
+  border-width: 2px !important;
+}
+
+/* Enhanced Focus States */
+.blood-card *:focus {
+  outline: 2px solid #ef4444 !important;
+  outline-offset: 2px !important;
+}

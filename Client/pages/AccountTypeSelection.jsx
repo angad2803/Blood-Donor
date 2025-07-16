@@ -1,9 +1,11 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/api";
 import { AuthContext } from "../context/AuthContext";
 import { toast } from "react-toastify";
 import LocationCapture from "../components/LocationCapture";
+import { gpsLocationService } from "../utils/gpsLocationService";
+import { gsap } from "gsap";
 
 const AccountTypeSelection = () => {
   const { user, updateUser } = useContext(AuthContext);
@@ -17,6 +19,10 @@ const AccountTypeSelection = () => {
   const [bloodGroup, setBloodGroup] = useState("");
   const [location, setLocation] = useState("");
   const [isDonor, setIsDonor] = useState(false);
+
+  // GSAP Refs
+  const formRef = useRef(null);
+  const headerRef = useRef(null);
 
   // Override setLocation to prevent coordinates from being displayed
   const safeSetLocation = (newLocation) => {
@@ -43,7 +49,7 @@ const AccountTypeSelection = () => {
       console.log("Immediate cleanup of coordinates:", location);
       setLocation("Location captured");
     }
-  }, []); // Run once on mount
+  }, [location]); // Include location dependency
 
   // Initialize form data from user
   useEffect(() => {
@@ -99,6 +105,50 @@ const AccountTypeSelection = () => {
     // Small delay to let the component render first
     setTimeout(autoCapturLocation, 1000);
   }, [user]);
+
+  // GSAP animations
+  useEffect(() => {
+    if (headerRef.current) {
+      gsap.fromTo(
+        headerRef.current,
+        { opacity: 0, y: -30, scale: 0.9 },
+        { opacity: 1, y: 0, scale: 1, duration: 1, ease: "back.out(1.7)" }
+      );
+    }
+
+    if (formRef.current) {
+      gsap.fromTo(
+        formRef.current,
+        { opacity: 0, scale: 0.9, rotationY: -10 },
+        {
+          opacity: 1,
+          scale: 1,
+          rotationY: 0,
+          duration: 0.8,
+          ease: "power2.out",
+          delay: 0.3,
+        }
+      );
+    }
+
+    // Add floating particles
+    const particles = document.querySelectorAll(".account-particle");
+    particles.forEach((particle) => {
+      gsap.set(particle, {
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+      });
+
+      gsap.to(particle, {
+        y: `+=${(Math.random() - 0.5) * 200}`,
+        x: `+=${(Math.random() - 0.5) * 100}`,
+        rotation: 360,
+        duration: Math.random() * 25 + 30,
+        repeat: -1,
+        ease: "none",
+      });
+    });
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -200,27 +250,49 @@ const AccountTypeSelection = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-blue-50">
-      <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-md">
-        <div className="text-center mb-6">
-          <h2 className="text-2xl font-semibold text-blue-700">
+    <div className="min-h-screen plasma-bg relative overflow-hidden flex items-center justify-center">
+      {/* Animated Background Particles */}
+      <div className="particles-bg">
+        {[...Array(10)].map((_, i) => (
+          <div
+            key={i}
+            className="particle account-particle"
+            style={{
+              width: Math.random() * 6 + 4 + "px",
+              height: Math.random() * 6 + 4 + "px",
+              background: `hsl(${Math.random() * 360}, 70%, 60%)`,
+              left: Math.random() * 100 + "%",
+              animationDelay: Math.random() * 15 + "s",
+              animationDuration: Math.random() * 12 + 20 + "s",
+            }}
+          />
+        ))}
+      </div>
+
+      <div className="relative z-10 w-full max-w-lg">
+        {/* Header Section */}
+        <div className="text-center mb-8" ref={headerRef}>
+          <div className="glass-card w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 glass-interactive">
+            <span className="text-4xl neon-glow">👋</span>
+          </div>
+          <h1 className="text-4xl font-bold text-white mb-2 neon-glow">
             Welcome, {user?.name}!
-          </h2>
-          <p className="text-gray-600 mt-2">
+          </h1>
+          <p className="text-white/70 text-lg">
             Please select your account type to continue
           </p>
 
           {/* Location Status */}
           {locationCaptured ? (
-            <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded-lg">
-              <p className="text-sm text-green-700 flex items-center justify-center">
+            <div className="mt-4 glass-card-success p-3 rounded-lg">
+              <p className="text-sm text-green-200 flex items-center justify-center">
                 <span className="mr-2">📍</span>
                 Location captured successfully
               </p>
             </div>
           ) : (
-            <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="text-sm text-yellow-700 flex items-center justify-center">
+            <div className="mt-4 glass-card p-3 rounded-lg border border-yellow-400/30">
+              <p className="text-sm text-yellow-200 flex items-center justify-center">
                 <span className="mr-2">⚠️</span>
                 Location access recommended for better experience
               </p>
@@ -228,224 +300,253 @@ const AccountTypeSelection = () => {
           )}
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Account Type Selection */}
-          <div className="space-y-3">
-            <label className="text-sm font-medium text-gray-700">
-              Account Type:
-            </label>
+        {/* Form Card */}
+        <div className="glass-card p-8 glass-interactive" ref={formRef}>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Account Type Selection */}
+            <div className="space-y-4">
+              <label className="text-white/80 font-medium">Account Type:</label>
 
-            <div
-              className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                selectedType === "individual"
-                  ? "border-blue-500 bg-blue-50"
-                  : "border-gray-200 hover:border-gray-300"
-              }`}
-              onClick={() => setSelectedType("individual")}
-            >
-              <div className="flex items-center">
-                <input
-                  type="radio"
-                  name="accountType"
-                  value="individual"
-                  checked={selectedType === "individual"}
-                  onChange={(e) => setSelectedType(e.target.value)}
-                  className="mr-3"
-                />
-                <div>
-                  <h3 className="font-medium text-gray-900">Individual User</h3>
-                  <p className="text-sm text-gray-600">
-                    Create blood requests or become a donor
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div
-              className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                selectedType === "hospital"
-                  ? "border-blue-500 bg-blue-50"
-                  : "border-gray-200 hover:border-gray-300"
-              }`}
-              onClick={() => setSelectedType("hospital")}
-            >
-              <div className="flex items-center">
-                <input
-                  type="radio"
-                  name="accountType"
-                  value="hospital"
-                  checked={selectedType === "hospital"}
-                  onChange={(e) => setSelectedType(e.target.value)}
-                  className="mr-3"
-                />
-                <div>
-                  <h3 className="font-medium text-gray-900">Hospital</h3>
-                  <p className="text-sm text-gray-600">
-                    Manage blood requests for your hospital
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Individual User Fields */}
-          {selectedType === "individual" && (
-            <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
-              <h4 className="font-medium text-gray-700">
-                Personal Information
-              </h4>
-
-              <select
-                value={bloodGroup}
-                onChange={(e) => setBloodGroup(e.target.value)}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+              <div
+                className={`glass-card p-4 cursor-pointer transition-all duration-300 hover:scale-105 ${
+                  selectedType === "individual"
+                    ? "ring-2 ring-white/30 glass-card-primary"
+                    : "hover:ring-1 hover:ring-white/20"
+                }`}
+                onClick={() => setSelectedType("individual")}
               >
-                <option value="">Select Blood Group</option>
-                <option value="A+">A+</option>
-                <option value="A-">A-</option>
-                <option value="B+">B+</option>
-                <option value="B-">B-</option>
-                <option value="AB+">AB+</option>
-                <option value="AB-">AB-</option>
-                <option value="O+">O+</option>
-                <option value="O-">O-</option>
-              </select>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">
-                  Location
-                </label>
-                <div className="relative">
+                <div className="flex items-center">
                   <input
-                    type="text"
-                    placeholder="Location (e.g., Mumbai)"
-                    value={location}
-                    onChange={handleLocationFieldChange}
-                    required
-                    className="w-full px-4 py-2 pr-12 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    type="radio"
+                    name="accountType"
+                    value="individual"
+                    checked={selectedType === "individual"}
+                    onChange={(e) => setSelectedType(e.target.value)}
+                    className="mr-3 accent-red-400"
                   />
-                  <button
-                    type="button"
-                    onClick={handleManualLocationCapture}
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-blue-600 hover:text-blue-800"
-                    title="Capture GPS Location"
-                  >
-                    📍
-                  </button>
+                  <div>
+                    <h3 className="font-medium text-white">Individual User</h3>
+                    <p className="text-sm text-white/70">
+                      Create blood requests or become a donor
+                    </p>
+                  </div>
                 </div>
-                {locationCaptured && (
-                  <p className="text-xs text-green-600 mt-1">
-                    ✅ GPS location captured accurately
-                  </p>
-                )}
               </div>
 
-              <label className="flex items-center space-x-2">
+              <div
+                className={`glass-card p-4 cursor-pointer transition-all duration-300 hover:scale-105 ${
+                  selectedType === "hospital"
+                    ? "ring-2 ring-white/30 glass-card-primary"
+                    : "hover:ring-1 hover:ring-white/20"
+                }`}
+                onClick={() => setSelectedType("hospital")}
+              >
+                <div className="flex items-center">
+                  <input
+                    type="radio"
+                    name="accountType"
+                    value="hospital"
+                    checked={selectedType === "hospital"}
+                    onChange={(e) => setSelectedType(e.target.value)}
+                    className="mr-3 accent-red-400"
+                  />
+                  <div>
+                    <h3 className="font-medium text-white">Hospital</h3>
+                    <p className="text-sm text-white/70">
+                      Manage blood requests for your hospital
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Individual User Fields */}
+            {selectedType === "individual" && (
+              <div className="space-y-4 glass-card p-4 rounded-lg">
+                <h4 className="font-medium text-white neon-glow">
+                  Personal Information
+                </h4>
+
+                <select
+                  value={bloodGroup}
+                  onChange={(e) => setBloodGroup(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 glass-card text-white border-0 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all duration-300"
+                >
+                  <option value="" className="bg-gray-800">
+                    Select Blood Group
+                  </option>
+                  <option value="A+" className="bg-gray-800">
+                    A+
+                  </option>
+                  <option value="A-" className="bg-gray-800">
+                    A-
+                  </option>
+                  <option value="B+" className="bg-gray-800">
+                    B+
+                  </option>
+                  <option value="B-" className="bg-gray-800">
+                    B-
+                  </option>
+                  <option value="AB+" className="bg-gray-800">
+                    AB+
+                  </option>
+                  <option value="AB-" className="bg-gray-800">
+                    AB-
+                  </option>
+                  <option value="O+" className="bg-gray-800">
+                    O+
+                  </option>
+                  <option value="O-" className="bg-gray-800">
+                    O-
+                  </option>
+                </select>
+
+                <div className="space-y-2">
+                  <label className="text-white/80 font-medium">Location</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Location (e.g., Mumbai)"
+                      value={location}
+                      onChange={handleLocationFieldChange}
+                      required
+                      className="w-full px-4 py-3 pr-12 glass-card text-white placeholder-white/60 border-0 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all duration-300"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleManualLocationCapture}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-blue-300 hover:text-blue-200 text-xl"
+                      title="Capture GPS Location"
+                    >
+                      📍
+                    </button>
+                  </div>
+                  {locationCaptured && (
+                    <p className="text-xs text-green-300 mt-1">
+                      ✅ GPS location captured accurately
+                    </p>
+                  )}
+                </div>
+
+                <label className="flex items-center space-x-3 glass-card p-3 rounded-lg">
+                  <input
+                    type="checkbox"
+                    checked={isDonor}
+                    onChange={(e) => setIsDonor(e.target.checked)}
+                    className="accent-red-400"
+                  />
+                  <span className="text-white/90">
+                    I want to register as a blood donor
+                  </span>
+                </label>
+              </div>
+            )}
+
+            {/* Hospital Fields */}
+            {selectedType === "hospital" && (
+              <div className="space-y-4 glass-card-primary p-4 rounded-lg">
+                <h4 className="font-medium text-blue-200 neon-glow">
+                  Hospital Information
+                </h4>
+
                 <input
-                  type="checkbox"
-                  checked={isDonor}
-                  onChange={(e) => setIsDonor(e.target.checked)}
-                  className="form-checkbox"
+                  type="text"
+                  placeholder="Hospital Name"
+                  value={hospitalDetails.hospitalName}
+                  onChange={(e) =>
+                    setHospitalDetails((prev) => ({
+                      ...prev,
+                      hospitalName: e.target.value,
+                    }))
+                  }
+                  required
+                  className="w-full px-4 py-3 glass-card text-white placeholder-white/60 border-0 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all duration-300"
                 />
-                <span>I want to register as a blood donor</span>
-              </label>
-            </div>
-          )}
 
-          {/* Hospital Fields */}
-          {selectedType === "hospital" && (
-            <div className="space-y-4 p-4 bg-blue-50 rounded-lg">
-              <h4 className="font-medium text-blue-700">
-                Hospital Information
-              </h4>
+                <input
+                  type="text"
+                  placeholder="Hospital Address"
+                  value={hospitalDetails.hospitalAddress}
+                  onChange={(e) =>
+                    setHospitalDetails((prev) => ({
+                      ...prev,
+                      hospitalAddress: e.target.value,
+                    }))
+                  }
+                  required
+                  className="w-full px-4 py-3 glass-card text-white placeholder-white/60 border-0 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all duration-300"
+                />
 
-              <input
-                type="text"
-                placeholder="Hospital Name"
-                value={hospitalDetails.hospitalName}
-                onChange={(e) =>
-                  setHospitalDetails((prev) => ({
-                    ...prev,
-                    hospitalName: e.target.value,
-                  }))
-                }
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
+                <input
+                  type="text"
+                  placeholder="Hospital License Number"
+                  value={hospitalDetails.hospitalLicense}
+                  onChange={(e) =>
+                    setHospitalDetails((prev) => ({
+                      ...prev,
+                      hospitalLicense: e.target.value,
+                    }))
+                  }
+                  required
+                  className="w-full px-4 py-3 glass-card text-white placeholder-white/60 border-0 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all duration-300"
+                />
 
-              <input
-                type="text"
-                placeholder="Hospital Address"
-                value={hospitalDetails.hospitalAddress}
-                onChange={(e) =>
-                  setHospitalDetails((prev) => ({
-                    ...prev,
-                    hospitalAddress: e.target.value,
-                  }))
-                }
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-
-              <input
-                type="text"
-                placeholder="Hospital License Number"
-                value={hospitalDetails.hospitalLicense}
-                onChange={(e) =>
-                  setHospitalDetails((prev) => ({
-                    ...prev,
-                    hospitalLicense: e.target.value,
-                  }))
-                }
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-blue-700">
-                  Hospital Location
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="Location (e.g., Mumbai)"
-                    value={location}
-                    onChange={handleLocationFieldChange}
-                    required
-                    className="w-full px-4 py-2 pr-12 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleManualLocationCapture}
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-blue-600 hover:text-blue-800"
-                    title="Capture GPS Location"
-                  >
-                    📍
-                  </button>
+                <div className="space-y-2">
+                  <label className="text-blue-200 font-medium">
+                    Hospital Location
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Location (e.g., Mumbai)"
+                      value={location}
+                      onChange={handleLocationFieldChange}
+                      required
+                      className="w-full px-4 py-3 pr-12 glass-card text-white placeholder-white/60 border-0 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all duration-300"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleManualLocationCapture}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-blue-300 hover:text-blue-200 text-xl"
+                      title="Capture GPS Location"
+                    >
+                      📍
+                    </button>
+                  </div>
+                  {locationCaptured && (
+                    <p className="text-xs text-green-300 mt-1">
+                      ✅ GPS location captured accurately
+                    </p>
+                  )}
                 </div>
-                {locationCaptured && (
-                  <p className="text-xs text-green-600 mt-1">
-                    ✅ GPS location captured accurately
-                  </p>
-                )}
               </div>
-            </div>
-          )}
+            )}
 
-          <button
-            type="submit"
-            disabled={!selectedType || loading}
-            className="w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded-md shadow-md hover:bg-blue-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? "Setting up account..." : "Continue"}
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={!selectedType || loading}
+              className="w-full glass-button py-4 text-white font-semibold text-lg rounded-xl transition-all duration-300 hover:scale-105 glass-interactive disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <span className="flex items-center justify-center">
+                  <div className="loading-pulse mr-2">⏳</div>
+                  Setting up account...
+                </span>
+              ) : (
+                <span>
+                  <span className="mr-2">🚀</span>
+                  Continue
+                </span>
+              )}
+            </button>
+          </form>
+        </div>
 
         {/* Location Capture Component */}
         {showLocationCapture && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 m-4 max-w-md w-full">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="glass-card p-6 m-4 max-w-md w-full">
               <LocationCapture
                 onLocationCaptured={handleLocationCaptured}
                 onSkip={handleLocationSkipped}

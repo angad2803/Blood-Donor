@@ -10,6 +10,7 @@ import Login from "../components/Login";
 import { AuthContext } from "../context/AuthContext";
 import "./styles/gsap-animations.css";
 import "./styles/swiper-carousel.css";
+import "./styles/glassmorphism.css";
 import GSAPDemo from "../components/GSAPDemo";
 import GSAPDemoSimple from "../components/GSAPDemoSimple";
 import GSAPDemoTest from "../components/GSAPDemoTest";
@@ -32,6 +33,7 @@ import GeolocationTest from "../pages/GeolocationTest";
 import ArcGISMapTestPage from "../pages/ArcGISMapTestPage";
 import ErrorBoundary from "../components/ErrorBoundary";
 import AdminCleanup from "../components/AdminCleanup";
+import Admin from "../pages/Admin";
 
 function App() {
   const { token, isLoading } = useContext(AuthContext);
@@ -134,6 +136,16 @@ function App() {
               element={
                 <PrivateRoute>
                   <ArcGISMapTestPage />
+                </PrivateRoute>
+              }
+            />
+
+            {/* Admin Dashboard */}
+            <Route
+              path="/admin"
+              element={
+                <PrivateRoute>
+                  <Admin />
                 </PrivateRoute>
               }
             />

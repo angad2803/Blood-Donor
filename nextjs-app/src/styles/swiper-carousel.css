@@ -1,0 +1,51 @@
+/* Swiper Blood Request Carousel Styles */
+
+.blood-request-carousel {
+  position: relative;
+  padding: 1rem 0;
+  /* Add subtle background and border for single card focus */
+  background: linear-gradient(135deg, #fef2f2 0%, #f3f4f6 100%);
+  border-radius: 16px;
+  margin: 1rem 0;
+}
+
+.blood-requests-swiper {
+  padding-bottom: 3rem !important;
+  overflow: visible;
+}
+
+.blood-requests-swiper .swiper-slide {
+  height: auto;
+  display: flex;
+  justify-content: center;
+}
+
+.blood-requests-swiper .swiper-slide > div {
+  width: 100%;
+  max-width: 600px; /* Limit width for better readability */
+  display: flex;
+  flex-direction: column;
+  margin: 0 auto;
+}
+
+/* Enhanced single card appearance */
+@media (min-width: 768px) {
+  .blood-requests-swiper .swiper-slide > div {
+    max-width: 700px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .blood-requests-swiper .swiper-slide > div {
+    max-width: 800px;
+  }
+}
+
+/* Custom Navigation Buttons */
+.swiper-button-next-custom,
+.swiper-button-prev-custom {
+  position: static !important;
+  margin: 0 !important;
+  width: auto !important;
+  height: auto !important;
+}

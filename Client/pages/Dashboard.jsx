@@ -1,5 +1,4 @@
 import React, { useContext, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import { toast } from "react-toastify";
 
@@ -20,7 +19,6 @@ import { useGSAPAnimations } from "../hooks/useGSAPAnimations";
 
 const Dashboard = () => {
   const { user, logout, refreshUserData } = useContext(AuthContext);
-  const navigate = useNavigate();
 
   // Custom hooks for data and state management
   const {
@@ -267,8 +265,6 @@ const Dashboard = () => {
             handleAcceptOffer={handleAcceptOffer}
             handleOpenChat={handleOpenChat}
             handleGetDirections={handleDirectionsClick}
-            navigate={navigate}
-            user={user}
           />
         </div>
       </div>
