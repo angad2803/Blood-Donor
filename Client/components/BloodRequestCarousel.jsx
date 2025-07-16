@@ -24,7 +24,6 @@ const BloodRequestCarousel = ({
 }) => {
   const swiperRef = useRef(null);
   const cardsRef = useRef([]);
-  const [currentSlide, setCurrentSlide] = useState(0);
   const [isFirstSlide, setIsFirstSlide] = useState(true);
   const [isLastSlide, setIsLastSlide] = useState(requests.length <= 1);
 
@@ -53,14 +52,12 @@ const BloodRequestCarousel = ({
 
   // Update slide states when requests change
   useEffect(() => {
-    setCurrentSlide(0);
     setIsFirstSlide(true);
     setIsLastSlide(requests.length <= 1);
   }, [requests]);
 
   const handleSlideChange = (swiper) => {
     const activeIndex = swiper.activeIndex;
-    setCurrentSlide(activeIndex);
     setIsFirstSlide(activeIndex === 0);
     setIsLastSlide(activeIndex === requests.length - 1);
   };

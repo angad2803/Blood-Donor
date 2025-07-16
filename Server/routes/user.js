@@ -119,8 +119,8 @@ router.put("/profile", verifyToken, async (req, res) => {
           accountType: isHospital
             ? "Hospital"
             : isDonor
-            ? "Donor"
-            : "Recipient",
+              ? "Donor"
+              : "Recipient",
           location: updatedUser.location,
           bloodGroup: updatedUser.bloodGroup,
         },
@@ -347,6 +347,77 @@ router.put("/location", verifyToken, async (req, res) => {
   }
 });
 
+// Reverse geocode coordinates to address
+router.post("/reverse-geocode", verifyToken, async (req, res) => {
+  try {
+    const { latitude, longitude } = req.body;
+
+    // Validate coordinates
+    if (!latitude || !longitude) {
+      return res.status(400).json({
+        success: false,
+        error: "Latitude and longitude are required",
+      });
+    }
+
+    // Validate coordinate ranges
+    if (
+      latitude < -90 ||
+      latitude > 90 ||
+      longitude < -180 ||
+      longitude > 180
+    ) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid coordinate values",
+      });
+    }
+
+    // Import geolocation service
+    const { default: GeolocationService } = await import(
+      "../utils/geolocationService.js"
+    );
+    const geolocationService = new GeolocationService();
+
+    try {
+      const addressData = await geolocationService.reverseGeocode(
+        latitude,
+        longitude
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Address retrieved successfully",
+        data: {
+          address:
+            addressData.formattedAddress ||
+            `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
+          details: addressData,
+          coordinates: { latitude, longitude },
+        },
+      });
+    } catch (geocodeError) {
+      console.error("Reverse geocoding failed:", geocodeError);
+
+      // Fallback to coordinates if geocoding fails
+      res.status(200).json({
+        success: true,
+        message: "Coordinates captured (address lookup failed)",
+        data: {
+          address: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
+          coordinates: { latitude, longitude },
+        },
+      });
+    }
+  } catch (error) {
+    console.error("Error in reverse geocoding:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message || "Failed to reverse geocode location",
+    });
+  }
+});
+
 // Find nearby donors using geolocation
 router.get("/nearby-donors", verifyToken, async (req, res) => {
   try {
@@ -462,18 +533,18 @@ router.get("/nearby-donors", verifyToken, async (req, res) => {
           a.bloodGroup === user.bloodGroup
             ? 3
             : a.bloodGroup === "O-"
-            ? 2
-            : a.bloodGroup === "O+"
-            ? 1
-            : 0;
+              ? 2
+              : a.bloodGroup === "O+"
+                ? 1
+                : 0;
         const bScore =
           b.bloodGroup === user.bloodGroup
             ? 3
             : b.bloodGroup === "O-"
-            ? 2
-            : b.bloodGroup === "O+"
-            ? 1
-            : 0;
+              ? 2
+              : b.bloodGroup === "O+"
+                ? 1
+                : 0;
         return bScore - aScore || a.distance - b.distance;
       });
     } else if (sortBy === "mixed") {
@@ -482,18 +553,18 @@ router.get("/nearby-donors", verifyToken, async (req, res) => {
           a.bloodGroup === user.bloodGroup
             ? 1000
             : a.bloodGroup === "O-"
-            ? 800
-            : a.bloodGroup === "O+"
-            ? 600
-            : 400;
+              ? 800
+              : a.bloodGroup === "O+"
+                ? 600
+                : 400;
         const bCompatScore =
           b.bloodGroup === user.bloodGroup
             ? 1000
             : b.bloodGroup === "O-"
-            ? 800
-            : b.bloodGroup === "O+"
-            ? 600
-            : 400;
+              ? 800
+              : b.bloodGroup === "O+"
+                ? 600
+                : 400;
 
         const aMixedScore =
           aCompatScore * 0.6 + (parseInt(maxDistance) - a.distance) * 0.4;

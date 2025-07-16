@@ -14,6 +14,7 @@ import messageRoutes from "./routes/message.js";
 import googleAuthRoutes from "./routes/googleAuth.js";
 import emailRoutes from "./routes/email.js";
 import adminRoutes from "./routes/admin.js"; // Add admin routes
+import aiRoutes from "./routes/ai.js"; // Add AI routes
 import passport from "passport";
 import "./config/passport.js"; // 👈 initialize passport config
 
@@ -132,6 +133,7 @@ app.use("/api/message", messageRoutes);
 app.use("/api/google-auth", googleAuthRoutes);
 app.use("/api/email", emailRoutes);
 app.use("/api/admin", adminRoutes); // Add admin routes
+app.use("/api/ai", aiRoutes); // Add AI routes
 app.use(passport.initialize());
 
 // MongoDB connection

@@ -1,4 +1,10 @@
-import React, { createContext, useState, useEffect, useContext } from "react";
+import React, {
+  createContext,
+  useState,
+  useEffect,
+  useContext,
+  useCallback,
+} from "react";
 import api from "../api/api.js";
 import { toast } from "react-toastify";
 
@@ -161,7 +167,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Logout function with option to logout from all tabs
-  const logout = (allTabs = true) => {
+  const logout = useCallback((allTabs = true) => {
     if (allTabs) {
       // Clear localStorage to logout from all tabs
       localStorage.removeItem("token");
@@ -174,7 +180,7 @@ export const AuthProvider = ({ children }) => {
     delete api.defaults.headers.common["Authorization"];
     setUser(null);
     setToken(null);
-  };
+  }, []);
 
   // Separate function to logout only current tab
   const logoutCurrentTab = () => logout(false);
@@ -188,7 +194,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Function to refresh user data from server
-  const refreshUserData = async () => {
+  const refreshUserData = useCallback(async () => {
     try {
       if (token) {
         const res = await api.get("/user/me");
@@ -206,7 +212,7 @@ export const AuthProvider = ({ children }) => {
         logout();
       }
     }
-  };
+  }, [token, logout]);
 
   // Periodic check for admin status changes (every 30 seconds)
   useEffect(() => {
@@ -234,7 +240,7 @@ export const AuthProvider = ({ children }) => {
       const interval = setInterval(checkAdminStatus, 30000); // Check every 30 seconds
       return () => clearInterval(interval);
     }
-  }, [user, token]);
+  }, [user, token, logout]);
 
   // Listen for admin privileges revoked or force logout events
   useEffect(() => {
