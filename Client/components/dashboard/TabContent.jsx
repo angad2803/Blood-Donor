@@ -1,7 +1,7 @@
 import React from "react";
-import MyRequestsCarousel from "./MyRequestsCarousel";
-import MyOffersCarousel from "./MyOffersCarousel";
-import AcceptedOffersCarousel from "./AcceptedOffersCarousel";
+import MyRequestsCarousel from "../requests/MyRequestsCarousel";
+import MyOffersCarousel from "../requests/MyOffersCarousel";
+import AcceptedOffersCarousel from "../requests/AcceptedOffersCarousel";
 
 const TabContent = ({
   activeTab,

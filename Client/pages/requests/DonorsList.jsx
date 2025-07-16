@@ -1,8 +1,8 @@
 // Enhanced Donors List with Geolocation
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import api from "../api/api";
-import { useAuth } from "../context/AuthContext";
-import LocationManager from "../components/LocationManager";
+import api from "../../api/api";
+import { useAuth } from "../../context/AuthContext";
+import LocationManager from "../../components/maps/LocationManager";
 import { gsap } from "gsap";
 
 const DonorList = () => {

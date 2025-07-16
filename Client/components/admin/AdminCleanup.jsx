@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useContext } from "react";
-import api from "../api/api";
+import api from "../../api/api";
 import { toast } from "react-toastify";
-import { AuthContext } from "../context/AuthContext";
+import { AuthContext } from "../../context/AuthContext";
 import AdminUserManagement from "./AdminUserManagement";
 import AdminRequestManagement from "./AdminRequestManagement";
-import ConfirmationModal from "./ConfirmationModal";
+import ConfirmationModal from "../ui/ConfirmationModal";
 
 const AdminCleanup = () => {
   const [testData, setTestData] = useState(null);

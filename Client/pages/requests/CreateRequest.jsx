@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState, useRef } from "react";
-import { AuthContext } from "../context/AuthContext";
-import api from "../api/api.js";
+import { AuthContext } from "../../context/AuthContext";
+import api from "../../api/api.js";
 import { useNavigate } from "react-router-dom";
 import { gsap } from "gsap";
 

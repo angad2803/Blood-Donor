@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import api from "../api/api";
+import api from "../../api/api";
 
 // Simple map component (can be enhanced with actual mapping library)
 const MapVisualization = ({ bloodRequestId, donorLocation }) => {

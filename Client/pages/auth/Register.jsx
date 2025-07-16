@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
-import api from "../api/api.js";
+import api from "../../api/api.js";
 import { useNavigate } from "react-router-dom";
-import LocationCapture from "../components/LocationCapture";
+import LocationCapture from "../../components/maps/LocationCapture";
 import { gsap } from "gsap";
 
 const Register = () => {

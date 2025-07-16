@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import api from "../api/api.js";
-import aiService from "../services/aiService.js";
+import api from "../../api/api.js";
+import aiService from "../../services/aiService.js";
 import { toast } from "react-toastify";
 import { gsap } from "gsap";
 

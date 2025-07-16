@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useContext } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import api from "../api/api";
+import api from "../../api/api";
 import { toast } from "react-toastify";
-import { AuthContext } from "../context/AuthContext";
-import AdminUserManagement from "../components/AdminUserManagement";
-import AdminRequestManagement from "../components/AdminRequestManagement";
+import { AuthContext } from "../../context/AuthContext";
+import AdminUserManagement from "../../components/admin/AdminUserManagement";
+import AdminRequestManagement from "../../components/admin/AdminRequestManagement";
 
 const Admin = () => {
   const [isAdmin, setIsAdmin] = useState(null); // null = loading, false = not admin, true = admin

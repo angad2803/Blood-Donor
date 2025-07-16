@@ -1,8 +1,8 @@
 // src/pages/MatchedRequests.jsx
 import React, { useContext, useEffect, useState } from "react";
-import api from "../api/api";
-import { AuthContext } from "../context/AuthContext";
-import { canDonateTo } from "../../Server/utils/compatability";
+import api from "../../api/api";
+import { AuthContext } from "../../context/AuthContext";
+import { canDonateTo } from "../../utils/bloodCompatibility";
 
 const MatchedRequests = () => {
   const { user } = useContext(AuthContext);

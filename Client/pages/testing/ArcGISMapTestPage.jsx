@@ -1,5 +1,5 @@
 import React from "react";
-import ArcGISMapTest from "../components/ArcGISMapTest";
+import ArcGISMapTest from "../../components/maps/ArcGISMapTest";
 
 const ArcGISMapTestPage = () => {
   return (

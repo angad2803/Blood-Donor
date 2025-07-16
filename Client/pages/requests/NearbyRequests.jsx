@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
-import api from "../api/api";
-import { useAuth } from "../context/AuthContext";
+import api from "../../api/api";
+import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-toastify";
-import LocationManager from "../components/LocationManager";
+import LocationManager from "../../components/maps/LocationManager";
 import { gsap } from "gsap";
 
 const NearbyRequests = () => {

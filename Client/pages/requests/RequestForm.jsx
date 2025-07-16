@@ -1,7 +1,7 @@
 import React, { useState, useContext, useEffect } from "react";
-import api from "../api/api";
+import api from "../../api/api";
 import { useNavigate } from "react-router-dom";
-import { AuthContext } from "../context/AuthContext";
+import { AuthContext } from "../../context/AuthContext";
 
 const RequestForm = () => {
   const { user } = useContext(AuthContext);

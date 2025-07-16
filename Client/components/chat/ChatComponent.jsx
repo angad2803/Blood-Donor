@@ -1,9 +1,9 @@
 import React, { useContext, useEffect, useState, useRef } from "react";
-import { AuthContext } from "../context/AuthContext";
+import { AuthContext } from "../../context/AuthContext";
 import { io } from "socket.io-client";
-import api from "../api/api.js";
+import api from "../../api/api.js";
 import { toast } from "react-toastify";
-import LoadingSpinner from "./LoadingSpinner";
+import LoadingSpinner from "../ui/LoadingSpinner";
 import { gsap } from "gsap";
 
 const socket = io("http://localhost:5000");
@@ -210,10 +210,10 @@ const ChatComponent = ({ bloodRequest, isOpen, onClose }) => {
                     bloodRequest.urgency === "Emergency"
                       ? "bg-red-500 animate-pulse"
                       : bloodRequest.urgency === "High"
-                      ? "bg-orange-500"
-                      : bloodRequest.urgency === "Medium"
-                      ? "bg-yellow-500"
-                      : "bg-green-500"
+                        ? "bg-orange-500"
+                        : bloodRequest.urgency === "Medium"
+                          ? "bg-yellow-500"
+                          : "bg-green-500"
                   }`}
                 >
                   {bloodRequest.urgency}

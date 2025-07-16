@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useRef } from "react";
-import { AuthContext } from "../context/AuthContext";
+import { AuthContext } from "../../context/AuthContext";
 import { gsap } from "gsap";
 
 const Profile = () => {

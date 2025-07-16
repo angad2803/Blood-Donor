@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useContext, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
-import { AuthContext } from "../context/AuthContext";
+import { AuthContext } from "../../context/AuthContext";
 import { io } from "socket.io-client";
-import api from "../api/api";
+import api from "../../api/api";
 import { toast } from "react-toastify";
 
 const socket = io("http://localhost:5000");
@@ -120,9 +120,9 @@ const ChatPage = () => {
                       requestInfo.urgency === "urgent"
                         ? "bg-red-500"
                         : requestInfo.urgency === "High" ||
-                          requestInfo.urgency === "moderate"
-                        ? "bg-yellow-500"
-                        : "bg-blue-500"
+                            requestInfo.urgency === "moderate"
+                          ? "bg-yellow-500"
+                          : "bg-blue-500"
                     }`}
                   >
                     {requestInfo.urgency}

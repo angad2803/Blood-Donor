@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext, useRef } from "react";
-import { AuthContext } from "../context/AuthContext";
-import api from "../api/api.js";
-import mapsDirectionsService from "../utils/mapsDirectionsService";
+import { AuthContext } from "../../context/AuthContext";
+import api from "../../api/api.js";
+import mapsDirectionsService from "../../utils/mapsDirectionsService";
 import { gsap } from "gsap";
 
 const AcceptedOffers = ({ onOpenChat, onGetDirections }) => {

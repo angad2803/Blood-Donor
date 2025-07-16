@@ -1,7 +1,7 @@
 import React, { useContext, useState } from "react";
-import { AuthContext } from "../context/AuthContext";
+import { AuthContext } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import api from "../api/api.js";
+import api from "../../api/api.js";
 import { toast } from "react-toastify";
 
 const CreateRequest = () => {

@@ -1,5 +1,5 @@
 import React from "react";
-import useThemeStore from "../stores/themeStore";
+import useThemeStore from "../../stores/themeStore";
 
 const ThemeToggle = ({ className = "" }) => {
   const { isDarkMode, toggleDarkMode } = useThemeStore();

@@ -1,9 +1,9 @@
 import React from "react";
-import SendOfferModal from "./SendOfferModal";
-import ChatComponent from "./ChatComponent";
-import KeyboardShortcutsModal from "./KeyboardShortcutsModal";
-import AIChatbot from "./AIChatbot.jsx";
-import ChatbotButton from "./ChatbotButton";
+import SendOfferModal from "../requests/SendOfferModal";
+import ChatComponent from "../chat/ChatComponent";
+import KeyboardShortcutsModal from "../ui/KeyboardShortcutsModal";
+import AIChatbot from "../chat/AIChatbot.jsx";
+import ChatbotButton from "../chat/ChatbotButton";
 
 const DashboardModals = ({
   showOfferModal,

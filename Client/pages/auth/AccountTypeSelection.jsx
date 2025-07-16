@@ -1,10 +1,10 @@
 import React, { useState, useContext, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api/api";
-import { AuthContext } from "../context/AuthContext";
+import api from "../../api/api";
+import { AuthContext } from "../../context/AuthContext";
 import { toast } from "react-toastify";
-import LocationCapture from "../components/maps/LocationCapture";
-import { gpsLocationService } from "../utils/gpsLocationService";
+import LocationCapture from "../../components/maps/LocationCapture";
+import { gpsLocationService } from "../../utils/gpsLocationService";
 import { gsap } from "gsap";
 
 const AccountTypeSelection = () => {

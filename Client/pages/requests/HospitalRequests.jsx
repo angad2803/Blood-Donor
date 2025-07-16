@@ -6,10 +6,10 @@ import React, {
   useRef,
 } from "react";
 import { useNavigate } from "react-router-dom";
-import { AuthContext } from "../context/AuthContext";
-import api from "../api/api.js";
-import ChatComponent from "../components/ChatComponent";
-import LoadingSpinner from "../components/LoadingSpinner";
+import { AuthContext } from "../../context/AuthContext";
+import api from "../../api/api.js";
+import ChatComponent from "../../components/chat/ChatComponent";
+import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import { toast } from "react-toastify";
 import { gsap } from "gsap";
 

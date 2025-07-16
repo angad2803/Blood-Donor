@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useAuth } from "../context/AuthContext";
-import api from "../api/api";
+import { useAuth } from "../../context/AuthContext";
+import api from "../../api/api";
 
 const LocationManager = () => {
   const { user } = useAuth();
@@ -444,10 +444,10 @@ const LocationManager = () => {
                             request.urgency === "Emergency"
                               ? "bg-red-100 text-red-800"
                               : request.urgency === "High"
-                              ? "bg-orange-100 text-orange-800"
-                              : request.urgency === "Medium"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-green-100 text-green-800"
+                                ? "bg-orange-100 text-orange-800"
+                                : request.urgency === "Medium"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : "bg-green-100 text-green-800"
                           }`}
                         >
                           {request.urgency}

@@ -1,8 +1,8 @@
 import { useEffect, useContext, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { AuthContext } from "../context/AuthContext";
-import api from "../api/api";
-import LocationCapture from "../components/LocationCapture";
+import { AuthContext } from "../../context/AuthContext";
+import api from "../../api/api";
+import LocationCapture from "../../components/maps/LocationCapture";
 
 const OAuthSuccess = () => {
   const [params] = useSearchParams();

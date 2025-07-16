@@ -1,6 +1,6 @@
 import React from "react";
 import BloodRequestCarousel from "./BloodRequestCarousel";
-import LeafletMap from "./LeafletMap";
+import LeafletMap from "../maps/LeafletMap";
 
 const BrowseRequestsContent = ({
   requests,

@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { useAuth } from "../context/AuthContext";
-import api from "../api/api";
-import LocationManager from "../components/LocationManager";
-import MapVisualization from "../components/MapVisualization";
+import { useAuth } from "../../context/AuthContext";
+import api from "../../api/api";
+import LocationManager from "../../components/maps/LocationManager";
+import MapVisualization from "../../components/maps/MapVisualization";
 
 const GeolocationTest = () => {
   const { user } = useAuth();
@@ -457,8 +457,8 @@ const GeolocationTest = () => {
                     {user?.isDonor
                       ? "👤 Donor"
                       : user?.isHospital
-                      ? "🏥 Hospital"
-                      : "❓ Unknown"}
+                        ? "🏥 Hospital"
+                        : "❓ Unknown"}
                   </span>
                 </div>
                 <div className="flex justify-between">

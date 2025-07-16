@@ -1,22 +1,22 @@
 import React, { useContext, useEffect, useRef } from "react";
-import { AuthContext } from "../context/AuthContext";
+import { AuthContext } from "../../context/AuthContext";
 import { toast } from "react-toastify";
 
 // Components
-import DashboardHeader from "../components/dashboard/DashboardHeader";
-import NavigationTabs from "../components/dashboard/NavigationTabs";
-import BrowseRequestsContent from "../components/requests/BrowseRequestsContent";
-import TabContent from "../components/dashboard/TabContent";
-import QuickStats from "../components/dashboard/QuickStats";
-import LoadingSpinner from "../components/ui/LoadingSpinner";
-import DashboardModals from "../components/dashboard/DashboardModals";
-import AnimationStyles from "../components/ui/AnimationStyles";
+import DashboardHeader from "../../components/dashboard/DashboardHeader";
+import NavigationTabs from "../../components/dashboard/NavigationTabs";
+import BrowseRequestsContent from "../../components/requests/BrowseRequestsContent";
+import TabContent from "../../components/dashboard/TabContent";
+import QuickStats from "../../components/dashboard/QuickStats";
+import LoadingSpinner from "../../components/ui/LoadingSpinner";
+import DashboardModals from "../../components/dashboard/DashboardModals";
+import AnimationStyles from "../../components/ui/AnimationStyles";
 
 // Hooks
-import { useDashboardData } from "../hooks/useDashboardData";
-import { useDashboardState } from "../hooks/useDashboardState";
-import { useGSAPAnimations } from "../hooks/useGSAPAnimations";
-import useThemeStore from "../stores/themeStore";
+import { useDashboardData } from "../../hooks/useDashboardData";
+import { useDashboardState } from "../../hooks/useDashboardState";
+import { useGSAPAnimations } from "../../hooks/useGSAPAnimations";
+import useThemeStore from "../../stores/themeStore";
 
 const Dashboard = () => {
   const { user, logout, refreshUserData } = useContext(AuthContext);

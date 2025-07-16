@@ -1,9 +1,9 @@
 // ChatRoom.jsx
 import React, { useContext, useEffect, useState, useRef } from "react";
-import { AuthContext } from "../context/AuthContext";
+import { AuthContext } from "../../context/AuthContext";
 import { useParams } from "react-router-dom";
 import { io } from "socket.io-client";
-import api from "../api/api";
+import api from "../../api/api";
 
 const socket = io("http://localhost:5000"); // your backend URL
 

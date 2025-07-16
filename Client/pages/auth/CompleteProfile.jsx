@@ -1,9 +1,9 @@
 import React, { useState, useContext, useRef, useEffect } from "react";
-import { AuthContext } from "../context/AuthContext";
+import { AuthContext } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import api from "../api/api";
-import GPSSetupPrompt from "../components/GPSSetupPrompt";
-import { gpsLocationService } from "../utils/gpsLocationService";
+import api from "../../api/api";
+import GPSSetupPrompt from "../../components/maps/GPSSetupPrompt";
+import { gpsLocationService } from "../../utils/gpsLocationService";
 import { gsap } from "gsap";
 
 const CompleteProfile = () => {
