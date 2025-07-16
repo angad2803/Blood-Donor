@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import api from "../api/api.js";
+import aiService from "../services/aiService.js";
 import { toast } from "react-toastify";
 import { gsap } from "gsap";
 
@@ -8,6 +9,14 @@ const SendOfferModal = ({ isOpen, onClose, bloodRequest, onOfferSent }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [includeMessage, setIncludeMessage] = useState(true);
+  
+  // AI Enhancement States
+  const [isPolishing, setIsPolishing] = useState(false);
+  const [showAITools, setShowAITools] = useState(false);
+  const [selectedTone, setSelectedTone] = useState("professional");
+  const [selectedLanguage, setSelectedLanguage] = useState("english");
+  const [aiSuggestions, setAiSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   // GSAP Refs
   const modalRef = useRef(null);
@@ -68,6 +77,100 @@ const SendOfferModal = ({ isOpen, onClose, bloodRequest, onOfferSent }) => {
     } blood and can help with your ${bloodRequest?.urgency?.toLowerCase()} request. Please let me know the best time and any specific details.`;
   };
 
+  // AI Enhancement Functions
+  const polishMessage = async () => {
+    if (!message.trim()) {
+      toast.error("Please write a message first before polishing");
+      return;
+    }
+
+    setIsPolishing(true);
+    try {
+      const polishPrompt = `Polish and improve this blood donation offer message. Make it ${selectedTone}, clear, and professional. Keep the same meaning but improve grammar, flow, and tone:
+
+Message: "${message}"
+Tone: ${selectedTone}
+Context: This is for a ${bloodRequest?.urgency} blood donation request for ${bloodRequest?.bloodGroup} blood type.
+
+Please respond with only the improved message, no additional text.`;
+
+      const response = await aiService.generateResponse(polishPrompt);
+      setMessage(response.message);
+      toast.success("✨ Message polished successfully!");
+    } catch (error) {
+      console.error("Polish error:", error);
+      toast.error("Failed to polish message. Please try again.");
+    } finally {
+      setIsPolishing(false);
+    }
+  };
+
+  const translateMessage = async () => {
+    if (!message.trim()) {
+      toast.error("Please write a message first before translating");
+      return;
+    }
+
+    setIsPolishing(true);
+    try {
+      const translatePrompt = `Translate this blood donation offer message to ${selectedLanguage}. Keep the same professional and caring tone:
+
+Message: "${message}"
+Target Language: ${selectedLanguage}
+Context: This is for a ${bloodRequest?.urgency} blood donation request.
+
+Please respond with only the translated message, no additional text.`;
+
+      const response = await aiService.generateResponse(translatePrompt);
+      setMessage(response.message);
+      toast.success(`🌍 Message translated to ${selectedLanguage}!`);
+    } catch (error) {
+      console.error("Translation error:", error);
+      toast.error("Failed to translate message. Please try again.");
+    } finally {
+      setIsPolishing(false);
+    }
+  };
+
+  const generateSuggestions = async () => {
+    setIsPolishing(true);
+    try {
+      const suggestionPrompt = `Generate 3 different blood donation offer messages for a ${bloodRequest?.urgency} ${bloodRequest?.bloodGroup} blood request. Make them ${selectedTone} and include:
+1. Availability confirmation
+2. Willingness to help
+3. Request for coordination details
+
+Context: 
+- Blood type needed: ${bloodRequest?.bloodGroup}
+- Urgency: ${bloodRequest?.urgency}
+- Requester: ${bloodRequest?.requester?.name}
+- Location: ${bloodRequest?.location}
+
+Please provide 3 different message options, each on a new line starting with "Option 1:", "Option 2:", "Option 3:".`;
+
+      const response = await aiService.generateResponse(suggestionPrompt);
+      const suggestions = response.message
+        .split(/Option [1-3]:/)
+        .filter(s => s.trim())
+        .map(s => s.trim());
+      
+      setAiSuggestions(suggestions);
+      setShowSuggestions(true);
+      toast.success("💡 Generated message suggestions!");
+    } catch (error) {
+      console.error("Suggestions error:", error);
+      toast.error("Failed to generate suggestions. Please try again.");
+    } finally {
+      setIsPolishing(false);
+    }
+  };
+
+  const applySuggestion = (suggestion) => {
+    setMessage(suggestion);
+    setShowSuggestions(false);
+    toast.success("✅ Applied suggestion to your message!");
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -112,7 +215,7 @@ const SendOfferModal = ({ isOpen, onClose, bloodRequest, onOfferSent }) => {
     >
       <div
         ref={modalRef}
-        className="bg-white rounded-lg p-6 w-full max-w-md mx-4"
+        className="bg-white rounded-lg p-6 w-full max-w-lg mx-4"
       >
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-gray-800">
@@ -214,6 +317,149 @@ const SendOfferModal = ({ isOpen, onClose, bloodRequest, onOfferSent }) => {
               <p className="text-xs text-gray-400 mt-1">
                 Leave empty to use default message
               </p>
+
+              {/* AI Enhancement Section */}
+              <div className="mt-3 p-3 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-sm font-medium text-blue-800 flex items-center">
+                    <span className="mr-2">🤖</span>
+                    AI Message Assistant
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={() => setShowAITools(!showAITools)}
+                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  >
+                    {showAITools ? "Hide" : "Show"} Tools
+                  </button>
+                </div>
+
+                {showAITools && (
+                  <div className="space-y-3">
+                    {/* Tone and Language Selection */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                          Tone
+                        </label>
+                        <select
+                          value={selectedTone}
+                          onChange={(e) => setSelectedTone(e.target.value)}
+                          className="w-full text-xs border border-gray-300 rounded px-2 py-1 focus:ring-1 focus:ring-blue-500"
+                        >
+                          <option value="professional">Professional</option>
+                          <option value="friendly">Friendly</option>
+                          <option value="urgent">Urgent</option>
+                          <option value="compassionate">Compassionate</option>
+                          <option value="formal">Formal</option>
+                          <option value="casual">Casual</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                          Language
+                        </label>
+                        <select
+                          value={selectedLanguage}
+                          onChange={(e) => setSelectedLanguage(e.target.value)}
+                          className="w-full text-xs border border-gray-300 rounded px-2 py-1 focus:ring-1 focus:ring-blue-500"
+                        >
+                          <option value="english">English</option>
+                          <option value="spanish">Spanish</option>
+                          <option value="french">French</option>
+                          <option value="german">German</option>
+                          <option value="italian">Italian</option>
+                          <option value="portuguese">Portuguese</option>
+                          <option value="hindi">Hindi</option>
+                          <option value="chinese">Chinese</option>
+                          <option value="arabic">Arabic</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* AI Action Buttons */}
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={polishMessage}
+                        disabled={isPolishing || !message.trim()}
+                        className="flex-1 min-w-[80px] px-3 py-1.5 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                      >
+                        {isPolishing ? (
+                          <div className="animate-spin w-3 h-3 border border-white border-t-transparent rounded-full mr-1"></div>
+                        ) : (
+                          "✨"
+                        )}
+                        <span className="ml-1">Polish</span>
+                      </button>
+                      
+                      <button
+                        type="button"
+                        onClick={translateMessage}
+                        disabled={isPolishing || !message.trim()}
+                        className="flex-1 min-w-[80px] px-3 py-1.5 bg-green-600 text-white text-xs rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                      >
+                        {isPolishing ? (
+                          <div className="animate-spin w-3 h-3 border border-white border-t-transparent rounded-full mr-1"></div>
+                        ) : (
+                          "🌍"
+                        )}
+                        <span className="ml-1">Translate</span>
+                      </button>
+                      
+                      <button
+                        type="button"
+                        onClick={generateSuggestions}
+                        disabled={isPolishing}
+                        className="flex-1 min-w-[80px] px-3 py-1.5 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                      >
+                        {isPolishing ? (
+                          <div className="animate-spin w-3 h-3 border border-white border-t-transparent rounded-full mr-1"></div>
+                        ) : (
+                          "💡"
+                        )}
+                        <span className="ml-1">Suggest</span>
+                      </button>
+                    </div>
+
+                    {/* AI Suggestions */}
+                    {showSuggestions && aiSuggestions.length > 0 && (
+                      <div className="mt-3 p-2 bg-white border border-purple-200 rounded">
+                        <h5 className="text-xs font-medium text-purple-800 mb-2">
+                          💡 AI Generated Suggestions (click to use):
+                        </h5>
+                        <div className="space-y-2">
+                          {aiSuggestions.map((suggestion, index) => (
+                            <button
+                              key={index}
+                              type="button"
+                              onClick={() => applySuggestion(suggestion)}
+                              className="w-full text-left p-2 text-xs bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded transition-colors"
+                            >
+                              <span className="font-medium text-purple-700">
+                                Option {index + 1}:
+                              </span>
+                              <br />
+                              <span className="text-gray-700">{suggestion}</span>
+                            </button>
+                          ))}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setShowSuggestions(false)}
+                          className="mt-2 text-xs text-purple-600 hover:text-purple-800"
+                        >
+                          ✕ Close suggestions
+                        </button>
+                      </div>
+                    )}
+
+                    <p className="text-xs text-blue-600">
+                      💡 <strong>Tip:</strong> Use AI to polish your message, change the tone, or translate to different languages for better communication!
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
