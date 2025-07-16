@@ -7,6 +7,8 @@ A comprehensive blood donation management system connecting donors with hospital
 - 🏥 **Real-time Blood Request Management** - Hospitals can create and manage blood requests
 - 🎯 **Smart Donor Matching** - Automatic matching based on blood type, location, and availability
 - 💬 **Live Chat System** - Real-time communication between donors and hospitals
+- 🤖 **AI-Enhanced Messaging** - Gemini AI integration for message enhancement, translation, and suggestions
+- 🌙 **Dark Mode Support** - Complete dark/light theme switching with smooth transitions
 - 📧 **Email & SMS Notifications** - Automated alerts for urgent requests and updates
 - 📍 **GPS-based Location Services** - Location-aware donor matching and routing
 - 🔐 **OAuth Authentication** - Secure login with Google OAuth integration
@@ -23,9 +25,11 @@ A comprehensive blood donation management system connecting donors with hospital
 - 🛣️ **React Router 7** - Client-side routing
 - 🎨 **Chakra UI 3** - Component library for consistent UI
 - 🎯 **Tailwind CSS 4** - Utility-first CSS framework
-- 🔌 **Socket.io Client** - Real-time communication
+- � **Zustand** - Lightweight state management for theme and app state
+- �🔌 **Socket.io Client** - Real-time communication
 - 📡 **Axios** - HTTP client for API requests
 - 🔔 **React Toastify** - Toast notifications
+- 🤖 **AI Integration** - Gemini API for enhanced messaging
 
 ### 🖥️ Backend (Server/)
 
@@ -37,6 +41,7 @@ A comprehensive blood donation management system connecting donors with hospital
 - 📋 **BullMQ** - Redis-based message queue system
 - 📧 **SendGrid** - Email service integration
 - 📮 **Nodemailer** - Email sending with SMTP fallback
+- 🤖 **Google Gemini AI** - AI-powered message enhancement and translation
 
 ### 🏗️ Infrastructure & DevOps
 
@@ -67,6 +72,14 @@ A comprehensive blood donation management system connecting donors with hospital
 | 🌊 Tailwind CSS  | 4.1.8   | Utility-first CSS |
 | 🎭 Framer Motion | 12.16.0 | Animation library |
 | 💅 Emotion       | 11.14.0 | CSS-in-JS         |
+| 🐻 Zustand       | 5.0.2   | State management  |
+
+### 🤖 AI & Intelligence
+
+| Technology       | Version   | Purpose                           |
+| ---------------- | --------- | --------------------------------- |
+| 🧠 Google Gemini | 1.5-flash | Message enhancement & translation |
+| 🎯 AI Services   | Custom    | Intelligent message suggestions   |
 
 ### 📡 Communication & Real-time
 
@@ -158,6 +171,9 @@ A comprehensive blood donation management system connecting donors with hospital
    SMTP_USER=your_email@gmail.com
    SMTP_PASS=your_app_password
 
+   # 🤖 Google Gemini AI
+   GEMINI_API_KEY=your_gemini_api_key
+
    # 🔴 Redis
    REDIS_URL=redis://localhost:6379
 
@@ -202,6 +218,8 @@ Blood_Donor/
 │   ├── pages/                 # Page components
 │   ├── context/              # React context providers
 │   ├── hooks/                # Custom React hooks
+│   ├── stores/               # Zustand state stores
+│   ├── services/             # API and external services
 │   ├── utils/                # Utility functions
 │   ├── api/                  # API service functions
 │   └── public/               # Static assets
@@ -235,6 +253,22 @@ Blood_Donor/
 - `npm run dev` - 🔄 Start development server with nodemon
 
 ### 🎯 Key Features Implementation
+
+#### 🤖 AI-Enhanced Messaging
+
+- 🧠 **Google Gemini integration** for intelligent message enhancement
+- 🌍 **Multi-language translation** for donor-hospital communication
+- 💡 **Smart suggestions** for improving message clarity and tone
+- 🎯 **Context-aware responses** based on blood donation scenarios
+- ✨ **Message polishing** for professional communication
+
+#### 🌙 Dark Mode & Theming
+
+- 🌓 **Complete dark/light mode** with system preference detection
+- 🐻 **Zustand state management** for persistent theme preferences
+- 🎨 **Smooth transitions** with coordinated animations
+- 📱 **Responsive design** optimized for both themes
+- ⚡ **Performance optimized** theme switching
 
 #### 🔄 Message Queue System
 
@@ -308,6 +342,8 @@ Detailed documentation is available in the `docs/` folder:
 - 🏥 **[Hospital Management](docs/HOSPITAL_MANAGEMENT_SUMMARY.md)** - Hospital features overview
 - 📨 **[Email Features](docs/Email-Features-Summary.md)** - Email system capabilities
 - ⚡ **[Quick Offer Feature](docs/QUICK_OFFER_FEATURE.md)** - Quick donation offers
+- 🤖 **[AI Integration](docs/AI_CHATBOT_INTEGRATION_FINAL.md)** - Gemini AI implementation
+- 🌙 **[Dark Mode Implementation](docs/POLISH_IMPROVEMENTS_SUMMARY.md)** - Theme system details
 
 ## 🤝 Contributing
 
