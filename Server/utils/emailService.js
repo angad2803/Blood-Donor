@@ -207,8 +207,8 @@ const emailTemplates = {
             <a href="mailto:${
               process.env.SUPPORT_EMAIL || "support@blooddonorconnect.com"
             }" style="color: #dc2626;">${
-      process.env.SUPPORT_EMAIL || "support@blooddonorconnect.com"
-    }</a>
+              process.env.SUPPORT_EMAIL || "support@blooddonorconnect.com"
+            }</a>
           </p>
         </div>
         
@@ -227,15 +227,15 @@ const emailTemplates = {
           data.priority === "High"
             ? "#dc2626"
             : data.priority === "Medium"
-            ? "#d97706"
-            : "#059669"
+              ? "#d97706"
+              : "#059669"
         };">
           ${
             data.priority === "High"
               ? "🚨"
               : data.priority === "Medium"
-              ? "⚠️"
-              : "ℹ️"
+                ? "⚠️"
+                : "ℹ️"
           } Blood Donor Connect Alert
         </h2>
         <p>Dear ${data.name},</p>
@@ -380,9 +380,14 @@ export async function sendEmail(to, subject, template, data) {
 
     const emailData = {
       to: to,
-      from: process.env.FROM_EMAIL || "noreply@blooddonor.com",
+      from: process.env.FROM_EMAIL || "noreply@yourdomain.com", // Use your authenticated domain
       subject: subject,
       html: emailContent.html,
+      // Add domain-specific headers for better deliverability
+      reply_to:
+        process.env.REPLY_TO_EMAIL ||
+        process.env.SUPPORT_EMAIL ||
+        "support@yourdomain.com",
     };
 
     // Try SendGrid first, fallback to Gmail
@@ -569,11 +574,19 @@ export function validateEmailConfig() {
     process.env.EMAIL_USER !== "your_gmail@gmail.com" &&
     process.env.EMAIL_PASS !== "your_app_password";
 
+  // Check if using authenticated domain
+  const fromEmail = process.env.FROM_EMAIL || "noreply@blooddonor.com";
+  const isUsingCustomDomain =
+    !fromEmail.includes("blooddonor.com") && !fromEmail.includes("gmail.com");
+
   return {
     sendgrid: hasValidSendGrid,
     gmail: hasValidGmail,
     hasAnyValidConfig: hasValidSendGrid || hasValidGmail,
-    fromEmail: process.env.FROM_EMAIL || "noreply@blooddonor.com",
+    fromEmail: fromEmail,
     supportEmail: process.env.SUPPORT_EMAIL || "support@blooddonor.com",
+    replyToEmail: process.env.REPLY_TO_EMAIL || process.env.SUPPORT_EMAIL,
+    isUsingCustomDomain: isUsingCustomDomain,
+    domainAuthenticated: hasValidSendGrid && isUsingCustomDomain, // Assumes domain is authenticated if using custom domain with SendGrid
   };
 }

@@ -57,23 +57,19 @@ const Dashboard = () => {
     useKeyboardShortcuts,
   } = useDashboardState();
 
-  // GSAP animations
+  // GSAP animations - keeping only tab transitions
   const {
     animateTabTransition,
     animateRibbonTabChange,
     animateCards,
     addCardHoverEffects,
-    performEntranceAnimations,
   } = useGSAPAnimations();
 
-  // Refs for animations
+  // Refs for animations - cleaned up
   const cardsRef = useRef([]);
   const tabsRef = useRef(null);
   const ribbonRef = useRef(null);
   const mainContentRef = useRef(null);
-  const headerRef = useRef(null);
-  const quickStatsRef = useRef(null);
-  const floatingElementsRef = useRef([]);
   const arcgisDirectionsRef = useRef(null);
 
   // Calculate available requests count for badge
@@ -131,20 +127,11 @@ const Dashboard = () => {
     }
   }, [location.state, fetchData, setActiveTab]);
 
-  // Entrance animations
+  // Entrance animations - REMOVED GSAP animations for better performance
   useEffect(() => {
-    performEntranceAnimations(
-      headerRef,
-      ribbonRef,
-      quickStatsRef,
-      mainContentRef,
-      floatingElementsRef
-    );
+    // Removed GSAP entrance animations
 
-    // Copy current elements for cleanup
-    const elementsToCleanup = floatingElementsRef.current;
-
-    // Add ribbon hover effects after entrance animation
+    // Add ribbon hover effects after page load
     setTimeout(() => {
       if (ribbonRef.current) {
         const tabButtons = ribbonRef.current.querySelectorAll("button");
@@ -156,17 +143,10 @@ const Dashboard = () => {
           });
         });
       }
-    }, 1500);
+    }, 100); // Reduced timeout since no animation needed
 
-    // Cleanup floating elements on unmount
-    return () => {
-      elementsToCleanup.forEach((element) => {
-        if (element.parentNode) {
-          element.parentNode.removeChild(element);
-        }
-      });
-    };
-  }, [performEntranceAnimations]);
+    // No cleanup needed since no floating elements created
+  }, []);
 
   // Cards animation on tab change
   useEffect(() => {
@@ -202,7 +182,7 @@ const Dashboard = () => {
       <AnimationStyles />
 
       {/* Header */}
-      <div ref={headerRef}>
+      <div>
         <DashboardHeader
           user={user}
           logout={logout}
@@ -223,10 +203,7 @@ const Dashboard = () => {
       </div>
 
       {/* Quick Stats */}
-      <div
-        ref={quickStatsRef}
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6"
-      >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <QuickStats
           requests={requests}
           myRequests={myRequests}

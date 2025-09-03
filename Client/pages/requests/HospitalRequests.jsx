@@ -226,7 +226,7 @@ const HospitalRequests = () => {
                   <h1 className="text-3xl font-bold text-white mb-1 neon-glow">
                     Hospital Blood Requests
                   </h1>
-                  <p className="text-white/70 text-sm">
+                  <p className="text-white text-sm font-medium">
                     Manage and fulfill blood requests in your area
                   </p>
                 </div>
@@ -317,7 +317,7 @@ const HospitalRequests = () => {
             <h2 className="text-2xl font-bold text-white mb-2 neon-glow">
               Blood Requests ({filteredRequests.length})
             </h2>
-            <p className="text-white/70">
+            <p className="text-white font-medium">
               Active blood requests requiring hospital attention
             </p>
           </div>
@@ -325,12 +325,12 @@ const HospitalRequests = () => {
             {filteredRequests.length === 0 ? (
               <div className="text-center py-12">
                 <div className="text-6xl mb-4 neon-glow">🩺</div>
-                <p className="text-white/60 text-lg">
+                <p className="text-white text-lg font-medium">
                   {filter === "all"
                     ? "No blood requests found"
                     : `No ${filter} priority requests found`}
                 </p>
-                <p className="text-white/40 text-sm mt-2">
+                <p className="text-white text-sm mt-2 font-medium">
                   Check back later or adjust your filters
                 </p>
               </div>
@@ -373,7 +373,7 @@ const HospitalRequests = () => {
                             )}
                           </div>
                           <div className="flex items-center space-x-2">
-                            <span className="text-white/60 text-sm">
+                            <span className="text-white text-sm font-medium">
                               Requested by: {request.requester?.name}
                             </span>
                           </div>
@@ -388,7 +388,7 @@ const HospitalRequests = () => {
                         >
                           {request.urgency?.toUpperCase() || "NORMAL"}
                         </span>
-                        <div className="text-right text-xs text-white/40">
+                        <div className="text-right text-xs text-white font-medium">
                           <div>
                             {new Date(request.createdAt).toLocaleDateString()}
                           </div>

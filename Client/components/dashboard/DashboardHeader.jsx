@@ -13,7 +13,7 @@ const DashboardHeader = ({
 
   return (
     <div
-      className="relative z-10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg shadow-lg border-b border-white/20 dark:border-gray-700/30 transition-colors duration-300"
+      className="relative z-10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg shadow-lg border-b border-white/20 dark:border-gray-700/30 transition-colors duration-300 dashboard-header"
       style={{
         boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
       }}
@@ -44,34 +44,34 @@ const DashboardHeader = ({
               </div>
             </div>
 
-            {/* User Info Card - Smaller */}
-            <div className="bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-md px-3 py-2 shadow-sm">
+            {/* User Info Card - Enhanced Visibility */}
+            <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 shadow-sm">
               <div className="flex items-center space-x-3">
-                {/* User Avatar - Smaller */}
-                <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                  <span className="text-gray-600 font-medium text-sm">
+                {/* User Avatar - Larger */}
+                <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center shadow-sm">
+                  <span className="text-white font-bold text-base">
                     {user?.name?.charAt(0)?.toUpperCase()}
                   </span>
                 </div>
 
-                {/* User Details - Smaller */}
+                {/* User Details - Larger and More Visible */}
                 <div>
                   <div className="flex items-center space-x-2">
-                    <span className="text-xs font-medium text-gray-700 dark:text-gray-200">
+                    <span className="text-base font-bold text-gray-900 dark:text-gray-100">
                       {user?.name}
                     </span>
                     <div className="flex items-center space-x-1">
-                      <span className="text-xs font-medium text-gray-500 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">
+                      <span className="text-sm font-bold text-white bg-red-600 px-3 py-1 rounded-full shadow-sm">
                         {user?.bloodGroup}
                       </span>
                     </div>
                   </div>
 
-                  {/* Location Info - Smaller */}
+                  {/* Location Info - More Visible */}
                   {user?.location && (
-                    <div className="flex items-center space-x-1 mt-0.5">
-                      <span className="text-xs text-gray-300">📍</span>
-                      <span className="text-xs text-gray-400 truncate max-w-32">
+                    <div className="flex items-center space-x-1 mt-1">
+                      <span className="text-sm text-red-500">📍</span>
+                      <span className="text-sm text-gray-600 dark:text-gray-300 font-medium truncate max-w-40">
                         {user.location}
                       </span>
                     </div>

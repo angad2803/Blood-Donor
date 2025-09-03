@@ -63,7 +63,10 @@ const LoadingSpinner = ({
         style={{ willChange: "transform" }}
       ></div>
       {message && (
-        <p ref={messageRef} className="mt-4 text-gray-600 text-sm">
+        <p
+          ref={messageRef}
+          className="mt-4 text-gray-700 dark:text-gray-300 text-sm font-medium"
+        >
           {message}
         </p>
       )}

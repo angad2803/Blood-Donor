@@ -23,6 +23,7 @@ router.post("/:requestId", verifyToken, async (req, res) => {
   try {
     const { text } = req.body;
     const user = req.user; // from verifyToken middleware
+
     const newMsg = new Message({
       roomId: req.params.requestId,
       sender: user._id,
@@ -30,8 +31,35 @@ router.post("/:requestId", verifyToken, async (req, res) => {
       text,
     });
 
-    await newMsg.save();
-    res.status(201).json({ message: "Message saved", newMsg });
+    const savedMessage = await newMsg.save();
+
+    // Get the Socket.IO instance and emit to room for persistence
+    const io = req.app.get("io");
+    if (io) {
+      const messageData = {
+        _id: savedMessage._id,
+        text: savedMessage.text,
+        sender: savedMessage.sender,
+        name: savedMessage.name,
+        roomId: savedMessage.roomId,
+        timestamp: savedMessage.timestamp,
+      };
+
+      // This ensures the message is also saved and confirmed via socket
+      io.to(req.params.requestId).emit("message-saved", messageData);
+    }
+
+    res.status(201).json({
+      message: "Message saved",
+      savedMessage: {
+        _id: savedMessage._id,
+        text: savedMessage.text,
+        sender: savedMessage.sender,
+        name: savedMessage.name,
+        roomId: savedMessage.roomId,
+        timestamp: savedMessage.timestamp,
+      },
+    });
   } catch (err) {
     res
       .status(500)

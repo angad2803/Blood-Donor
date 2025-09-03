@@ -1,0 +1,149 @@
+/* Text Legibility Improvements */
+
+/* Override low-opacity text for better readability */
+.text-white\/70,
+.text-white\/60,
+.text-white\/50,
+.text-white\/40 {
+  opacity: 1 !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.text-gray-400,
+.text-gray-500,
+.text-gray-600 {
+  color: rgb(55, 65, 81) !important; /* text-gray-700 equivalent */
+}
+
+.dark .text-gray-400,
+.dark .text-gray-500,
+.dark .text-gray-600 {
+  color: rgb(209, 213, 219) !important; /* text-gray-300 equivalent */
+}
+
+/* Improve text contrast on glass/transparent backgrounds */
+.glass-card .text-white\/70,
+.glass-card .text-white\/60,
+.glass-card .text-white\/40 {
+  color: rgba(255, 255, 255, 0.98) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Dark text on light backgrounds - ensure sufficient contrast */
+.bg-white .text-gray-600,
+.bg-gray-50 .text-gray-600,
+.bg-gray-100 .text-gray-600 {
+  color: rgb(31, 41, 55) !important; /* text-gray-800 equivalent */
+}
+
+/* Improve readability for small text */
+.text-xs,
+.text-sm {
+  font-weight: 500 !important;
+}
+
+/* Better contrast for disabled states */
+.disabled\:opacity-50:disabled,
+.opacity-50 {
+  opacity: 0.7 !important;
+}
+
+/* Ensure readable text on colored backgrounds */
+.bg-red-500 .text-white,
+.bg-blue-500 .text-white,
+.bg-green-500 .text-white {
+  color: rgb(255, 255, 255) !important;
+  font-weight: 600;
+}
+
+/* Improve navigation tab text readability */
+.nav-tab-text {
+  color: rgb(31, 41, 55) !important;
+  font-weight: 600 !important;
+}
+
+.nav-tab-active .nav-tab-text {
+  color: rgb(255, 255, 255) !important;
+  font-weight: 700 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Dashboard header improvements */
+.dashboard-header .text-gray-600 {
+  color: rgb(17, 24, 39) !important; /* text-gray-900 */
+}
+
+.dark .dashboard-header .text-gray-600 {
+  color: rgb(243, 244, 246) !important; /* text-gray-100 */
+}
+
+/* Card content improvements */
+.card-content .text-white\/70 {
+  color: rgba(255, 255, 255, 0.95) !important;
+  font-weight: 500;
+}
+
+.card-content .text-gray-500 {
+  color: rgb(55, 65, 81) !important; /* text-gray-700 */
+  font-weight: 500;
+}
+
+.dark .card-content .text-gray-500 {
+  color: rgb(229, 231, 235) !important; /* text-gray-200 */
+}
+
+/* Button text improvements */
+.glass-button {
+  font-weight: 600 !important;
+  color: rgb(255, 255, 255) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Form label improvements */
+label,
+.form-label {
+  color: rgb(31, 41, 55) !important; /* text-gray-800 */
+  font-weight: 600 !important;
+}
+
+.dark label,
+.dark .form-label {
+  color: rgb(243, 244, 246) !important; /* text-gray-100 */
+}
+
+/* Placeholder text improvements */
+::placeholder {
+  color: rgb(107, 114, 128) !important; /* text-gray-500 */
+  opacity: 0.8 !important;
+}
+
+.dark ::placeholder {
+  color: rgb(156, 163, 175) !important; /* text-gray-400 */
+}
+
+/* Status text improvements */
+.status-text {
+  font-weight: 600 !important;
+}
+
+.status-pending {
+  color: rgb(217, 119, 6) !important; /* amber-600 */
+}
+
+.status-accepted {
+  color: rgb(22, 163, 74) !important; /* green-600 */
+}
+
+.status-rejected {
+  color: rgb(220, 38, 38) !important; /* red-600 */
+}
+
+/* Loading text improvements */
+.loading-text {
+  color: rgb(55, 65, 81) !important; /* text-gray-700 */
+  font-weight: 500 !important;
+}
+
+.dark .loading-text {
+  color: rgb(209, 213, 219) !important; /* text-gray-300 */
+}

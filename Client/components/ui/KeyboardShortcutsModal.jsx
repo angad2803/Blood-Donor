@@ -32,12 +32,12 @@ const KeyboardShortcutsModal = ({ isOpen, onClose, user }) => {
     >
       <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-gray-800">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
             ⌨️ Keyboard Shortcuts
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
             aria-label="Close shortcuts modal"
           >
             <svg
@@ -59,7 +59,7 @@ const KeyboardShortcutsModal = ({ isOpen, onClose, user }) => {
         <div className="space-y-4">
           {/* Navigation Shortcuts */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-600 mb-2">
+            <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
               Navigation
             </h3>
             {shortcuts
@@ -75,8 +75,8 @@ const KeyboardShortcutsModal = ({ isOpen, onClose, user }) => {
                   <kbd
                     className={`px-2 py-1 rounded text-xs font-mono ${
                       shortcut.category === "admin"
-                        ? "bg-purple-100 text-purple-800"
-                        : "bg-gray-100 text-gray-800"
+                        ? "bg-purple-100 text-purple-900 dark:bg-purple-900 dark:text-purple-100"
+                        : "bg-gray-200 text-gray-900 dark:bg-gray-700 dark:text-gray-100"
                     }`}
                   >
                     {shortcut.key}
@@ -88,7 +88,7 @@ const KeyboardShortcutsModal = ({ isOpen, onClose, user }) => {
           {/* Admin Shortcuts */}
           {user?.isAdmin && (
             <div>
-              <h3 className="text-sm font-semibold text-purple-600 mb-2">
+              <h3 className="text-sm font-semibold text-purple-700 dark:text-purple-300 mb-2">
                 Admin Controls
               </h3>
               {shortcuts
@@ -133,7 +133,7 @@ const KeyboardShortcutsModal = ({ isOpen, onClose, user }) => {
         </div>
 
         <div className="mt-6 pt-4 border-t border-gray-200">
-          <p className="text-xs text-gray-500 text-center">
+          <p className="text-xs text-gray-600 dark:text-gray-400 text-center font-medium">
             💡 Tip: These shortcuts work when not typing in input fields
           </p>
         </div>

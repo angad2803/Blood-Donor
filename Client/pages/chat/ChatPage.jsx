@@ -15,20 +15,50 @@ const ChatPage = () => {
   const [input, setInput] = useState("");
   const [requestInfo, setRequestInfo] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isTyping, setIsTyping] = useState(false);
   const bottomRef = useRef(null);
 
   useEffect(() => {
     socket.emit("join-room", requestId);
 
+    // Listen for real-time messages
     socket.on("receive-message", (message) => {
-      setMessages((prev) => [...prev, message]);
+      setMessages((prev) => {
+        // Check if message already exists to prevent duplicates
+        const exists = prev.some(
+          (msg) =>
+            msg.timestamp === message.timestamp &&
+            msg.sender === message.sender &&
+            msg.text === message.text
+        );
+
+        if (!exists) {
+          return [...prev, message];
+        }
+        return prev;
+      });
+    });
+
+    // Listen for message save confirmations
+    socket.on("message-saved", (message) => {
+      console.log("Message saved to database:", message._id);
+      // Optionally update message status to show it's been saved
+    });
+
+    // Listen for typing indicators
+    socket.on("user-typing", ({ userId, name, isTyping: userIsTyping }) => {
+      if (userId !== user._id) {
+        setIsTyping(userIsTyping ? `${name} is typing...` : false);
+      }
     });
 
     return () => {
       socket.emit("leave-room", requestId);
       socket.off("receive-message");
+      socket.off("message-saved");
+      socket.off("user-typing");
     };
-  }, [requestId]);
+  }, [requestId, user._id]);
 
   useEffect(() => {
     const fetchChatData = async () => {
@@ -62,29 +92,63 @@ const ChatPage = () => {
     if (!input.trim()) return;
 
     const messageData = {
-      text: input,
+      text: input.trim(),
       sender: user._id,
       roomId: requestId,
       name: user.name,
       timestamp: new Date().toISOString(),
     };
 
-    // Emit to socket for real-time delivery
+    // Clear input immediately for better UX
+    const messageText = input.trim();
+    setInput("");
+
+    // Stop typing indicator
+    socket.emit("typing", {
+      roomId: requestId,
+      userId: user._id,
+      name: user.name,
+      isTyping: false,
+    });
+
+    // Emit to socket for real-time delivery to ALL users (including sender)
     socket.emit("send-message", {
       roomId: requestId,
       message: messageData,
     });
 
-    // Add to local state immediately for better UX
-    setMessages((prev) => [...prev, messageData]);
-    setInput("");
-
-    // Save to database
+    // Save to database in background
     try {
-      await api.post(`/message/${requestId}`, { text: input });
+      const response = await api.post(`/message/${requestId}`, {
+        text: messageText,
+      });
+      console.log("Message saved successfully:", response.data);
     } catch (err) {
       console.error("Failed to save message", err);
-      toast.error("Failed to save message");
+      toast.error("Message sent but failed to save to database");
+
+      // The message was still delivered via socket, so users can see it
+      // But we should inform about the persistence issue
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    setInput(value);
+
+    // Send typing indicator
+    socket.emit("typing", {
+      roomId: requestId,
+      userId: user._id,
+      name: user.name,
+      isTyping: value.length > 0,
+    });
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
     }
   };
 
@@ -196,7 +260,7 @@ const ChatPage = () => {
           ) : (
             messages.map((msg, index) => (
               <div
-                key={index}
+                key={`${msg.timestamp}-${msg.sender}-${index}`}
                 className={`flex ${
                   msg.sender === user._id ? "justify-end" : "justify-start"
                 }`}
@@ -208,15 +272,33 @@ const ChatPage = () => {
                       : "bg-gray-200 text-gray-800 rounded-bl-none"
                   }`}
                 >
-                  <div className="text-xs opacity-75 mb-1">{msg.name}</div>
+                  {msg.sender !== user._id && (
+                    <div className="text-xs opacity-75 mb-1">{msg.name}</div>
+                  )}
                   <div className="break-words">{msg.text}</div>
-                  <div className="text-xs opacity-75 mt-1">
-                    {new Date(msg.timestamp).toLocaleTimeString()}
+                  <div
+                    className={`text-xs mt-1 ${msg.sender === user._id ? "opacity-75" : "opacity-60"}`}
+                  >
+                    {new Date(msg.timestamp).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                    {msg.sender === user._id && <span className="ml-1">✓</span>}
                   </div>
                 </div>
               </div>
             ))
           )}
+
+          {/* Typing Indicator */}
+          {isTyping && (
+            <div className="flex justify-start">
+              <div className="bg-gray-100 px-4 py-2 rounded-lg max-w-xs">
+                <div className="text-sm text-gray-600 italic">{isTyping}</div>
+              </div>
+            </div>
+          )}
+
           <div ref={bottomRef}></div>
         </div>
 
@@ -225,8 +307,8 @@ const ChatPage = () => {
           <div className="flex gap-2">
             <input
               value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSend()}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyPress}
               className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Type your message..."
               maxLength={500}

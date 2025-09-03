@@ -152,7 +152,7 @@ const Dashboard = () => {
                   <h1 className="text-3xl font-bold text-white mb-1 neon-glow">
                     Create Blood Request
                   </h1>
-                  <p className="text-white/70 text-sm">
+                  <p className="text-white text-sm font-medium">
                     Help save lives by requesting blood donations
                   </p>
                 </div>
@@ -213,7 +213,7 @@ const Dashboard = () => {
             <h2 className="text-2xl font-bold text-white mb-2 neon-glow">
               Emergency Blood Request
             </h2>
-            <p className="text-white/70">
+            <p className="text-white font-medium">
               Fill out the details for your blood request
             </p>
           </div>

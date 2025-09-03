@@ -143,48 +143,8 @@ export const useGSAPAnimations = () => {
     animateCards,
     addCardHoverEffects
   ) => {
-    // Enhanced glass morphism tab change animation
-    animateRibbonTabChange(newTab);
-
-    gsap.to(mainContentRef.current, {
-      opacity: 0,
-      y: -30,
-      scale: 0.95,
-      rotationX: -10,
-      backdropFilter: "blur(5px)",
-      duration: 0.4,
-      ease: "power2.in",
-      onComplete: () => {
-        setActiveTab(newTab);
-        gsap.fromTo(
-          mainContentRef.current,
-          {
-            opacity: 0,
-            y: 30,
-            scale: 0.95,
-            rotationX: 10,
-            backdropFilter: "blur(5px)",
-          },
-          {
-            opacity: 1,
-            y: 0,
-            scale: 1,
-            rotationX: 0,
-            backdropFilter: "blur(20px)",
-            duration: 0.6,
-            ease: "power2.out",
-            onComplete: () => {
-              // Reset cards ref and animate them
-              cardsRef.current = [];
-              setTimeout(() => {
-                animateCards();
-                addCardHoverEffects();
-              }, 100);
-            },
-          }
-        );
-      },
-    });
+    // Remove GSAP animation: switch tab directly
+    setActiveTab(newTab);
   };
 
   const animateRibbonTabChange = (newTab, tabsRef) => {

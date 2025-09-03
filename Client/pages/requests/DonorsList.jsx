@@ -231,7 +231,7 @@ const DonorList = () => {
               ? `Find Donors - ${user.hospitalName}`
               : "Find Blood Donors"}
           </h1>
-          <p className="text-white/70 text-lg">
+          <p className="text-white text-lg font-medium">
             Find compatible blood donors near your location with real-time
             distances and routes
           </p>
@@ -310,7 +310,7 @@ const DonorList = () => {
                   onChange={(e) => setSearchRadius(parseInt(e.target.value))}
                   className="w-full accent-red-400"
                 />
-                <div className="flex justify-between text-xs text-white/60 mt-1">
+                <div className="flex justify-between text-xs text-white font-medium mt-1">
                   <span>5km</span>
                   <span>100km</span>
                 </div>
@@ -429,7 +429,7 @@ const DonorList = () => {
                   <p className="text-white/80 text-lg font-medium">
                     No donors found
                   </p>
-                  <p className="text-white/60 text-sm mt-2">
+                  <p className="text-white text-sm mt-2 font-medium">
                     Try expanding your search radius or updating your location
                   </p>
                 </div>

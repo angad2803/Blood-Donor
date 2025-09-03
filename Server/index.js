@@ -85,7 +85,11 @@ io.on("connection", (socket) => {
 
   socket.on("send-message", (data) => {
     const { roomId, message } = data;
-    socket.to(roomId).emit("receive-message", message);
+
+    // Emit to ALL users in the room INCLUDING the sender
+    // This ensures everyone sees the message in real-time
+    io.to(roomId).emit("receive-message", message);
+
     console.log(
       `Message sent to room ${roomId}:`,
       message.text?.substring(0, 50) + "..."

@@ -1,10 +1,6 @@
-import React, { useEffect, useRef } from "react";
-import { gsap } from "gsap";
+import React from "react";
 
 const QuickStats = ({ requests, myRequests, myOffers }) => {
-  const statsRef = useRef([]);
-  const numberRefs = useRef([]);
-
   const activeRequests = requests?.length || 0;
   const myActiveRequests =
     myRequests?.filter((req) => !req.fulfilled)?.length || 0;
@@ -48,45 +44,11 @@ const QuickStats = ({ requests, myRequests, myOffers }) => {
     },
   ];
 
-  useEffect(() => {
-    // Animate stats cards entrance
-    gsap.fromTo(
-      statsRef.current,
-      { opacity: 0, y: 20, scale: 0.9 },
-      {
-        opacity: 1,
-        y: 0,
-        scale: 1,
-        duration: 0.5,
-        stagger: 0.1,
-        ease: "power2.out",
-      }
-    );
-
-    // Animate numbers counting up
-    numberRefs.current.forEach((ref, index) => {
-      if (ref && stats[index]) {
-        gsap.fromTo(
-          ref,
-          { innerHTML: 0 },
-          {
-            innerHTML: stats[index].value,
-            duration: 1.5,
-            ease: "power2.out",
-            snap: { innerHTML: 1 },
-            delay: 0.3 + index * 0.1,
-          }
-        );
-      }
-    });
-  }, [requests, myRequests, myOffers]);
-
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
       {stats.map((stat, index) => (
         <div
           key={index}
-          ref={(el) => (statsRef.current[index] = el)}
           className={`glass-card glass-interactive p-6 text-center bg-gradient-to-br ${stat.bgGradient} relative overflow-hidden group`}
         >
           {/* Glow effect on hover */}
@@ -100,15 +62,10 @@ const QuickStats = ({ requests, myRequests, myOffers }) => {
             >
               {stat.icon}
             </div>
-            <div
-              ref={(el) => (numberRefs.current[index] = el)}
-              className={`text-3xl font-bold ${stat.color} mb-2`}
-            >
-              0
+            <div className={`text-3xl font-bold ${stat.color} mb-2`}>
+              {stat.value}
             </div>
-            <div className="text-sm text-white/70 font-medium">
-              {stat.label}
-            </div>
+            <div className="text-sm text-white font-semibold">{stat.label}</div>
           </div>
         </div>
       ))}

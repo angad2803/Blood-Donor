@@ -88,8 +88,8 @@ const NavigationTabs = ({
               onClick={() => animateTabTransition(tab.id)}
               className={`relative flex items-center space-x-3 px-6 py-3 rounded-2xl font-medium text-sm transition-all duration-300 whitespace-nowrap group overflow-hidden ${
                 activeTab === tab.id
-                  ? "text-white"
-                  : "text-gray-600 hover:text-gray-900"
+                  ? "text-white nav-tab-active"
+                  : "text-gray-800 dark:text-gray-200 hover:text-gray-900 dark:hover:text-gray-100 nav-tab-text"
               }`}
               style={{
                 background:

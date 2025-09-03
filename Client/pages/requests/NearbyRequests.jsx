@@ -264,7 +264,7 @@ const NearbyRequests = () => {
           <h1 className="text-4xl font-bold text-white mb-2 neon-glow">
             {user?.isDonor ? "Nearby Blood Requests" : "Blood Requests"}
           </h1>
-          <p className="text-white/70 text-lg">
+          <p className="text-white text-lg font-medium">
             {user?.isDonor
               ? "Find blood requests near your location where you can help save lives"
               : "View blood requests in your area"}
@@ -321,7 +321,7 @@ const NearbyRequests = () => {
                   onChange={(e) => setSearchRadius(parseInt(e.target.value))}
                   className="w-full accent-red-400"
                 />
-                <div className="flex justify-between text-xs text-white/60 mt-1">
+                <div className="flex justify-between text-xs text-white font-medium mt-1">
                   <span>5km</span>
                   <span>100km</span>
                 </div>
@@ -446,7 +446,7 @@ const NearbyRequests = () => {
                   <p className="text-white/80 text-lg font-medium">
                     No blood requests found
                   </p>
-                  <p className="text-white/60 text-sm mt-2">
+                  <p className="text-white text-sm mt-2 font-medium">
                     {user?.isDonor
                       ? "No one needs your blood type in your area right now. Thank you for being ready to help!"
                       : "Try expanding your search radius or check back later"}

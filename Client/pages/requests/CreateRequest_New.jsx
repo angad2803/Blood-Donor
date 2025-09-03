@@ -134,22 +134,22 @@ const CreateRequest = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
+          <div className="flex justify-between items-center py-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Create Blood Request
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                🩸 Create Blood Request
               </h1>
-              <p className="text-sm text-gray-600">
+              <p className="text-lg text-gray-700 dark:text-gray-300 mt-1 font-medium">
                 Request blood donation from nearby donors
               </p>
             </div>
             <button
               onClick={() => navigate("/dashboard")}
-              className="text-gray-600 hover:text-gray-800"
+              className="text-gray-800 dark:text-gray-200 hover:text-gray-900 dark:hover:text-gray-100 font-semibold bg-gray-100 dark:bg-gray-700 px-4 py-2 rounded-lg transition-colors"
             >
               ← Back to Dashboard
             </button>
@@ -159,20 +159,20 @@ const CreateRequest = () => {
 
       {/* Form */}
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-lg shadow-md">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-800">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+          <div className="px-8 py-6 border-b border-gray-200 dark:border-gray-700 bg-red-50 dark:bg-red-900/20 rounded-t-xl">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
               Blood Request Details
             </h2>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-base text-gray-700 dark:text-gray-300 mt-2 font-medium">
               Fill in the details for your blood donation request
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          <form onSubmit={handleSubmit} className="p-8 space-y-8">
             {/* Blood Group */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-base font-bold text-gray-900 dark:text-gray-100 mb-3">
                 Blood Group Required *
               </label>
               <select
@@ -180,23 +180,25 @@ const CreateRequest = () => {
                 value={form.bloodGroup}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                className="w-full px-4 py-3 text-base font-medium border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-3 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-all"
               >
-                <option value="">Select Blood Group</option>
-                <option value="A+">A+</option>
-                <option value="A-">A-</option>
-                <option value="B+">B+</option>
-                <option value="B-">B-</option>
-                <option value="AB+">AB+</option>
-                <option value="AB-">AB-</option>
-                <option value="O+">O+</option>
-                <option value="O-">O-</option>
+                <option value="" className="text-gray-500">
+                  Select Blood Group
+                </option>
+                <option value="A+">A+ (A Positive)</option>
+                <option value="A-">A- (A Negative)</option>
+                <option value="B+">B+ (B Positive)</option>
+                <option value="B-">B- (B Negative)</option>
+                <option value="AB+">AB+ (AB Positive)</option>
+                <option value="AB-">AB- (AB Negative)</option>
+                <option value="O+">O+ (O Positive)</option>
+                <option value="O-">O- (O Negative)</option>
               </select>
             </div>
 
             {/* Location */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-base font-bold text-gray-900 dark:text-gray-100 mb-3">
                 Location *
               </label>
               <div className="relative">
@@ -206,20 +208,20 @@ const CreateRequest = () => {
                   value={form.location}
                   onChange={handleLocationFieldChange}
                   required
-                  placeholder="Enter location where blood is needed"
-                  className="w-full px-4 py-2 pr-12 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  placeholder="Enter hospital/clinic name and address"
+                  className="w-full px-4 py-3 pr-16 text-base font-medium border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-3 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-all"
                 />
                 <button
                   type="button"
                   onClick={handleCaptureLocation}
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-red-600 hover:text-red-800"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-2xl text-red-600 hover:text-red-800 transition-colors"
                   title="Capture GPS Location"
                 >
                   📍
                 </button>
               </div>
               {locationData && (
-                <p className="text-xs text-green-600 mt-1">
+                <p className="text-sm text-green-700 dark:text-green-400 mt-2 font-semibold">
                   ✅ GPS location captured for precise matching
                 </p>
               )}
@@ -227,7 +229,7 @@ const CreateRequest = () => {
 
             {/* Urgency */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-base font-bold text-gray-900 dark:text-gray-100 mb-3">
                 Urgency Level *
               </label>
               <select
@@ -235,22 +237,22 @@ const CreateRequest = () => {
                 value={form.urgency}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                className="w-full px-4 py-3 text-base font-medium border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-3 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-all"
               >
-                <option value="Low">Low - Can wait a few days</option>
+                <option value="Low">🟢 Low - Can wait a few days</option>
                 <option value="Medium">
-                  Medium - Needed within 24-48 hours
+                  🟡 Medium - Needed within 24-48 hours
                 </option>
-                <option value="High">High - Needed within 12 hours</option>
+                <option value="High">🟠 High - Needed within 12 hours</option>
                 <option value="Emergency">
-                  Emergency - Needed immediately
+                  🔴 Emergency - Needed immediately
                 </option>
               </select>
             </div>
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-base font-bold text-gray-900 dark:text-gray-100 mb-3">
                 Additional Details (Optional)
               </label>
               <textarea
@@ -258,44 +260,48 @@ const CreateRequest = () => {
                 value={form.description}
                 onChange={handleChange}
                 rows={4}
-                placeholder="Provide any additional information about the blood requirement..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                placeholder="Provide any additional information about the blood requirement, patient condition, or special instructions..."
+                className="w-full px-4 py-3 text-base font-medium border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-3 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-all resize-y"
               />
             </div>
 
             {/* Error Display */}
             {error && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-red-700 text-sm">{error}</p>
+              <div className="p-4 bg-red-100 dark:bg-red-900/30 border-2 border-red-300 dark:border-red-700 rounded-lg">
+                <p className="text-red-800 dark:text-red-300 text-base font-semibold">
+                  ⚠️ {error}
+                </p>
               </div>
             )}
 
             {/* Submit Button */}
-            <div className="flex gap-4">
+            <div className="flex gap-4 pt-4">
               <button
                 type="button"
                 onClick={() => navigate("/dashboard")}
-                className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                className="flex-1 px-6 py-4 text-base font-semibold border-2 border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-3 focus:ring-gray-400 transition-all"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 px-6 py-3 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-6 py-4 text-base font-bold bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-3 focus:ring-red-500 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
               >
-                {loading ? "Creating Request..." : "Create Blood Request"}
+                {loading ? "🔄 Creating Request..." : "🩸 Create Blood Request"}
               </button>
             </div>
           </form>
 
           {/* Info Box */}
-          <div className="px-6 py-4 bg-blue-50 border-t border-gray-200">
+          <div className="px-8 py-6 bg-blue-50 dark:bg-blue-900/20 border-t border-gray-200 dark:border-gray-700 rounded-b-xl">
             <div className="flex items-start">
-              <div className="text-blue-500 mr-3 mt-0.5">ℹ️</div>
-              <div className="text-sm text-blue-700">
-                <p className="font-medium">How it works:</p>
-                <ul className="list-disc list-inside mt-1 space-y-1">
+              <div className="text-blue-600 dark:text-blue-400 mr-4 mt-1 text-xl">
+                ℹ️
+              </div>
+              <div className="text-base text-blue-800 dark:text-blue-300">
+                <p className="font-bold text-lg mb-3">How it works:</p>
+                <ul className="list-disc list-inside space-y-2 font-medium">
                   <li>Your request will be visible to nearby donors</li>
                   <li>Donors can send you offers to help</li>
                   <li>You can accept the best offer and coordinate directly</li>
