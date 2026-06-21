@@ -5,12 +5,10 @@ import BloodRequest from "../models/BloodRequest.js";
 import { canDonateTo } from "../utils/compatability.js";
 import { sendEmail } from "../utils/emailService.js";
 
-
 function getCompatibleBloodGroups(requestedType) {
   const allBloodGroups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
   return allBloodGroups.filter((group) => canDonateTo(group, requestedType));
 }
-
 
 const urgentWorker = new Worker(
   "urgent-blood-requests",
@@ -27,7 +25,6 @@ const urgentWorker = new Worker(
     console.log(`🚨 Processing urgent ${bloodGroup} request in ${location}`);
 
     try {
-
       const compatibleDonors = await User.find({
         location: location,
         available: { $ne: false },
@@ -35,32 +32,26 @@ const urgentWorker = new Worker(
       });
 
       console.log(
-        `Found ${compatibleDonors.length} compatible donors for ${bloodGroup}`
+        `Found ${compatibleDonors.length} compatible donors for ${bloodGroup}`,
       );
-
 
       const emailPromises = compatibleDonors.map(async (donor) => {
         try {
-          await sendEmail(
-            donor.email,
-            null,
-            "urgent-donor-alert",
-            {
-              donorName: donor.name,
-              bloodGroup: bloodGroup,
-              location: location,
-              hospital: hospital,
-              urgency: urgency,
-              requesterName: requesterName,
-              requestId: requestId,
-            }
-          );
+          await sendEmail(donor.email, null, "urgent-donor-alert", {
+            donorName: donor.name,
+            bloodGroup: bloodGroup,
+            location: location,
+            hospital: hospital,
+            urgency: urgency,
+            requesterName: requesterName,
+            requestId: requestId,
+          });
           console.log(`📧 Urgent alert sent to ${donor.name} (${donor.email})`);
           return { success: true, donor: donor.email };
         } catch (error) {
           console.error(
             `❌ Failed to send urgent alert to ${donor.email}:`,
-            error.message
+            error.message,
           );
           return { success: false, donor: donor.email, error: error.message };
         }
@@ -68,7 +59,7 @@ const urgentWorker = new Worker(
 
       const emailResults = await Promise.allSettled(emailPromises);
       const successfulEmails = emailResults.filter(
-        (result) => result.status === "fulfilled" && result.value.success
+        (result) => result.status === "fulfilled" && result.value.success,
       ).length;
 
       return {
@@ -79,7 +70,7 @@ const urgentWorker = new Worker(
         emailResults: emailResults.map((result) =>
           result.status === "fulfilled"
             ? result.value
-            : { success: false, error: result.reason }
+            : { success: false, error: result.reason },
         ),
       };
     } catch (error) {
@@ -87,9 +78,8 @@ const urgentWorker = new Worker(
       throw error;
     }
   },
-  { connection, concurrency: 5 }
+  { connection, concurrency: 5 },
 );
-
 
 const donorMatchingWorker = new Worker(
   "donor-matching",
@@ -97,7 +87,7 @@ const donorMatchingWorker = new Worker(
     const { requestId, bloodGroup, location } = job.data;
 
     console.log(
-      `🎯 Processing donor matching for ${bloodGroup} in ${location}`
+      `🎯 Processing donor matching for ${bloodGroup} in ${location}`,
     );
 
     try {
@@ -122,22 +112,21 @@ const donorMatchingWorker = new Worker(
       throw error;
     }
   },
-  { connection, concurrency: 3 }
+  { connection, concurrency: 3 },
 );
-
 
 const emailWorker = new Worker(
   "email-notifications",
   async (job) => {
     console.log(
       `📧 Email worker received job ${job.id} with data:`,
-      JSON.stringify(job.data, null, 2)
+      JSON.stringify(job.data, null, 2),
     );
 
     const { to, subject, template, data, priority = "normal" } = job.data;
 
     console.log(
-      `📧 Processing ${priority} email to ${to}: ${subject || "Template-based"}`
+      `📧 Processing ${priority} email to ${to}: ${subject || "Template-based"}`,
     );
 
     try {
@@ -155,7 +144,6 @@ const emailWorker = new Worker(
       };
     } catch (error) {
       console.error(`❌ Error sending email to ${to}:`, error.message);
-
 
       if (priority === "low") {
         return {
@@ -176,9 +164,8 @@ const emailWorker = new Worker(
     settings: {
       retryProcessDelay: 5000,
     },
-  }
+  },
 );
-
 
 emailWorker.on("ready", () => {
   console.log("📧 Email worker is ready and listening for jobs");
@@ -192,7 +179,6 @@ emailWorker.on("stalled", (jobId) => {
   console.log(`⏰ Email job ${jobId} stalled`);
 });
 
-
 const smsWorker = new Worker(
   "sms-notifications",
   async (job) => {
@@ -201,7 +187,6 @@ const smsWorker = new Worker(
     console.log(`📱 Processing SMS to ${to}`);
 
     try {
-
       console.log(`📱 SMS sent to ${to}: ${message}`);
 
       return {
@@ -215,9 +200,8 @@ const smsWorker = new Worker(
       throw error;
     }
   },
-  { connection, concurrency: 5 }
+  { connection, concurrency: 5 },
 );
-
 
 export function startWorkers() {
   console.log("🔧 Starting BullMQ workers...");
@@ -256,7 +240,6 @@ export function startWorkers() {
 
   console.log("✅ All BullMQ workers started successfully");
 }
-
 
 process.on("SIGTERM", async () => {
   console.log("🛑 Closing workers...");

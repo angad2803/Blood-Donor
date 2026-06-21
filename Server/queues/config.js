@@ -1,15 +1,11 @@
 import { Queue } from "bullmq";
 import Redis from "ioredis";
 
-
-const connection = new Redis({
-  host: process.env.REDIS_HOST || "localhost",
-  port: process.env.REDIS_PORT || 6379,
-  password: process.env.REDIS_PASSWORD || undefined,
+// Create Redis connection using Upstash REDIS_URL
+const connection = new Redis(process.env.REDIS_URL, {
   maxRetriesPerRequest: null,
   lazyConnect: true,
 });
-
 
 connection.on("connect", () => {
   console.log("✅ Redis connected successfully");
@@ -18,19 +14,28 @@ connection.on("connect", () => {
 connection.on("error", (err) => {
   console.error("❌ Redis connection error:", err.message);
   console.log(
-    "💡 Queue system will not work without Redis. Please install and start Redis server."
+    "💡 Queue system will not work without Redis. Please check your REDIS_URL.",
   );
 });
 
-
+// Create queues
 const urgentNotificationQueue = new Queue("urgent-blood-requests", {
   connection,
 });
-const donorMatchingQueue = new Queue("donor-matching", { connection });
-const emailQueue = new Queue("email-notifications", { connection });
-const smsQueue = new Queue("sms-notifications", { connection });
 
+const donorMatchingQueue = new Queue("donor-matching", {
+  connection,
+});
 
+const emailQueue = new Queue("email-notifications", {
+  connection,
+});
+
+const smsQueue = new Queue("sms-notifications", {
+  connection,
+});
+
+// Email queue helper functions
 export async function addEmailJob(jobData, options = {}) {
   try {
     const job = await emailQueue.add("send-email", jobData, options);
@@ -56,6 +61,7 @@ export async function clearEmailQueue() {
   }
 }
 
+// Export everything
 export {
   connection,
   urgentNotificationQueue,

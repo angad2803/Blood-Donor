@@ -1,5 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
+dotenv.config();
 import mongoose from "mongoose";
 import cors from "cors";
 import http from "http";
@@ -17,7 +18,6 @@ import aiRoutes from "./routes/ai.js";
 import passport from "passport";
 import "./config/passport.js";
 
-
 import { startWorkers } from "./queues/workers.js";
 import { createBullBoardRouter } from "./queues/dashboard.js";
 import {
@@ -27,21 +27,16 @@ import {
   smsQueue,
 } from "./queues/config.js";
 
-
-
-dotenv.config();
 console.log("🔄 Starting Blood Donor API...");
 console.log("📊 Environment:", process.env.NODE_ENV || "development");
 console.log(
   "️ Mongo URI:",
-  process.env.MONGO_URI ? "✅ Configured" : "❌ Missing"
+  process.env.MONGO_URI ? "✅ Configured" : "❌ Missing",
 );
 
 const app = express();
 
-
 const server = http.createServer(app);
-
 
 const io = new Server(server, {
   cors: {
@@ -51,9 +46,7 @@ const io = new Server(server, {
   },
 });
 
-
 app.set("io", io);
-
 
 app.set("urgentNotificationQueue", urgentNotificationQueue);
 app.set("donorMatchingQueue", donorMatchingQueue);
@@ -67,7 +60,6 @@ io.on("connection", (socket) => {
     socket.join(roomId);
     console.log(`User ${socket.id} joined room: ${roomId}`);
 
-
     const room = io.sockets.adapter.rooms.get(roomId);
     const users = room ? Array.from(room).map((id) => ({ id })) : [];
     io.to(roomId).emit("room-users", users);
@@ -77,7 +69,6 @@ io.on("connection", (socket) => {
     socket.leave(roomId);
     console.log(`User ${socket.id} left room: ${roomId}`);
 
-
     const room = io.sockets.adapter.rooms.get(roomId);
     const users = room ? Array.from(room).map((id) => ({ id })) : [];
     io.to(roomId).emit("room-users", users);
@@ -86,12 +77,11 @@ io.on("connection", (socket) => {
   socket.on("send-message", (data) => {
     const { roomId, message } = data;
 
-
     io.to(roomId).emit("receive-message", message);
 
     console.log(
       `Message sent to room ${roomId}:`,
-      message.text?.substring(0, 50) + "..."
+      message.text?.substring(0, 50) + "...",
     );
   });
 
@@ -105,17 +95,15 @@ io.on("connection", (socket) => {
   });
 });
 
-
 app.use(
   cors({
     origin: ["http://localhost:5173", "http://localhost:3000"],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],
-  })
+  }),
 );
 app.use(express.json());
-
 
 try {
   const { router: bullBoardRouter } = createBullBoardRouter();
@@ -128,7 +116,6 @@ try {
 
 app.use(passport.initialize());
 
-
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/request", requestRoutes);
@@ -139,7 +126,6 @@ app.use("/api/email", emailRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/ai", aiRoutes);
 
-
 const connectDB = async () => {
   console.log("🔄 Starting database connection...");
   try {
@@ -148,7 +134,6 @@ const connectDB = async () => {
       console.log("✅ MongoDB connected");
       console.log("Mongo Host:", mongoose.connection.host);
       console.log("Mongo DB:", mongoose.connection.name);
-      console.log("Mongo URI:", process.env.MONGO_URI);
 
       try {
         const User = (await import("./models/User.js")).default;
@@ -162,11 +147,12 @@ const connectDB = async () => {
         console.error("Error fetching counts:", err);
       }
     } else {
-      console.log("⚠️ No MONGO_URI provided, running without database");
+      console.error("❌ No MONGO_URI provided in environment variables!");
+      throw new Error("MONGO_URI is missing");
     }
   } catch (err) {
     console.error("❌ MongoDB connection error:", err);
-    console.log("⚠️ Continuing without database connection...");
+    throw err; // Stop execution if DB connection fails
   }
 
   console.log("🔄 Starting queue workers...");
@@ -179,16 +165,21 @@ const connectDB = async () => {
   }
 };
 
-
-connectDB();
-
-
 app.get("/", (req, res) =>
-  res.send("Blood Donor API is working - Queue Dashboard: /admin/queues")
+  res.send("Blood Donor API is working - Queue Dashboard: /admin/queues"),
 );
-
 
 export { io };
 
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => console.log(`Server running on ${PORT}`));
+const startServer = async () => {
+  try {
+    await connectDB();
+    const PORT = process.env.PORT || 5000;
+    server.listen(PORT, () => console.log(`Server running on ${PORT}`));
+  } catch (error) {
+    console.error("❌ Failed to start server:", error.message);
+    process.exit(1);
+  }
+};
+
+startServer();
