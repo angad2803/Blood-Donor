@@ -31,11 +31,12 @@ export const useDashboardData = () => {
   const fetchMyOffers = async () => {
     try {
       const res = await api.get("/offer/my-offers");
+      console.log("Trace: API response for my-offers:", res.data.offers?.length, res.data.offers);
       setMyOffers(res.data.offers);
 
       // Extract request IDs that the user has already sent offers for
       const offeredRequestIds = new Set(
-        res.data.offers.map((offer) => offer.bloodRequest._id)
+        res.data.offers.map((offer) => offer.bloodRequest?._id).filter(Boolean)
       );
       setRequestsWithOffers(offeredRequestIds);
     } catch (err) {

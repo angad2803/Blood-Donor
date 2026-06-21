@@ -6,9 +6,9 @@ import ConfirmationModal from "../ui/ConfirmationModal";
 const AdminRequestManagement = () => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [filter, setFilter] = useState("all"); // all, active, fulfilled, urgent
+  const [filter, setFilter] = useState("all");
 
-  // Confirmation modal state
+
   const [confirmationModal, setConfirmationModal] = useState({
     isOpen: false,
     title: "",
@@ -22,7 +22,7 @@ const AdminRequestManagement = () => {
     fetchRequests();
   }, []);
 
-  // Helper function to show confirmation modal
+
   const showConfirmation = ({
     title,
     message,
@@ -76,7 +76,7 @@ const AdminRequestManagement = () => {
         try {
           await api.delete(`/admin/requests/${requestId}`);
           toast.success(`Blood request deleted successfully`);
-          fetchRequests(); // Refresh the list
+          fetchRequests();
           closeConfirmation();
         } catch (error) {
           toast.error(
@@ -116,7 +116,7 @@ const AdminRequestManagement = () => {
             fulfilled: !isCurrentlyFulfilled,
           });
           toast.success(`Request status updated successfully`);
-          fetchRequests(); // Refresh the list
+          fetchRequests();
           closeConfirmation();
         } catch (error) {
           toast.error(
@@ -177,7 +177,7 @@ const AdminRequestManagement = () => {
           </button>
         </div>
 
-        {/* Filter Tabs */}
+        {}
         <div className="mt-4 flex space-x-4">
           {[
             { id: "all", label: "All Requests", icon: "📋" },
@@ -297,7 +297,7 @@ const AdminRequestManagement = () => {
                   </div>
 
                   <div className="flex flex-col space-y-2 ml-4">
-                    {/* Toggle Status Button */}
+                    {}
                     <button
                       onClick={() =>
                         toggleFulfillmentStatus(
@@ -316,7 +316,7 @@ const AdminRequestManagement = () => {
                       {request.fulfilled ? "Mark Active" : "Mark Fulfilled"}
                     </button>
 
-                    {/* Delete Button */}
+                    {}
                     <button
                       onClick={() =>
                         deleteRequest(
@@ -337,7 +337,7 @@ const AdminRequestManagement = () => {
         )}
       </div>
 
-      {/* Beautiful Confirmation Modal */}
+      {}
       <ConfirmationModal
         isOpen={confirmationModal.isOpen}
         onClose={closeConfirmation}

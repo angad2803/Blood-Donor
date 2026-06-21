@@ -2,8 +2,6 @@ import React, { useState, useContext, useRef, useEffect } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/api";
-import GPSSetupPrompt from "../../components/maps/GPSSetupPrompt";
-import { gpsLocationService } from "../../utils/gpsLocationService";
 import { gsap } from "gsap";
 
 const CompleteProfile = () => {
@@ -17,9 +15,6 @@ const CompleteProfile = () => {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showGPSPrompt, setShowGPSPrompt] = useState(false);
-  const [locationLoading, setLocationLoading] = useState(false);
-  const [locationError, setLocationError] = useState("");
 
   // GSAP Refs
   const formRef = useRef(null);
@@ -58,43 +53,7 @@ const CompleteProfile = () => {
       });
     });
 
-    // Auto-capture location when component mounts
-    captureLocation();
   }, []);
-
-  const captureLocation = async () => {
-    if (!gpsLocationService.isSupported()) {
-      setLocationError("Geolocation not supported by your browser");
-      return;
-    }
-
-    setLocationLoading(true);
-    setLocationError("");
-
-    try {
-      const result = await gpsLocationService.captureLocationAutomatically(
-        "complete profile setup",
-        false
-      );
-
-      if (result.success) {
-        setFormData((prev) => ({
-          ...prev,
-          location:
-            result.city ||
-            result.address ||
-            `${result.latitude?.toFixed(4)}, ${result.longitude?.toFixed(4)}`,
-        }));
-        setLocationError("");
-      } else {
-        setLocationError(result.error || "Failed to capture location");
-      }
-    } catch (error) {
-      setLocationError("Location capture failed: " + error.message);
-    } finally {
-      setLocationLoading(false);
-    }
-  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -113,90 +72,18 @@ const CompleteProfile = () => {
       });
 
       const updatedUser = response.data.user;
-      loginWithToken(updatedUser, token);
+      loginWithToken(token, updatedUser);
 
-      // Show GPS prompt if successful
-      setShowGPSPrompt(true);
+      navigate("/dashboard");
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to update profile");
+      setError(
+        err.response?.data?.message ||
+          "Failed to complete profile. Please try again."
+      );
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleGPSPromptClose = () => {
-    setShowGPSPrompt(false);
-    navigate("/dashboard");
-  };
-
-  // Get current location
-  const handleGetCurrentLocation = () => {
-    setLocationLoading(true);
-    setLocationError("");
-
-    if (!navigator.geolocation) {
-      setLocationError("Geolocation is not supported by this browser.");
-      setLocationLoading(false);
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
-
-        try {
-          // Use the server's reverse geocoding endpoint
-          const token = localStorage.getItem("token");
-          const response = await api.post(
-            "/users/reverse-geocode",
-            { latitude, longitude },
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-
-          if (response.data.success) {
-            const location =
-              response.data.data.address ||
-              `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
-            setFormData({ ...formData, location });
-          } else {
-            // Fallback to coordinates
-            const location = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
-            setFormData({ ...formData, location });
-          }
-          setLocationLoading(false);
-          setLocationError("");
-        } catch (error) {
-          console.error("Reverse geocoding error:", error);
-          // Fallback to coordinates if reverse geocoding fails
-          const location = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
-          setFormData({ ...formData, location });
-          setLocationLoading(false);
-          setLocationError("");
-        }
-      },
-      (error) => {
-        let errorMessage = "";
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            errorMessage = "Location access denied by user.";
-            break;
-          case error.POSITION_UNAVAILABLE:
-            errorMessage = "Location information is unavailable.";
-            break;
-          case error.TIMEOUT:
-            errorMessage = "Location request timed out.";
-            break;
-          default:
-            errorMessage = "An unknown error occurred.";
-            break;
-        }
-        setLocationError(errorMessage);
-        setLocationLoading(false);
-      }
-    );
-  };
-
-  return (
+  };  return (
     <>
       {/* Background Particles */}
       <div className="complete-particle fixed w-2 h-2 bg-purple-400/20 rounded-full pointer-events-none"></div>
@@ -268,53 +155,9 @@ const CompleteProfile = () => {
                     value={formData.location}
                     onChange={handleChange}
                     required
-                    className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white/70"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white/70"
                   />
-                  <button
-                    type="button"
-                    onClick={handleGetCurrentLocation}
-                    disabled={locationLoading}
-                    className="px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg"
-                  >
-                    {locationLoading ? (
-                      <>
-                        <div className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full"></div>
-                        <span className="hidden sm:inline">Getting...</span>
-                      </>
-                    ) : (
-                      <>
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                          />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-                        </svg>
-                        <span className="hidden sm:inline">GPS</span>
-                      </>
-                    )}
-                  </button>
                 </div>
-                {locationError && (
-                  <p className="text-red-500 text-sm mt-2">{locationError}</p>
-                )}
-                {locationLoading && (
-                  <p className="text-blue-500 text-sm mt-2">
-                    📍 Detecting your location...
-                  </p>
-                )}
               </div>
 
               {/* Donor Checkbox */}
@@ -361,16 +204,6 @@ const CompleteProfile = () => {
         </div>
       </div>
 
-      {/* GPS Setup Prompt for New Users */}
-      {showGPSPrompt && (
-        <GPSSetupPrompt
-          onClose={handleGPSPromptClose}
-          isNewUser={true}
-          canDismiss={true}
-          title="🎉 Profile Complete! Set Up GPS?"
-          description="Unlock powerful location-based blood donation features!"
-        />
-      )}
     </>
   );
 };

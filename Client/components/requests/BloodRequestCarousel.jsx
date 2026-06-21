@@ -8,7 +8,7 @@ import {
 } from "swiper/modules";
 import { gsap } from "gsap";
 
-// Import Swiper styles
+
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
@@ -18,8 +18,6 @@ const BloodRequestCarousel = ({
   requests = [],
   onSendOffer,
   onOpenChat,
-  onGetDirections,
-  getDistanceInfo,
   loading = false,
 }) => {
   const swiperRef = useRef(null);
@@ -29,9 +27,9 @@ const BloodRequestCarousel = ({
   const [isLastSlide, setIsLastSlide] = useState(requests.length <= 1);
 
   useEffect(() => {
-    // Animate cards entrance
+
     if (cardsRef.current.length > 0) {
-      // Filter out null refs before animating
+
       const validRefs = cardsRef.current.filter((ref) => ref !== null);
       if (validRefs.length > 0) {
         gsap.fromTo(
@@ -51,7 +49,7 @@ const BloodRequestCarousel = ({
     }
   }, [requests]);
 
-  // Update slide states when requests change
+
   useEffect(() => {
     setIsFirstSlide(true);
     setIsLastSlide(requests.length <= 1);
@@ -104,7 +102,7 @@ const BloodRequestCarousel = ({
     }
   };
 
-  // Loading state
+
   if (loading) {
     return (
       <div className="blood-request-carousel">
@@ -118,41 +116,41 @@ const BloodRequestCarousel = ({
 
   if (requests.length === 0) {
     return (
-      <div className="relative bg-gradient-to-br from-green-500/15 to-emerald-500/15 backdrop-blur-xl border-2 border-green-400/40 rounded-3xl shadow-2xl p-12 text-center">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-emerald-500/5 rounded-3xl"></div>
+      <div className="relative bg-gradient-to-br from-green-50 to-emerald-100 backdrop-blur-xl border-2 border-green-200 rounded-3xl shadow-lg p-12 text-center">
+        {}
+        <div className="absolute inset-0 bg-gradient-to-r from-green-100/50 to-emerald-100/50 rounded-3xl"></div>
 
         <div className="relative z-10">
-          {/* Success Icon */}
+          {}
           <div className="text-8xl mb-6 animate-bounce">✅</div>
 
-          {/* Success Message */}
-          <h3 className="text-2xl font-bold text-white mb-4">
+          {}
+          <h3 className="text-2xl font-bold text-green-900 mb-4">
             🎉 Amazing! All Requests Fulfilled! 🎉
           </h3>
 
-          <div className="bg-green-500/20 backdrop-blur-sm border border-green-400/40 rounded-xl p-6 mb-6">
-            <p className="text-lg text-green-100 font-semibold mb-2">
+          <div className="bg-white/60 backdrop-blur-md border border-green-300 rounded-xl p-6 mb-6">
+            <p className="text-lg text-green-800 font-semibold mb-2">
               Thanks to heroes like you, there are no urgent blood requests at
               the moment!
             </p>
-            <p className="text-green-200">
+            <p className="text-green-700">
               Keep checking back - new requests may appear at any time and lives
               depend on quick responses.
             </p>
           </div>
 
-          {/* Encourage Actions */}
+          {}
           <div className="space-y-4">
-            <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-4">
-              <h4 className="font-bold text-white mb-2 flex items-center justify-center">
+            <div className="bg-white/50 backdrop-blur-md border border-green-200 rounded-xl p-4">
+              <h4 className="font-bold text-green-900 mb-2 flex items-center justify-center">
                 <span className="mr-2">💡</span>
                 Stay Ready to Help
               </h4>
-              <p className="text-white/80 text-sm">
-                • Update your profile to match with compatible requests • Enable
-                notifications for urgent blood requests • Share this platform
-                with other potential donors
+              <p className="text-green-800 text-sm">
+                • Update your profile to match with compatible requests <br/>
+                • Enable notifications for urgent blood requests <br/>
+                • Share this platform with other potential donors
               </p>
             </div>
           </div>
@@ -163,7 +161,7 @@ const BloodRequestCarousel = ({
 
   return (
     <div className="blood-request-carousel">
-      {/* Clear Header */}
+      {}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-xl font-bold text-gray-800 flex items-center">
@@ -179,7 +177,7 @@ const BloodRequestCarousel = ({
         </div>
       </div>
 
-      {/* Swiper Carousel */}
+      {}
       <Swiper
         ref={swiperRef}
         modules={[Navigation, Pagination, Autoplay, EffectCoverflow]}
@@ -201,9 +199,9 @@ const BloodRequestCarousel = ({
         }}
         effect="slide"
         speed={600}
-        loop={false} // Disable loop to prevent cycling back to first
+        loop={false}
         onSlideChange={handleSlideChange}
-        allowSlidePrev={!isFirstSlide} // Disable previous navigation on first slide
+        allowSlidePrev={!isFirstSlide}
         breakpoints={{
           640: {
             slidesPerView: 1,
@@ -226,9 +224,6 @@ const BloodRequestCarousel = ({
       >
         {requests.map((request, index) => {
           const urgencyStyle = getUrgencyColor(request.urgency);
-          const distanceInfo = getDistanceInfo
-            ? getDistanceInfo(request)
-            : null;
 
           return (
             <SwiperSlide key={request._id}>
@@ -240,7 +235,7 @@ const BloodRequestCarousel = ({
                     : "border-gray-300"
                 } hover:border-blue-500 transform hover:-translate-y-1`}
               >
-                {/* Clear Header with Blood Type and Urgency */}
+                {}
                 <div className="relative flex items-start justify-between mb-4">
                   <div className="flex items-center">
                     <div className="bg-red-100 border-2 border-red-300 p-3 rounded-full mr-4">
@@ -277,7 +272,7 @@ const BloodRequestCarousel = ({
                   </span>
                 </div>
 
-                {/* Details Grid */}
+                {}
                 <div className="relative space-y-4 mb-8">
                   <div className="flex items-center text-sm text-gray-800 bg-gray-50 rounded-lg p-3 border border-gray-300">
                     <span className="mr-3 text-lg">📍</span>
@@ -313,30 +308,10 @@ const BloodRequestCarousel = ({
                     </div>
                   </div>
 
-                  {/* Distance Info */}
-                  {distanceInfo && (
-                    <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-3">
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center text-blue-900">
-                          <span className="mr-2 text-lg">
-                            {distanceInfo.icon}
-                          </span>
-                          <span className="font-bold">
-                            Distance: {distanceInfo.distanceText}
-                          </span>
-                        </div>
-                        <div className="text-blue-900 font-bold text-base">
-                          ~{distanceInfo.estimatedTime} min
-                        </div>
-                      </div>
-                      <p className="text-xs text-blue-800 mt-1 font-medium">
-                        {distanceInfo.description}
-                      </p>
-                    </div>
-                  )}
+
                 </div>
 
-                {/* Clear Action Buttons */}
+                {}
                 <div className="relative flex gap-3 mt-auto">
                   <button
                     onClick={() => onSendOffer && onSendOffer(request)}
@@ -352,32 +327,7 @@ const BloodRequestCarousel = ({
                     <span className="mr-2 text-lg">💬</span>
                     Chat Now
                   </button>
-                  <button
-                    onClick={() => {
-                      if (onGetDirections) {
-                        onGetDirections(request);
-                      } else {
-                        // Fallback to external maps
-                        if (request.requester?.coordinates?.coordinates) {
-                          const [reqLng, reqLat] =
-                            request.requester.coordinates.coordinates;
-                          const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${reqLat},${reqLng}&travelmode=driving`;
-                          window.open(googleMapsUrl, "_blank");
-                        } else {
-                          const encodedLocation = encodeURIComponent(
-                            request.location
-                          );
-                          const googleMapsUrl = `https://www.google.com/maps/search/${encodedLocation}`;
-                          window.open(googleMapsUrl, "_blank");
-                        }
-                      }
-                    }}
-                    className="bg-green-500 hover:bg-green-600 border-2 border-green-600 text-white px-4 py-3 rounded-lg font-bold transition-all duration-300 flex items-center justify-center shadow-lg hover:shadow-xl transform hover:scale-105 text-sm"
-                  >
-                    <span className="mr-2 text-lg">🗺️</span>
-                    <span className="hidden sm:inline">Get Directions</span>
-                    <span className="sm:hidden">Directions</span>
-                  </button>
+
                 </div>
               </div>
             </SwiperSlide>
@@ -385,7 +335,7 @@ const BloodRequestCarousel = ({
         })}
       </Swiper>
 
-      {/* Custom Navigation Buttons */}
+      {}
       <div className="flex items-center justify-center mt-6 space-x-4">
         <button
           className={`swiper-button-prev-custom p-3 rounded-full border border-gray-200 transition-all duration-200 transform ${
@@ -440,7 +390,7 @@ const BloodRequestCarousel = ({
         </button>
       </div>
 
-      {/* Carousel Info */}
+      {}
       <div className="text-center mt-4">
         <p className="text-xs text-gray-500">
           <span className="hidden sm:inline">

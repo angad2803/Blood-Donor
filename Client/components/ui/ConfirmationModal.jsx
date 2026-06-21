@@ -8,7 +8,7 @@ const ConfirmationModal = ({
   message,
   confirmText = "Confirm",
   cancelText = "Cancel",
-  type = "default", // default, danger, warning, success
+  type = "default",
   requiresTyping = false,
   typingText = "",
   icon = null,
@@ -78,7 +78,7 @@ const ConfirmationModal = ({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 transform transition-all">
-        {/* Header */}
+        {}
         <div className={`px-6 py-4 border-b ${styles.border}`}>
           <div className="flex items-center space-x-3">
             {icon && (
@@ -92,7 +92,7 @@ const ConfirmationModal = ({
           </div>
         </div>
 
-        {/* Content */}
+        {}
         <div className="px-6 py-4">
           <p className="text-gray-600 leading-relaxed mb-4">{message}</p>
 

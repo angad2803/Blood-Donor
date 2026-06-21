@@ -6,9 +6,9 @@ import ConfirmationModal from "../ui/ConfirmationModal";
 const AdminUserManagement = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [filter, setFilter] = useState("all"); // all, donors, hospitals, admins
+  const [filter, setFilter] = useState("all");
 
-  // Confirmation modal state
+
   const [confirmationModal, setConfirmationModal] = useState({
     isOpen: false,
     title: "",
@@ -22,7 +22,7 @@ const AdminUserManagement = () => {
     fetchUsers();
   }, []);
 
-  // Helper function to show confirmation modal
+
   const showConfirmation = ({
     title,
     message,
@@ -76,7 +76,7 @@ const AdminUserManagement = () => {
         try {
           await api.delete(`/admin/users/${userId}`);
           toast.success(`User "${userName}" deleted successfully`);
-          fetchUsers(); // Refresh the list
+          fetchUsers();
           closeConfirmation();
         } catch (error) {
           toast.error(
@@ -111,7 +111,7 @@ const AdminUserManagement = () => {
             isAdmin: !isCurrentlyAdmin,
           });
           toast.success(`Admin status updated for "${userName}"`);
-          fetchUsers(); // Refresh the list
+          fetchUsers();
           closeConfirmation();
         } catch (error) {
           toast.error(
@@ -157,7 +157,7 @@ const AdminUserManagement = () => {
           </button>
         </div>
 
-        {/* Filter Tabs */}
+        {}
         <div className="mt-4 flex space-x-4">
           {[
             { id: "all", label: "All Users", icon: "👥" },
@@ -268,7 +268,7 @@ const AdminUserManagement = () => {
                   </div>
 
                   <div className="flex flex-col space-y-2 ml-4">
-                    {/* Admin Toggle Button */}
+                    {}
                     <button
                       onClick={() =>
                         toggleAdminStatus(user._id, user.name, user.isAdmin)
@@ -282,7 +282,7 @@ const AdminUserManagement = () => {
                       {user.isAdmin ? "Remove Admin" : "Make Admin"}
                     </button>
 
-                    {/* Delete Button */}
+                    {}
                     <button
                       onClick={() => deleteUser(user._id, user.name)}
                       className="bg-red-100 text-red-700 px-3 py-1 rounded text-sm font-medium hover:bg-red-200"
@@ -297,7 +297,7 @@ const AdminUserManagement = () => {
         )}
       </div>
 
-      {/* Beautiful Confirmation Modal */}
+      {}
       <ConfirmationModal
         isOpen={confirmationModal.isOpen}
         onClose={closeConfirmation}

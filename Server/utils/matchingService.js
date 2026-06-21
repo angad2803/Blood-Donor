@@ -6,7 +6,7 @@ import { addEmailJob } from "../queues/config.js";
 
 class MatchingService {
   constructor() {
-    this.maxSearchRadius = 100000; // 100km in meters
+    this.maxSearchRadius = 100000;
     this.urgencyMultipliers = {
       Emergency: 1.5,
       High: 1.2,
@@ -15,9 +15,7 @@ class MatchingService {
     };
   }
 
-  /**
-   * Find compatible donors for a blood request with geolocation
-   */
+
   async findCompatibleDonors(requestId, options = {}) {
     try {
       const request = await BloodRequest.findById(requestId).populate(
@@ -26,13 +24,13 @@ class MatchingService {
       if (!request) throw new Error("Blood request not found");
 
       const {
-        maxDistance = 50000, // 50km default
+        maxDistance = 50000,
         limit = 20,
         includeRouteInfo = false,
-        sortBy = "proximity", // 'proximity', 'compatibility', 'mixed'
+        sortBy = "proximity",
       } = options;
 
-      // Find donors within radius using geospatial query
+
       const donors = await User.aggregate([
         {
           $geoNear: {
@@ -48,31 +46,31 @@ class MatchingService {
         },
         {
           $match: {
-            _id: { $ne: request.requester._id }, // Exclude requester
+            _id: { $ne: request.requester._id },
           },
         },
         {
-          $limit: limit * 2, // Get more to filter by blood compatibility
+          $limit: limit * 2,
         },
       ]);
 
-      // Filter by blood type compatibility
+
       const compatibleDonors = donors.filter((donor) =>
         canDonateTo(donor.bloodGroup, request.bloodGroup)
       );
 
-      // Calculate match scores
+
       const scoredDonors = await Promise.all(
         compatibleDonors.map(async (donor) => {
           const score = await this.calculateMatchScore(donor, request);
           const donorObj = { ...donor, matchScore: score };
 
-          // Add route information if requested
+
           if (includeRouteInfo && donor.coordinates) {
             try {
               const route = await geolocationService.calculateRoute(
-                donor.coordinates.coordinates[1], // latitude
-                donor.coordinates.coordinates[0], // longitude
+                donor.coordinates.coordinates[1],
+                donor.coordinates.coordinates[0],
                 request.coordinates.coordinates[1],
                 request.coordinates.coordinates[0]
               );
@@ -87,7 +85,7 @@ class MatchingService {
         })
       );
 
-      // Sort donors based on criteria
+
       const sortedDonors = this.sortDonors(scoredDonors, sortBy);
 
       return {
@@ -106,15 +104,13 @@ class MatchingService {
     }
   }
 
-  /**
-   * Find nearby blood requests for a donor
-   */
+
   async findNearbyRequests(donorId, options = {}) {
     try {
       const donor = await User.findById(donorId);
       if (!donor) throw new Error("Donor not found");
 
-      // Check if donor has location data
+
       if (
         !donor.coordinates ||
         !donor.coordinates.coordinates ||
@@ -130,7 +126,7 @@ class MatchingService {
       }
 
       const {
-        maxDistance = 50000, // 50km default
+        maxDistance = 50000,
         limit = 10,
         urgencyFilter,
         includeRouteInfo = false,
@@ -138,7 +134,7 @@ class MatchingService {
 
       console.log("Finding nearby blood requests using $near query...");
 
-      // Use $near instead of $geoNear to avoid index conflicts
+
       const query = {
         fulfilled: false,
         coordinates: {
@@ -149,12 +145,12 @@ class MatchingService {
         },
       };
 
-      // Add urgency filter if specified
+
       if (urgencyFilter) {
         query.urgency = urgencyFilter;
       }
 
-      // Blood compatibility filter - include requests that this donor can help with
+
       const donorBloodGroup = donor.bloodGroup;
       let compatibleBloodGroups = [];
 
@@ -193,26 +189,26 @@ class MatchingService {
           compatibleBloodGroups = ["AB+"];
           break;
         default:
-          compatibleBloodGroups = [donorBloodGroup]; // Same blood group at minimum
+          compatibleBloodGroups = [donorBloodGroup];
       }
 
       query.bloodGroup = { $in: compatibleBloodGroups };
 
       console.log("Blood Request Query:", JSON.stringify(query, null, 2));
 
-      // Execute the query with population
+
       let requestsQuery = BloodRequest.find(query)
         .populate("requester", "name hospitalName location bloodGroup")
         .limit(parseInt(limit));
 
       const requests = await requestsQuery;
 
-      // Calculate distances manually and add urgency scoring
+
       const requestsWithDistance = requests.map((request) => {
         let distance = 0;
         if (request.coordinates && request.coordinates.coordinates) {
-          // Calculate distance using Haversine formula
-          const R = 6371e3; // Earth's radius in meters
+
+          const R = 6371e3;
           const φ1 = (donor.coordinates.coordinates[1] * Math.PI) / 180;
           const φ2 = (request.coordinates.coordinates[1] * Math.PI) / 180;
           const Δφ =
@@ -233,7 +229,7 @@ class MatchingService {
           distance = R * c;
         }
 
-        // Add urgency score
+
         const urgencyScore =
           {
             Emergency: 4,
@@ -249,26 +245,26 @@ class MatchingService {
         };
       });
 
-      // Sort by urgency (highest first), then by distance (closest first), then by creation date (newest first)
+
       requestsWithDistance.sort((a, b) => {
         if (a.urgencyScore !== b.urgencyScore) {
-          return b.urgencyScore - a.urgencyScore; // Higher urgency first
+          return b.urgencyScore - a.urgencyScore;
         }
         if (a.distance !== b.distance) {
-          return a.distance - b.distance; // Closer distance first
+          return a.distance - b.distance;
         }
-        return new Date(b.createdAt) - new Date(a.createdAt); // Newer requests first
+        return new Date(b.createdAt) - new Date(a.createdAt);
       });
 
-      // Add route information if requested
+
       if (includeRouteInfo && requestsWithDistance.length > 0) {
         for (const request of requestsWithDistance) {
           try {
             const route = await geolocationService.calculateRoute(
-              donor.coordinates.coordinates[1], // donor lat
-              donor.coordinates.coordinates[0], // donor lng
-              request.coordinates.coordinates[1], // request lat
-              request.coordinates.coordinates[0] // request lng
+              donor.coordinates.coordinates[1],
+              donor.coordinates.coordinates[0],
+              request.coordinates.coordinates[1],
+              request.coordinates.coordinates[0]
             );
             request.routeInfo = route;
           } catch (error) {
@@ -316,7 +312,7 @@ class MatchingService {
     } catch (error) {
       console.error("Error finding nearby requests:", error);
 
-      // Return empty results instead of throwing
+
       return {
         requests: [],
         totalCount: 0,
@@ -326,40 +322,38 @@ class MatchingService {
     }
   }
 
-  /**
-   * Calculate match score for a donor-request pair
-   */
-  async calculateMatchScore(donor, request) {
-    let score = 100; // Base score
 
-    // Distance factor (closer = better)
+  async calculateMatchScore(donor, request) {
+    let score = 100;
+
+
     const distance = donor.distance || 0;
-    const distanceScore = Math.max(0, 50 - distance / 1000); // Max 50 points for distance
+    const distanceScore = Math.max(0, 50 - distance / 1000);
     score += distanceScore;
 
-    // Urgency factor
+
     const urgencyMultiplier = this.urgencyMultipliers[request.urgency] || 1.0;
     score *= urgencyMultiplier;
 
-    // Availability factor
+
     if (donor.available) score += 20;
 
-    // Recent donation factor (prefer donors who haven't donated recently)
+
     if (donor.lastDonationDate) {
       const daysSinceLastDonation =
         (Date.now() - donor.lastDonationDate) / (1000 * 60 * 60 * 24);
       if (daysSinceLastDonation < 56) {
-        // Less than 8 weeks
-        score *= 0.7; // Reduce score
+
+        score *= 0.7;
       }
     }
 
-    // Location accuracy factor
+
     if (donor.locationAccuracy && donor.locationAccuracy < 100) {
-      score += 10; // Bonus for accurate location
+      score += 10;
     }
 
-    // Preferred travel methods
+
     if (donor.locationPreferences?.preferredTravelMethods?.length > 0) {
       score += 5;
     }
@@ -367,13 +361,11 @@ class MatchingService {
     return Math.round(score);
   }
 
-  /**
-   * Calculate match score for a request from donor's perspective
-   */
+
   calculateRequestMatchScore(request, donor, distance) {
     let score = 100;
 
-    // Urgency factor (higher urgency = higher score)
+
     const urgencyScores = {
       Emergency: 100,
       High: 80,
@@ -382,11 +374,11 @@ class MatchingService {
     };
     score += urgencyScores[request.urgency] || 60;
 
-    // Distance factor (closer = better)
+
     const distanceScore = Math.max(0, 50 - distance);
     score += distanceScore;
 
-    // Time factor (newer requests get slight bonus)
+
     const hoursSinceCreated =
       (Date.now() - request.createdAt) / (1000 * 60 * 60);
     if (hoursSinceCreated < 24) {
@@ -396,9 +388,7 @@ class MatchingService {
     return Math.round(score);
   }
 
-  /**
-   * Sort donors based on different criteria
-   */
+
   sortDonors(donors, sortBy) {
     switch (sortBy) {
       case "proximity":
@@ -408,7 +398,7 @@ class MatchingService {
       case "mixed":
       default:
         return donors.sort((a, b) => {
-          // Combine distance and match score
+
           const aScore = (b.matchScore || 0) - a.distance / 1000;
           const bScore = (a.matchScore || 0) - b.distance / 1000;
           return bScore - aScore;
@@ -416,14 +406,12 @@ class MatchingService {
     }
   }
 
-  /**
-   * Send real-time notifications to nearby donors
-   */
+
   async notifyNearbyDonors(requestId, options = {}) {
     try {
       const matchResult = await this.findCompatibleDonors(requestId, {
         ...options,
-        limit: 50, // Notify more donors for urgent requests
+        limit: 50,
       });
 
       if (matchResult.donors.length === 0) {
@@ -431,7 +419,7 @@ class MatchingService {
         return { notified: 0 };
       }
 
-      // Send notifications via queue
+
       const notificationPromises = matchResult.donors.map((donor) => {
         const emailData = {
           to: donor.email,
@@ -467,9 +455,7 @@ class MatchingService {
     }
   }
 
-  /**
-   * Update donor's real-time location
-   */
+
   async updateDonorLocation(donorId, latitude, longitude, accuracy = null) {
     try {
       const donor = await User.findById(donorId);
@@ -479,24 +465,24 @@ class MatchingService {
         throw new Error("Invalid coordinates");
       }
 
-      // Reverse geocode to get address
+
       const address = await geolocationService.reverseGeocode(
         latitude,
         longitude
       );
 
-      // Update donor location
+
       await donor.updateLocation(latitude, longitude, address, accuracy);
 
-      // Check for nearby urgent requests and notify
+
       if (donor.locationPreferences?.shareRealTimeLocation) {
         const nearbyRequests = await this.findNearbyRequests(donorId, {
           urgencyFilter: "Emergency",
-          maxDistance: 25000, // 25km for emergency notifications
+          maxDistance: 25000,
         });
 
         if (nearbyRequests.requests.length > 0) {
-          // Notify donor about nearby emergency requests
+
           const emailData = {
             to: donor.email,
             type: "nearby_emergency_alert",
@@ -529,9 +515,7 @@ class MatchingService {
     }
   }
 
-  /**
-   * Find optimal meeting points for donor-hospital pairs
-   */
+
   async findOptimalMeetingPoints(donorId, requestId) {
     try {
       const donor = await User.findById(donorId);
@@ -540,13 +524,13 @@ class MatchingService {
       if (!donor || !request) throw new Error("Donor or request not found");
 
       const meetingPoint = await geolocationService.findOptimalMeetingPoint(
-        donor.coordinates.coordinates[1], // latitude
-        donor.coordinates.coordinates[0], // longitude
+        donor.coordinates.coordinates[1],
+        donor.coordinates.coordinates[0],
         request.coordinates.coordinates[1],
         request.coordinates.coordinates[0]
       );
 
-      // Calculate routes from both points to meeting point
+
       const [donorRoute, hospitalRoute] = await Promise.all([
         geolocationService.calculateRoute(
           donor.coordinates.coordinates[1],

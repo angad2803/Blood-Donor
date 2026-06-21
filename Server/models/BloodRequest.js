@@ -54,13 +54,13 @@ const bloodRequestSchema = new mongoose.Schema({
       default: "Point",
     },
     coordinates: {
-      type: [Number], // [longitude, latitude]
+      type: [Number],
       default: [0, 0],
     },
   },
 });
 
-// Create 2dsphere index for geospatial queries
+
 bloodRequestSchema.index({ coordinates: "2dsphere" });
 
 export default mongoose.model("BloodRequest", bloodRequestSchema);

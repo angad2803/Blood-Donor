@@ -13,7 +13,7 @@ const AdminCleanup = () => {
   const [activeTab, setActiveTab] = useState("cleanup");
   const { user } = useContext(AuthContext);
 
-  // Confirmation modal states
+
   const [confirmationModal, setConfirmationModal] = useState({
     isOpen: false,
     title: "",
@@ -64,7 +64,7 @@ const AdminCleanup = () => {
     }
   };
 
-  // Helper function to show confirmation modal
+
   const showConfirmation = ({
     title,
     message,
@@ -214,7 +214,7 @@ const AdminCleanup = () => {
             </p>
           </div>
 
-          {/* Navigation Tabs */}
+          {}
           <div className="mb-6 border-b border-gray-200">
             <nav className="flex space-x-8">
               {[
@@ -241,7 +241,7 @@ const AdminCleanup = () => {
             </nav>
           </div>
 
-          {/* Tab Content */}
+          {}
           {activeTab === "cleanup" && (
             <div className="space-y-6">
               <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
@@ -354,7 +354,7 @@ const AdminCleanup = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Delete All Users */}
+                {}
                 <div className="bg-white border-2 border-red-200 rounded-lg p-6">
                   <div className="text-center">
                     <div className="text-4xl mb-4">🗑️👥</div>
@@ -375,7 +375,7 @@ const AdminCleanup = () => {
                   </div>
                 </div>
 
-                {/* Delete All Requests */}
+                {}
                 <div className="bg-white border-2 border-red-200 rounded-lg p-6">
                   <div className="text-center">
                     <div className="text-4xl mb-4">🗑️🩸</div>
@@ -413,7 +413,7 @@ const AdminCleanup = () => {
         </>
       )}
 
-      {/* Beautiful Confirmation Modal */}
+      {}
       <ConfirmationModal
         isOpen={confirmationModal.isOpen}
         onClose={closeConfirmation}

@@ -24,7 +24,7 @@ const LoadingSpinner = ({
   };
 
   useEffect(() => {
-    // Enhanced spinner animation
+
     gsap.to(spinnerRef.current, {
       rotation: 360,
       duration: 1,
@@ -32,7 +32,7 @@ const LoadingSpinner = ({
       repeat: -1,
     });
 
-    // Pulsing message animation
+
     if (messageRef.current) {
       gsap.to(messageRef.current, {
         opacity: 0.5,
@@ -43,7 +43,7 @@ const LoadingSpinner = ({
       });
     }
 
-    // Scale pulse for larger spinners
+
     if (size === "lg" || size === "xl") {
       gsap.to(spinnerRef.current, {
         scale: 1.1,

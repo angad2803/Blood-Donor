@@ -10,7 +10,6 @@ const TabContent = ({
   acceptedOffers,
   handleAcceptOffer,
   handleOpenChat,
-  handleGetDirections,
   user,
 }) => {
   const renderTabContent = () => {
@@ -21,16 +20,14 @@ const TabContent = ({
             myRequests={myRequests}
             onAcceptOffer={handleAcceptOffer}
             onOpenChat={handleOpenChat}
-            onGetDirections={handleGetDirections}
             user={user}
           />
         );
       case "my-offers":
         return (
           <MyOffersCarousel
-            offers={myOffers}
+            myOffers={myOffers}
             onOpenChat={handleOpenChat}
-            onGetDirections={handleGetDirections}
           />
         );
       case "accepted":
@@ -38,7 +35,6 @@ const TabContent = ({
           <AcceptedOffersCarousel
             acceptedOffers={acceptedOffers}
             onOpenChat={handleOpenChat}
-            onGetDirections={handleGetDirections}
           />
         );
       default:
@@ -47,7 +43,7 @@ const TabContent = ({
   };
 
   if (activeTab === "browse") {
-    return null; // Browse content is handled separately
+    return null;
   }
 
   return (

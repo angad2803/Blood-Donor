@@ -11,7 +11,7 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // GSAP refs
+
   const titleRef = useRef(null);
   const bloodEmojiRef = useRef(null);
   const cardRef = useRef(null);
@@ -19,10 +19,10 @@ export default function Login() {
   const particlesRef = useRef(null);
 
   useEffect(() => {
-    // Entrance animations
+
     const tl = gsap.timeline();
 
-    // Animate blood emoji with pulse effect
+
     tl.fromTo(
       bloodEmojiRef.current,
       { scale: 0, rotation: -180, opacity: 0 },
@@ -34,21 +34,21 @@ export default function Login() {
         ease: "elastic.out(1, 0.8)",
       }
     )
-      // Animate title with typewriter effect
+
       .fromTo(
         titleRef.current,
         { opacity: 0, y: -50 },
         { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" },
         "-=0.6"
       )
-      // Animate card entrance
+
       .fromTo(
         cardRef.current,
         { opacity: 0, y: 100, scale: 0.8 },
         { opacity: 1, y: 0, scale: 1, duration: 1, ease: "power3.out" },
         "-=0.4"
       )
-      // Animate form elements
+
       .fromTo(
         formRef.current.querySelectorAll("input, button"),
         { opacity: 0, x: -30 },
@@ -56,7 +56,7 @@ export default function Login() {
         "-=0.5"
       );
 
-    // Continuous pulse animation for blood emoji
+
     gsap.to(bloodEmojiRef.current, {
       scale: 1.1,
       duration: 2,
@@ -65,7 +65,7 @@ export default function Login() {
       repeat: -1,
     });
 
-    // Floating animation for the card
+
     gsap.to(cardRef.current, {
       y: -10,
       duration: 3,
@@ -74,7 +74,7 @@ export default function Login() {
       repeat: -1,
     });
 
-    // Animate particles
+
     if (particlesRef.current) {
       const particles =
         particlesRef.current.querySelectorAll(".plasma-particle");
@@ -105,7 +105,7 @@ export default function Login() {
     setError("");
     setLoading(true);
 
-    // Loading animation
+
     gsap.to(formRef.current, {
       scale: 0.95,
       opacity: 0.7,
@@ -117,7 +117,7 @@ export default function Login() {
     setLoading(false);
 
     if (result.success) {
-      // Success animation
+
       gsap.to(cardRef.current, {
         scale: 1.05,
         rotation: 2,
@@ -138,7 +138,7 @@ export default function Login() {
     } else {
       setError(result.message || "Login failed");
 
-      // Error shake animation
+
       gsap.to(cardRef.current, {
         x: -10,
         duration: 0.1,
@@ -149,7 +149,7 @@ export default function Login() {
       });
     }
 
-    // Reset form animation
+
     gsap.to(formRef.current, {
       scale: 1,
       opacity: 1,
@@ -160,7 +160,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-br from-[#1e1b4b] via-[#3730a3] to-[#5b21b6] font-[Inter,sans-serif] relative overflow-hidden">
-      {/* Subtle Background Elements */}
+      {}
       <div
         ref={particlesRef}
         className="absolute inset-0 pointer-events-none opacity-30"
@@ -180,7 +180,7 @@ export default function Login() {
           />
         ))}
 
-        {/* Subtle floating blood cells */}
+        {}
         {[...Array(4)].map((_, i) => (
           <div
             key={`blood-cell-${i}`}
@@ -197,7 +197,7 @@ export default function Login() {
         ))}
       </div>
 
-      {/* Title and Blood Emoji Outside Card */}
+      {}
       <div className="text-center mb-8 z-10">
         <div
           ref={bloodEmojiRef}
@@ -224,7 +224,7 @@ export default function Login() {
         </p>
       </div>
 
-      {/* Glassmorphic Login Card */}
+      {}
       <div
         ref={cardRef}
         className="backdrop-blur-xl bg-[rgba(255,255,255,0.08)] rounded-[16px] shadow-2xl px-10 py-8 w-full max-w-md border border-white/20 z-10"

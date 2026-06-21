@@ -1,10 +1,10 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
-// Middleware to verify admin access
+
 export const requireAdmin = async (req, res, next) => {
   try {
-    // Check if user is authenticated
+
     const token = req.header("Authorization")?.replace("Bearer ", "");
 
     if (!token) {
@@ -14,10 +14,10 @@ export const requireAdmin = async (req, res, next) => {
       });
     }
 
-    // Verify JWT token
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Find user and check if they're an admin
+
     const user = await User.findById(decoded.id);
 
     if (!user) {
@@ -34,7 +34,7 @@ export const requireAdmin = async (req, res, next) => {
       });
     }
 
-    // Add user to request object for use in route handlers
+
     req.user = user;
     next();
   } catch (error) {

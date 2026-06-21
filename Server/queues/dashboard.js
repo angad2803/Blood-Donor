@@ -10,11 +10,11 @@ import {
   smsQueue,
 } from "./config.js";
 
-// Create Express adapter for Bull Board
+
 const serverAdapter = new ExpressAdapter();
 serverAdapter.setBasePath("/admin/queues");
 
-// Create Bull Board with all queues
+
 const { addQueue, removeQueue, setQueues, replaceQueues } = createBullBoard({
   queues: [
     new BullMQAdapter(urgentNotificationQueue, { readOnlyMode: false }),
@@ -43,7 +43,7 @@ const { addQueue, removeQueue, setQueues, replaceQueues } = createBullBoard({
   },
 });
 
-// Queue statistics helper
+
 const getQueueStats = async () => {
   try {
     const stats = {};
@@ -86,10 +86,10 @@ const getQueueStats = async () => {
   }
 };
 
-// Emergency queue priority manager
+
 const setEmergencyMode = async (requestId, priority = 1) => {
   try {
-    // Promote urgent jobs to highest priority
+
     const urgentJobs = await urgentNotificationQueue.getJobs([
       "waiting",
       "delayed",
@@ -109,7 +109,7 @@ const setEmergencyMode = async (requestId, priority = 1) => {
   }
 };
 
-// Queue health check
+
 const healthCheck = async () => {
   try {
     const health = {
@@ -119,7 +119,7 @@ const healthCheck = async () => {
       overall: "healthy",
     };
 
-    // Check Redis connection
+
     try {
       await connection.ping();
       health.redis = "connected";
@@ -128,11 +128,11 @@ const healthCheck = async () => {
       health.overall = "unhealthy";
     }
 
-    // Check queue status
+
     const stats = await getQueueStats();
     health.queues = stats;
 
-    // Determine overall health
+
     const totalFailed = Object.values(stats).reduce(
       (sum, queue) => sum + queue.failed,
       0
@@ -161,7 +161,7 @@ const healthCheck = async () => {
   }
 };
 
-// Cleanup old jobs
+
 const cleanupOldJobs = async (hoursOld = 24) => {
   try {
     const cutoffTime = Date.now() - hoursOld * 60 * 60 * 1000;
@@ -197,7 +197,7 @@ export {
   removeQueue,
 };
 
-// Default export for convenience
+
 export function createBullBoardRouter() {
   return { router: serverAdapter.getRouter() };
 }

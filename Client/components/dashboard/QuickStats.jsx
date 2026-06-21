@@ -14,33 +14,29 @@ const QuickStats = ({ requests, myRequests, myOffers }) => {
       label: "Active Requests",
       value: activeRequests,
       icon: "🩸",
-      color: "text-red-300",
-      bgGradient: "from-red-500/10 to-pink-500/10",
-      glowColor: "red",
+      color: "text-red-600 dark:text-red-400",
+      bgGradient: "bg-red-50 dark:bg-red-900/20",
     },
     {
       label: "My Requests",
       value: myActiveRequests,
       icon: "📋",
-      color: "text-blue-300",
-      bgGradient: "from-blue-500/10 to-cyan-500/10",
-      glowColor: "blue",
+      color: "text-blue-600 dark:text-blue-400",
+      bgGradient: "bg-blue-50 dark:bg-blue-900/20",
     },
     {
       label: "Pending Offers",
       value: pendingOffers,
       icon: "⏳",
-      color: "text-yellow-300",
-      bgGradient: "from-yellow-500/10 to-orange-500/10",
-      glowColor: "yellow",
+      color: "text-orange-500 dark:text-orange-400",
+      bgGradient: "bg-orange-50 dark:bg-orange-900/20",
     },
     {
       label: "Accepted Offers",
       value: acceptedOffers,
       icon: "✅",
-      color: "text-green-300",
-      bgGradient: "from-green-500/10 to-emerald-500/10",
-      glowColor: "green",
+      color: "text-green-600 dark:text-green-400",
+      bgGradient: "bg-green-50 dark:bg-green-900/20",
     },
   ];
 
@@ -49,23 +45,19 @@ const QuickStats = ({ requests, myRequests, myOffers }) => {
       {stats.map((stat, index) => (
         <div
           key={index}
-          className={`glass-card glass-interactive p-6 text-center bg-gradient-to-br ${stat.bgGradient} relative overflow-hidden group`}
+          className={`bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center hover:shadow-md transition-shadow relative overflow-hidden group`}
         >
-          {/* Glow effect on hover */}
-          <div
-            className={`absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-300 bg-gradient-to-br ${stat.bgGradient}`}
-          />
+          {}
+          <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${stat.bgGradient} -z-10`} />
 
           <div className="relative z-10">
-            <div
-              className={`text-3xl mb-3 transform group-hover:scale-110 transition-transform duration-200 ${stat.glowColor === "red" ? "neon-glow text-red-300" : stat.glowColor === "blue" ? "neon-glow text-blue-300" : stat.glowColor === "yellow" ? "neon-glow text-yellow-300" : "neon-glow text-green-300"}`}
-            >
+            <div className={`text-3xl mb-3 transform group-hover:scale-110 transition-transform duration-200`}>
               {stat.icon}
             </div>
             <div className={`text-3xl font-bold ${stat.color} mb-2`}>
               {stat.value}
             </div>
-            <div className="text-sm text-white font-semibold">{stat.label}</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">{stat.label}</div>
           </div>
         </div>
       ))}

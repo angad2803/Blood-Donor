@@ -9,9 +9,7 @@ import {
 import Login from "../components/auth/Login";
 import { AuthContext } from "../context/AuthContext";
 import useThemeStore from "../stores/themeStore";
-import "./styles/gsap-animations.css";
 import "./styles/swiper-carousel.css";
-import "./styles/glassmorphism.css";
 import GSAPDemo from "../components/ui/GSAPDemo";
 import GSAPDemoSimple from "../components/ui/GSAPDemoSimple";
 import GSAPDemoTest from "../components/ui/GSAPDemoTest";
@@ -25,13 +23,10 @@ import HospitalRequests from "../pages/requests/HospitalRequests";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import MatchedRequests from "../pages/requests/MatchedRequests";
-import ChatPage from "../pages/chat/ChatPage";
 import OAuthSuccess from "../pages/auth/OAuthSuccess";
 import CompleteProfile from "../pages/auth/CompleteProfile";
 import AccountTypeSelection from "../pages/auth/AccountTypeSelection";
 import SessionManager from "../components/auth/SessionManager";
-import GeolocationTest from "../pages/testing/GeolocationTest";
-import ArcGISMapTestPage from "../pages/testing/ArcGISMapTestPage";
 import ErrorBoundary from "../components/ui/ErrorBoundary";
 import AdminCleanup from "../components/admin/AdminCleanup";
 import Admin from "../pages/admin/Admin";
@@ -40,12 +35,12 @@ function App() {
   const { token, isLoading } = useContext(AuthContext);
   const { initializeTheme } = useThemeStore();
 
-  // Initialize theme on app start
+
   useEffect(() => {
     initializeTheme();
   }, [initializeTheme]);
 
-  // Show loading while checking authentication state
+
   if (isLoading) {
     return (
       <div className="loading-container">
@@ -55,7 +50,7 @@ function App() {
     );
   }
 
-  // Protected route wrapper
+
   const PrivateRoute = ({ children }) => {
     return token ? children : <Navigate to="/login" />;
   };
@@ -78,7 +73,7 @@ function App() {
               element={<AccountTypeSelection />}
             />
 
-            {/* Protected routes */}
+            {}
             <Route
               path="/dashboard"
               element={
@@ -91,15 +86,6 @@ function App() {
             <Route path="/nearby" element={<NearbyRequests />} />
             <Route path="/nearby-requests" element={<NearbyRequests />} />
             <Route path="/match" element={<MatchedRequests />} />
-            <Route
-              path="/chat/:requestId"
-              element={
-                <PrivateRoute>
-                  <ChatPage />
-                </PrivateRoute>
-              }
-            />
-
             <Route
               path="/create-request"
               element={
@@ -117,7 +103,7 @@ function App() {
               }
             />
 
-            {/* Hospital-specific routes */}
+            {}
             <Route
               path="/hospital/requests"
               element={
@@ -127,27 +113,9 @@ function App() {
               }
             />
 
-            {/* Geolocation Testing Page */}
-            <Route
-              path="/geolocation-test"
-              element={
-                <PrivateRoute>
-                  <GeolocationTest />
-                </PrivateRoute>
-              }
-            />
 
-            {/* ArcGIS Map Test Page */}
-            <Route
-              path="/arcgis-map-test"
-              element={
-                <PrivateRoute>
-                  <ArcGISMapTestPage />
-                </PrivateRoute>
-              }
-            />
 
-            {/* Admin Dashboard */}
+            {}
             <Route
               path="/admin"
               element={
@@ -157,7 +125,7 @@ function App() {
               }
             />
 
-            {/* Admin Cleanup Tool */}
+            {}
             <Route
               path="/admin-cleanup"
               element={
@@ -167,7 +135,7 @@ function App() {
               }
             />
 
-            {/* Default redirect */}
+            {}
             <Route
               path="/"
               element={

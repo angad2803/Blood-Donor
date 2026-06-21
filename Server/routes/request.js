@@ -5,19 +5,19 @@ import { addEmailJob, urgentNotificationQueue } from "../queues/config.js";
 
 const router = express.Router();
 
-// Helper function to validate that location is not raw coordinates
+
 function isValidLocationString(location) {
-  // Check if location looks like coordinates (e.g., "30.644634, 76.837683")
+
   const coordinatePattern = /^-?\d+\.\d+,?\s*-?\d+\.\d+$/;
   return !coordinatePattern.test(location.trim());
 }
 
-// Create a new blood request
+
 router.post("/create", verifyToken, async (req, res) => {
   const { bloodGroup, location, urgency, coordinates } = req.body;
 
   try {
-    // Validate that location is not raw coordinates for privacy
+
     if (!isValidLocationString(location)) {
       return res.status(400).json({
         message:
@@ -32,7 +32,7 @@ router.post("/create", verifyToken, async (req, res) => {
       urgency,
     };
 
-    // Add coordinates if provided, otherwise use user's coordinates
+
     if (coordinates && coordinates.latitude && coordinates.longitude) {
       requestData.coordinates = {
         type: "Point",
@@ -45,8 +45,8 @@ router.post("/create", verifyToken, async (req, res) => {
     const newRequest = new BloodRequest(requestData);
     await newRequest.save();
 
-    // Queue urgent notification if urgency is high
-    if (urgency === "urgent" || urgency === "critical") {
+
+    if (urgency === "High" || urgency === "Emergency") {
       try {
         await urgentNotificationQueue.add("urgent-blood-request", {
           requestId: newRequest._id,
@@ -61,11 +61,11 @@ router.post("/create", verifyToken, async (req, res) => {
         );
       } catch (queueError) {
         console.error("❌ Failed to queue urgent notification:", queueError);
-        // Don't fail the request creation if queue fails
+
       }
     }
 
-    // Queue regular email notification to requester
+
     try {
       await addEmailJob({
         to: req.user.email,
@@ -92,7 +92,7 @@ router.post("/create", verifyToken, async (req, res) => {
   }
 });
 
-// Get all active blood requests
+
 router.get("/all", async (req, res) => {
   try {
     const requests = await BloodRequest.find({ fulfilled: false })
@@ -105,7 +105,7 @@ router.get("/all", async (req, res) => {
   }
 });
 
-// Get requests created by the current user
+
 router.get("/my-requests", verifyToken, async (req, res) => {
   try {
     const userId = req.user._id;
@@ -125,20 +125,20 @@ router.get("/my-requests", verifyToken, async (req, res) => {
   }
 });
 
-// Fulfill a blood request (for hospitals)
+
 router.put("/:requestId/fulfill", verifyToken, async (req, res) => {
   try {
     const { requestId } = req.params;
     const { hospitalName } = req.body;
 
-    // Check if user is a hospital
+
     if (!req.user.isHospital) {
       return res.status(403).json({
         message: "Only hospitals can fulfill blood requests",
       });
     }
 
-    // Find and update the blood request
+
     const bloodRequest = await BloodRequest.findById(requestId).populate(
       "requester",
       "name email"
@@ -154,14 +154,14 @@ router.put("/:requestId/fulfill", verifyToken, async (req, res) => {
       });
     }
 
-    // Mark as fulfilled
+
     bloodRequest.fulfilled = true;
     bloodRequest.fulfilledBy = req.user._id;
     bloodRequest.fulfilledAt = new Date();
     bloodRequest.hospitalName = hospitalName || req.user.hospitalName;
     await bloodRequest.save();
 
-    // Queue notification email to requester
+
     try {
       if (bloodRequest.requester?.email) {
         await addEmailJob({

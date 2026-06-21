@@ -15,7 +15,6 @@ import AnimationStyles from "../../components/ui/AnimationStyles";
 // Hooks
 import { useDashboardData } from "../../hooks/useDashboardData";
 import { useDashboardState } from "../../hooks/useDashboardState";
-import { useGSAPAnimations } from "../../hooks/useGSAPAnimations";
 import useThemeStore from "../../stores/themeStore";
 
 const Dashboard = () => {
@@ -49,30 +48,13 @@ const Dashboard = () => {
     setActiveTab,
     showMapView,
     setShowMapView,
-    showChatbot,
-    setShowChatbot,
-    chatbotNotification,
-    setChatbotNotification,
     handleSendOffer,
     handleOpenChat,
-    handleGetDirections,
     useKeyboardShortcuts,
   } = useDashboardState();
 
-  // GSAP animations - keeping only tab transitions
-  const {
-    animateTabTransition,
-    animateRibbonTabChange,
-    animateCards,
-    addCardHoverEffects,
-  } = useGSAPAnimations();
-
-  // Refs for animations - cleaned up
-  const cardsRef = useRef([]);
-  const tabsRef = useRef(null);
-  const ribbonRef = useRef(null);
+  // Refs for navigation
   const mainContentRef = useRef(null);
-  const arcgisDirectionsRef = useRef(null);
 
   // Calculate available requests count for badge
   const availableRequestsCount = requests.filter(
@@ -80,30 +62,12 @@ const Dashboard = () => {
       !requestsWithOffers.has(req._id) && req.requester?._id !== user?._id
   ).length;
 
-  // Enhanced tab transition with animations
+  // Simple tab transition
   const handleTabTransition = (newTab) => {
-    animateTabTransition(
-      newTab,
-      mainContentRef,
-      setActiveTab,
-      (tab) => animateRibbonTabChange(tab, tabsRef),
-      cardsRef,
-      () => animateCards(cardsRef),
-      () => addCardHoverEffects(cardsRef)
-    );
+    setActiveTab(newTab);
   };
 
-  // Enhanced directions handler
-  const handleDirectionsClick = (request) => {
-    handleGetDirections(
-      request,
-      activeTab,
-      showMapView,
-      setActiveTab,
-      setShowMapView,
-      arcgisDirectionsRef
-    );
-  };
+
 
   // Setup keyboard shortcuts
   useKeyboardShortcuts(
@@ -129,61 +93,15 @@ const Dashboard = () => {
     }
   }, [location.state, fetchData, setActiveTab]);
 
-  // Entrance animations - REMOVED GSAP animations for better performance
-  useEffect(() => {
-    // Removed GSAP entrance animations
+  // Removed Entrance animations and hover effects
 
-    // Add ribbon hover effects after page load
-    setTimeout(() => {
-      if (ribbonRef.current) {
-        const tabButtons = ribbonRef.current.querySelectorAll("button");
-        tabButtons.forEach((button) => {
-          button.addEventListener("mouseenter", () => {
-            if (!button.classList.contains("active")) {
-              // Enhanced hover effect for non-active tabs
-            }
-          });
-        });
-      }
-    }, 100); // Reduced timeout since no animation needed
-
-    // No cleanup needed since no floating elements created
-  }, []);
-
-  // Cards animation on tab change
-  useEffect(() => {
-    setTimeout(() => {
-      animateCards(cardsRef);
-      addCardHoverEffects(cardsRef);
-    }, 100);
-  }, [activeTab, animateCards, addCardHoverEffects]);
 
   if (loading) {
     return <LoadingSpinner />;
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 relative overflow-hidden transition-colors duration-300">
-      {/* Dynamic Background */}
-      <div
-        className="fixed inset-0 z-0 transition-opacity duration-300"
-        style={{
-          background: `
-            radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
-            radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
-            radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%),
-            linear-gradient(135deg, #667eea 0%, #764ba2 100%)
-          `,
-          backgroundSize: "100% 100%, 100% 100%, 100% 100%, 100% 100%",
-          backgroundPosition: "0% 0%, 100% 100%, 50% 50%, 0% 0%",
-          animation: "pulseGradient 15s ease-in-out infinite",
-          opacity: isDarkMode ? "0.2" : "1",
-        }}
-      />
-
-      {/* Animation Styles */}
-      <AnimationStyles />
-
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
       {/* Header */}
       <div>
         <DashboardHeader
@@ -195,12 +113,10 @@ const Dashboard = () => {
       </div>
 
       {/* Navigation Tabs */}
-      <div ref={ribbonRef}>
+      <div>
         <NavigationTabs
           activeTab={activeTab}
           animateTabTransition={handleTabTransition}
-          tabsRef={tabsRef}
-          ribbonRef={ribbonRef}
           availableRequestsCount={availableRequestsCount}
         />
       </div>
@@ -231,8 +147,6 @@ const Dashboard = () => {
               setShowMapView={setShowMapView}
               handleSendOffer={handleSendOffer}
               handleOpenChat={handleOpenChat}
-              handleGetDirections={handleDirectionsClick}
-              arcgisDirectionsRef={arcgisDirectionsRef}
             />
           )}
 
@@ -244,7 +158,6 @@ const Dashboard = () => {
             acceptedOffers={acceptedOffers}
             handleAcceptOffer={handleAcceptOffer}
             handleOpenChat={handleOpenChat}
-            handleGetDirections={handleDirectionsClick}
             user={user}
           />
         </div>
@@ -261,10 +174,6 @@ const Dashboard = () => {
         selectedChatRequest={selectedChatRequest}
         showShortcutsModal={showShortcutsModal}
         setShowShortcutsModal={setShowShortcutsModal}
-        showChatbot={showChatbot}
-        setShowChatbot={setShowChatbot}
-        chatbotNotification={chatbotNotification}
-        setChatbotNotification={setChatbotNotification}
         user={user}
       />
     </div>

@@ -13,8 +13,14 @@ import "swiper/css/pagination";
 import "swiper/css/effect-coverflow";
 
 const MyOffersCarousel = ({ myOffers = [], onOpenChat }) => {
+  console.log("Trace: MyOffersCarousel received myOffers:", myOffers?.length, myOffers);
   const swiperRef = useRef(null);
   const cardsRef = useRef([]);
+
+
+  const validOffers = myOffers && Array.isArray(myOffers) 
+    ? myOffers.filter((offer) => offer && offer.bloodRequest && offer.bloodRequest._id)
+    : [];
 
   useEffect(() => {
     if (cardsRef.current.length > 0) {
@@ -35,18 +41,24 @@ const MyOffersCarousel = ({ myOffers = [], onOpenChat }) => {
         );
       }
     }
-  }, [myOffers]);
+  }, [validOffers]);
 
-  if (myOffers.length === 0) {
+  if (validOffers.length === 0) {
+    console.log("Trace: MyOffersCarousel rendering empty state because validOffers is empty");
     return (
-      <div className="text-center py-8">
-        <div className="text-6xl mb-4">💌</div>
-        <p className="text-gray-500">
+      <div className="text-center py-10 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-700">
+        <div className="text-5xl mb-4 opacity-50">💌</div>
+        <p className="text-gray-900 dark:text-white text-lg font-medium">
           You haven't sent any donation offers yet
+        </p>
+        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+          When you offer to donate blood, your offers will appear here
         </p>
       </div>
     );
   }
+
+  console.log("Trace: MyOffersCarousel rendering", validOffers.length, "offers");
 
   return (
     <div className="my-offers-carousel">
@@ -62,7 +74,7 @@ const MyOffersCarousel = ({ myOffers = [], onOpenChat }) => {
         loop={false}
         className="my-offers-swiper"
       >
-        {myOffers.map((offer, idx) => (
+        {validOffers.map((offer, idx) => (
           <SwiperSlide key={offer._id}>
             <div
               ref={(el) => (cardsRef.current[idx] = el)}
@@ -86,7 +98,7 @@ const MyOffersCarousel = ({ myOffers = [], onOpenChat }) => {
                       : "bg-yellow-100 text-yellow-800"
                   }`}
                 >
-                  {offer.status.charAt(0).toUpperCase() + offer.status.slice(1)}
+                  {(offer.status || "pending").charAt(0).toUpperCase() + (offer.status || "pending").slice(1)}
                 </span>
               </div>
               <p className="text-sm text-gray-700 italic mb-3">
@@ -103,14 +115,7 @@ const MyOffersCarousel = ({ myOffers = [], onOpenChat }) => {
                   )}
                 </div>
                 <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => onOpenChat(offer.bloodRequest)}
-                    className="bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 flex items-center space-x-1"
-                    title="Chat with requester"
-                  >
-                    <span>💬</span>
-                    <span className="text-sm">Chat</span>
-                  </button>
+
                   {offer.status === "accepted" && (
                     <div className="text-xs text-green-600 font-medium">
                       🎉 Accepted - Please coordinate with the requester

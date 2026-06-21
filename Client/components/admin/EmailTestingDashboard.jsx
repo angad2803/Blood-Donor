@@ -19,7 +19,7 @@ const EmailTestingDashboard = () => {
   const [testEmail, setTestEmail] = useState("");
   const [queueStatus, setQueueStatus] = useState(null);
 
-  // Load email configuration on component mount
+
   useEffect(() => {
     loadEmailConfig();
     loadQueueStatus();
@@ -169,7 +169,7 @@ const EmailTestingDashboard = () => {
         queueTest: data,
       }));
 
-      // Refresh queue status
+
       setTimeout(loadQueueStatus, 1000);
     } catch (error) {
       setResults((prev) => ({
@@ -219,7 +219,7 @@ const EmailTestingDashboard = () => {
           </p>
         </div>
 
-        {/* Email Configuration Status */}
+        {}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4 flex items-center">
             <Settings className="w-5 h-5 mr-2" />
@@ -312,7 +312,7 @@ const EmailTestingDashboard = () => {
           )}
         </div>
 
-        {/* Queue Status */}
+        {}
         {queueStatus && (
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <h2 className="text-xl font-semibold mb-4 flex items-center">
@@ -349,7 +349,7 @@ const EmailTestingDashboard = () => {
           </div>
         )}
 
-        {/* Test Email Input */}
+        {}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">Test Email Address</h2>
           <div className="flex items-center space-x-4">
@@ -363,9 +363,9 @@ const EmailTestingDashboard = () => {
           </div>
         </div>
 
-        {/* Email Tests */}
+        {}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Basic Email Tests */}
+          {}
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-xl font-semibold mb-4 flex items-center">
               <Send className="w-5 h-5 mr-2" />
@@ -432,7 +432,7 @@ const EmailTestingDashboard = () => {
             </div>
           </div>
 
-          {/* Queue Tests */}
+          {}
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-xl font-semibold mb-4 flex items-center">
               <Clock className="w-5 h-5 mr-2" />
@@ -505,7 +505,7 @@ const EmailTestingDashboard = () => {
           </div>
         </div>
 
-        {/* Results Section */}
+        {}
         {Object.keys(results).length > 0 && (
           <div className="mt-6 bg-white rounded-lg shadow-md p-6">
             <h2 className="text-xl font-semibold mb-4">Test Results</h2>

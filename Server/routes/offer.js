@@ -7,13 +7,13 @@ import { addEmailJob } from "../queues/config.js";
 
 const router = express.Router();
 
-// Send an offer to a blood request
+
 router.post("/send", verifyToken, async (req, res) => {
   try {
     const { requestId, message } = req.body;
     const donorId = req.user._id;
 
-    // Check if the blood request exists and is not fulfilled
+
     const bloodRequest = await BloodRequest.findById(requestId);
     if (!bloodRequest) {
       return res.status(404).json({ message: "Blood request not found" });
@@ -25,7 +25,7 @@ router.post("/send", verifyToken, async (req, res) => {
         .json({ message: "Blood request already fulfilled" });
     }
 
-    // Check if donor already sent an offer for this request
+
     const existingOffer = await Offer.findOne({
       bloodRequest: requestId,
       donor: donorId,
@@ -37,7 +37,7 @@ router.post("/send", verifyToken, async (req, res) => {
         .json({ message: "You have already sent an offer for this request" });
     }
 
-    // Create the offer
+
     const offer = new Offer({
       bloodRequest: requestId,
       donor: donorId,
@@ -46,14 +46,14 @@ router.post("/send", verifyToken, async (req, res) => {
 
     await offer.save();
 
-    // Add offer to blood request
+
     bloodRequest.offers.push(offer._id);
     await bloodRequest.save();
 
-    // Populate donor info for response
+
     await offer.populate("donor", "name bloodGroup location");
 
-    // Queue email notification to requester about new offer
+
     try {
       const requester = await User.findById(bloodRequest.requester);
       if (requester) {
@@ -89,13 +89,13 @@ router.post("/send", verifyToken, async (req, res) => {
   }
 });
 
-// Get all offers for a blood request (for requesters)
+
 router.get("/request/:requestId", verifyToken, async (req, res) => {
   try {
     const { requestId } = req.params;
     const userId = req.user._id;
 
-    // Check if user is the requester
+
     const bloodRequest = await BloodRequest.findById(requestId);
     if (!bloodRequest) {
       return res.status(404).json({ message: "Blood request not found" });
@@ -105,7 +105,7 @@ router.get("/request/:requestId", verifyToken, async (req, res) => {
       return res.status(403).json({ message: "Access denied" });
     }
 
-    // Get all offers for this request
+
     const offers = await Offer.find({ bloodRequest: requestId })
       .populate("donor", "name bloodGroup location coordinates")
       .sort({ createdAt: -1 });
@@ -117,36 +117,36 @@ router.get("/request/:requestId", verifyToken, async (req, res) => {
   }
 });
 
-// Accept an offer
+
 router.post("/accept/:offerId", verifyToken, async (req, res) => {
   try {
     const { offerId } = req.params;
     const userId = req.user._id;
 
-    // Find the offer
+
     const offer = await Offer.findById(offerId).populate("bloodRequest");
     if (!offer) {
       return res.status(404).json({ message: "Offer not found" });
     }
 
-    // Check if user is the requester
+
     if (offer.bloodRequest.requester.toString() !== userId.toString()) {
       return res.status(403).json({ message: "Access denied" });
     }
 
-    // Check if request is already fulfilled
+
     if (offer.bloodRequest.fulfilled) {
       return res
         .status(400)
         .json({ message: "Blood request already fulfilled" });
     }
 
-    // Accept the offer
+
     offer.status = "accepted";
     offer.respondedAt = new Date();
     await offer.save();
 
-    // Mark blood request as fulfilled
+
     const bloodRequest = offer.bloodRequest;
     bloodRequest.fulfilled = true;
     bloodRequest.fulfilledBy = offer.donor;
@@ -154,7 +154,7 @@ router.post("/accept/:offerId", verifyToken, async (req, res) => {
     bloodRequest.acceptedOffer = offerId;
     await bloodRequest.save();
 
-    // Reject all other pending offers for this request
+
     await Offer.updateMany(
       {
         bloodRequest: bloodRequest._id,
@@ -167,15 +167,15 @@ router.post("/accept/:offerId", verifyToken, async (req, res) => {
       }
     );
 
-    // Populate donor info for response
+
     await offer.populate("donor", "name bloodGroup location coordinates");
 
-    // Queue email notifications for offer acceptance
+
     try {
       const donor = await User.findById(offer.donor);
       const requester = await User.findById(bloodRequest.requester);
 
-      // Notify donor that their offer was accepted
+
       if (donor) {
         await addEmailJob({
           to: donor.email,
@@ -195,7 +195,7 @@ router.post("/accept/:offerId", verifyToken, async (req, res) => {
         );
       }
 
-      // Notify requester with donor contact details
+
       if (requester) {
         await addEmailJob({
           to: requester.email,
@@ -216,7 +216,7 @@ router.post("/accept/:offerId", verifyToken, async (req, res) => {
         );
       }
 
-      // Notify other donors that their offers were rejected
+
       const rejectedOffers = await Offer.find({
         bloodRequest: bloodRequest._id,
         _id: { $ne: offerId },
@@ -255,17 +255,20 @@ router.post("/accept/:offerId", verifyToken, async (req, res) => {
   }
 });
 
-// Get offers sent by the current user (for donors)
+
 router.get("/my-offers", verifyToken, async (req, res) => {
   try {
     const userId = req.user._id;
 
     const offers = await Offer.find({ donor: userId })
-      .populate(
-        "bloodRequest",
-        "bloodGroup location urgency fulfilled createdAt"
-      )
-      .populate("bloodRequest.requester", "name location coordinates")
+      .populate({
+        path: "bloodRequest",
+        select: "bloodGroup location urgency fulfilled createdAt requester",
+        populate: {
+          path: "requester",
+          select: "name location coordinates"
+        }
+      })
       .sort({ createdAt: -1 });
 
     res.json({ offers });
@@ -275,7 +278,7 @@ router.get("/my-offers", verifyToken, async (req, res) => {
   }
 });
 
-// Get accepted offers for the current user (for donors to get routing info)
+
 router.get("/accepted", verifyToken, async (req, res) => {
   try {
     const userId = req.user._id;

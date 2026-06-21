@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import api from "../../api/api.js";
-import { useNavigate } from "react-router-dom";
-import LocationCapture from "../../components/maps/LocationCapture";
-import { gsap } from "gsap";
+import { useNavigate, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const Register = () => {
+  const { t } = useTranslation();
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -19,70 +19,9 @@ const Register = () => {
   });
 
   const [error, setError] = useState("");
-  const [locationData, setLocationData] = useState(null);
   const [registrationStep, setRegistrationStep] = useState("form"); // form, location, complete
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-
-  // GSAP Refs
-  const formRef = useRef(null);
-  const titleRef = useRef(null);
-  const cardRef = useRef(null);
-  const fieldsRef = useRef([]);
-
-  useEffect(() => {
-    // Enhanced entrance animations with glassmorphism
-    const tl = gsap.timeline();
-
-    tl.fromTo(
-      titleRef.current,
-      { opacity: 0, y: -40, rotationX: -90 },
-      { opacity: 1, y: 0, rotationX: 0, duration: 1, ease: "back.out(1.7)" }
-    )
-      .fromTo(
-        cardRef.current,
-        { opacity: 0, scale: 0.8, rotationY: -15 },
-        {
-          opacity: 1,
-          scale: 1,
-          rotationY: 0,
-          duration: 0.8,
-          ease: "power2.out",
-        },
-        "-=0.6"
-      )
-      .fromTo(
-        fieldsRef.current,
-        { opacity: 0, x: -30, scale: 0.95 },
-        {
-          opacity: 1,
-          x: 0,
-          scale: 1,
-          duration: 0.5,
-          stagger: 0.08,
-          ease: "power2.out",
-        },
-        "-=0.4"
-      );
-
-    // Add floating particle effects
-    const particles = document.querySelectorAll(".register-particle");
-    particles.forEach((particle) => {
-      gsap.set(particle, {
-        x: Math.random() * window.innerWidth,
-        y: Math.random() * window.innerHeight,
-      });
-
-      gsap.to(particle, {
-        y: `+=${(Math.random() - 0.5) * 200}`,
-        x: `+=${(Math.random() - 0.5) * 100}`,
-        rotation: 360,
-        duration: Math.random() * 15 + 20,
-        repeat: -1,
-        ease: "none",
-        delay: Math.random() * 5,
-      });
-    });
-  }, []);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -92,162 +31,64 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setIsLoading(true);
 
     // First, complete the form registration
     try {
       const registrationData = { ...form };
 
-      // If we have location data, include coordinates
-      if (locationData && locationData.coordinates) {
-        registrationData.coordinates = {
-          latitude: locationData.coordinates.latitude,
-          longitude: locationData.coordinates.longitude,
-          accuracy: locationData.coordinates.accuracy,
-        };
-        // Update location field with more precise address if available
-        if (locationData.address) {
-          registrationData.location = locationData.address;
-        }
-      }
 
       await api.post("/auth/register", registrationData);
 
-      // If no location captured yet, show location capture
-      if (!locationData) {
-        setRegistrationStep("location");
-      } else {
-        // Registration complete
-        setRegistrationStep("complete");
-        setTimeout(() => navigate("/login"), 2000);
-      }
+      // Registration complete
+      setRegistrationStep("complete");
+      setTimeout(() => navigate("/login"), 2000);
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed");
+    } finally {
+      setIsLoading(false);
     }
   };
-
-  const handleLocationCaptured = (capturedLocationData) => {
-    console.log("Location captured during registration:", capturedLocationData);
-    setLocationData(capturedLocationData);
-    setRegistrationStep("complete");
-
-    // Navigate to login after a short delay
-    setTimeout(() => {
-      navigate("/login");
-    }, 2000);
-  };
-
-  const handleLocationSkipped = () => {
-    console.log("Location capture skipped during registration");
-    setRegistrationStep("complete");
-    setTimeout(() => navigate("/login"), 2000);
-  };
-
-  // Auto-capture location when user fills in location field
-  const handleLocationFieldChange = async (e) => {
-    const { name, value } = e.target;
-    handleChange(e);
-
-    // If user is typing location and we don't have GPS coordinates yet
-    if (
-      name === "location" &&
-      value.length > 3 &&
-      !locationData &&
-      navigator.geolocation
-    ) {
-      try {
-        // Try to capture location silently in background
-        const result = await new Promise((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(
-            (position) => {
-              const coordinates = {
-                latitude: position.coords.latitude,
-                longitude: position.coords.longitude,
-                accuracy: position.coords.accuracy,
-              };
-              resolve({
-                coordinates,
-                address: `${coordinates.latitude.toFixed(4)}, ${coordinates.longitude.toFixed(4)}`,
-                success: true,
-              });
-            },
-            (error) => {
-              reject(error);
-            },
-            { enableHighAccuracy: false, timeout: 5000, maximumAge: 300000 }
-          );
-        });
-        if (result.success) {
-          setLocationData(result);
-          console.log(
-            "Background location capture successful during registration"
-          );
-        }
-      } catch (error) {
-        // Silent fail - user can still register without GPS
-        console.log("Background location capture failed:", error.message);
-      }
-    }
-  };
-
-  // Show location capture step
-  if (registrationStep === "location") {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-blue-50">
-        <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold text-center text-blue-700 mb-4">
-            Almost Done! 🎉
-          </h2>
-          <p className="text-gray-600 text-center mb-6 text-sm">
-            Your account has been created successfully! Now let's enable
-            location access to help you connect with nearby blood requests and
-            donors.
-          </p>
-          <LocationCapture
-            onLocationCaptured={handleLocationCaptured}
-            onSkip={handleLocationSkipped}
-            purpose="find nearby blood requests and donors"
-            showSkipOption={true}
-            autoCapture={false}
-          />
-        </div>
-      </div>
-    );
-  }
 
   // Show completion step
   if (registrationStep === "complete") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-blue-50">
-        <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-md text-center">
-          <div className="mb-4">
-            <svg
-              className="w-16 h-16 text-green-500 mx-auto"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 transition-colors duration-300 px-4">
+        <div className="w-full max-w-md p-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 text-center">
+          <div className="mb-6 flex justify-center">
+            <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center border border-green-200 dark:border-green-800">
+              <svg
+                className="w-10 h-10 text-green-600 dark:text-green-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={3}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            </div>
           </div>
-          <h2 className="text-2xl font-semibold text-green-700 mb-4">
-            Registration Complete! ✅
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            {t("register.registration_complete")}
           </h2>
-          <p className="text-gray-600 mb-6">
-            Your account has been successfully created
-            {locationData ? " with location access" : ""}. You can now log in
+          <p className="text-gray-600 dark:text-gray-400 mb-8">
+            {t("register.account_created_success")}. You can now log in
             and start{" "}
             {form.isDonor
-              ? "helping save lives by donating blood"
-              : "finding blood donors in your area"}
+              ? t("register.helping_save_lives")
+              : t("register.finding_blood_donors")}
             .
           </p>
-          <div className="animate-pulse text-blue-600">
-            Redirecting to login...
+          <div className="inline-flex items-center text-blue-600 dark:text-blue-400 font-medium">
+            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-blue-600 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            {t("register.redirecting")}
           </div>
         </div>
       </div>
@@ -256,271 +97,222 @@ const Register = () => {
 
   // Show main registration form
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1e1b4b] via-[#3730a3] to-[#5b21b6] relative overflow-hidden flex items-center justify-center font-[Inter,sans-serif]">
-      {/* Subtle Background Elements */}
-      <div className="absolute inset-0 pointer-events-none opacity-30">
-        {[...Array(8)].map((_, i) => (
-          <div
-            key={`plasma-${i}`}
-            className="absolute rounded-full"
-            style={{
-              width: Math.random() * 150 + 50 + "px",
-              height: Math.random() * 150 + 50 + "px",
-              background: `radial-gradient(circle, rgba(139, 92, 246, 0.1), transparent)`,
-              left: Math.random() * 100 + "%",
-              top: Math.random() * 100 + "%",
-              animation: `float ${Math.random() * 25 + 30}s infinite linear`,
-            }}
-          />
-        ))}
-
-        {/* Subtle floating blood cells */}
-        {[...Array(4)].map((_, i) => (
-          <div
-            key={`blood-cell-${i}`}
-            className="absolute opacity-10 text-xl"
-            style={{
-              left: Math.random() * 100 + "%",
-              top: Math.random() * 100 + "%",
-              animation: `float ${Math.random() * 20 + 25}s infinite linear`,
-              animationDelay: Math.random() * 10 + "s",
-            }}
-          >
-            🩸
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
+      <div className="max-w-md w-full">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-8 sm:p-10">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-2">
+              {t("register.create_account")}
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {t("register.join_network")}
+            </p>
           </div>
-        ))}
-      </div>
 
-      <div className="relative z-10 w-full max-w-md">
-        <div
-          className="backdrop-blur-xl bg-[rgba(255,255,255,0.08)] rounded-[16px] shadow-2xl px-10 py-8 border border-white/20"
-          ref={cardRef}
-          style={{
-            boxShadow:
-              "0 25px 50px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)",
-            background:
-              "linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05))",
-          }}
-        >
-          <h2
-            className="text-3xl font-bold text-center text-white mb-8"
-            ref={titleRef}
-            style={{
-              textShadow:
-                "0 0 30px rgba(255, 255, 255, 0.5), 0 0 60px rgba(220, 38, 127, 0.3)",
-            }}
-          >
-            Join Blood Donor Network
-          </h2>
-
-          <form onSubmit={handleSubmit} className="space-y-5" ref={formRef}>
-            <div ref={(el) => (fieldsRef.current[0] = el)}>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {t("register.full_name")}
+              </label>
               <input
                 name="name"
-                placeholder="Full Name"
+                type="text"
+                placeholder={t("register.john_doe")}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-4 bg-[#2A2E40]/90 text-white placeholder-white/50 rounded-lg border border-white/20 focus:outline-none focus:ring-2 focus:ring-[#00E4FF]/60 focus:border-transparent transition-all duration-300 backdrop-blur-sm"
-                style={{
-                  fontFamily: "inherit",
-                  boxShadow: "inset 0 2px 10px rgba(0, 0, 0, 0.2)",
-                }}
+                className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               />
             </div>
 
-            <div ref={(el) => (fieldsRef.current[1] = el)}>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {t("register.email_address")}
+              </label>
               <input
                 name="email"
                 type="email"
-                placeholder="Email Address"
+                placeholder={t("register.john_example")}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-4 bg-[#2A2E40]/90 text-white placeholder-white/50 rounded-lg border border-white/20 focus:outline-none focus:ring-2 focus:ring-[#00E4FF]/60 focus:border-transparent transition-all duration-300 backdrop-blur-sm"
-                style={{
-                  fontFamily: "inherit",
-                  boxShadow: "inset 0 2px 10px rgba(0, 0, 0, 0.2)",
-                }}
+                className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               />
             </div>
 
-            <div ref={(el) => (fieldsRef.current[2] = el)}>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {t("register.password")}
+              </label>
               <input
                 name="password"
                 type="password"
-                placeholder="Password"
+                placeholder="••••••••"
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-4 bg-[#2A2E40]/90 text-white placeholder-white/50 rounded-lg border border-white/20 focus:outline-none focus:ring-2 focus:ring-[#00E4FF]/60 focus:border-transparent transition-all duration-300 backdrop-blur-sm"
-                style={{
-                  fontFamily: "inherit",
-                  boxShadow: "inset 0 2px 10px rgba(0, 0, 0, 0.2)",
-                }}
+                className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               />
             </div>
 
-            <div ref={(el) => (fieldsRef.current[3] = el)}>
-              <input
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {t("register.blood_group")}
+              </label>
+              <select
                 name="bloodGroup"
-                placeholder="Blood Group (e.g., A+)"
                 onChange={handleChange}
                 required={!form.isHospital}
                 disabled={form.isHospital}
-                className={`w-full px-4 py-4 bg-[#2A2E40]/90 text-white placeholder-white/50 rounded-lg border border-white/20 focus:outline-none focus:ring-2 focus:ring-[#00E4FF]/60 focus:border-transparent transition-all duration-300 backdrop-blur-sm ${
-                  form.isHospital ? "opacity-50 cursor-not-allowed" : ""
+                className={`w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                  form.isHospital ? "opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-800" : ""
                 }`}
-                style={{
-                  fontFamily: "inherit",
-                  boxShadow: "inset 0 2px 10px rgba(0, 0, 0, 0.2)",
-                }}
-              />
+              >
+                <option value="">{t("register.select_blood_group")}</option>
+                <option value="A+">A+</option>
+                <option value="A-">A-</option>
+                <option value="B+">B+</option>
+                <option value="B-">B-</option>
+                <option value="AB+">AB+</option>
+                <option value="AB-">AB-</option>
+                <option value="O+">O+</option>
+                <option value="O-">O-</option>
+              </select>
             </div>
 
-            <div className="relative" ref={(el) => (fieldsRef.current[4] = el)}>
-              <input
-                name="location"
-                placeholder="Location (e.g., Mumbai)"
-                value={form.location}
-                onChange={handleLocationFieldChange}
-                required
-                className="w-full px-4 py-4 bg-[#2A2E40]/90 text-white placeholder-white/50 rounded-lg border border-white/20 focus:outline-none focus:ring-2 focus:ring-[#00E4FF]/60 focus:border-transparent transition-all duration-300 backdrop-blur-sm"
-                style={{
-                  fontFamily: "inherit",
-                  boxShadow: "inset 0 2px 10px rgba(0, 0, 0, 0.2)",
-                }}
-              />
-              {locationData && (
-                <div className="absolute right-3 top-3">
-                  <svg
-                    className="w-6 h-6 text-green-300 neon-glow"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                  </svg>
-                </div>
-              )}
-            </div>
-
-            {locationData && (
-              <div className="text-sm text-green-300 glass-card-success p-3 rounded-lg">
-                📍 GPS location captured: {locationData.address}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {t("register.location")}
+              </label>
+              <div className="relative">
+                <input
+                  name="location"
+                  type="text"
+                  placeholder={t("register.city_area")}
+                  value={form.location}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                />
               </div>
-            )}
+            </div>
 
             {/* User Type Selection */}
-            <div
-              className="glass-card p-4 space-y-4"
-              ref={(el) => (fieldsRef.current[5] = el)}
-            >
-              <h3 className="text-sm font-semibold text-white/90">
-                Select Account Type:
-              </h3>
-              <label className="flex items-center space-x-3 cursor-pointer">
-                <input
-                  name="isDonor"
-                  type="checkbox"
-                  onChange={handleChange}
-                  disabled={form.isHospital}
-                  className="form-checkbox h-5 w-5 text-blue-400 rounded focus:ring-blue-300 glass-interactive"
-                />
-                <span
-                  className={`text-white/80 ${form.isHospital ? "opacity-50" : ""}`}
-                >
-                  I want to register as a donor
-                </span>
-              </label>
+            <div className="pt-2">
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">{t("register.account_type")}</p>
+              <div className="space-y-3 p-4 bg-gray-50 dark:bg-gray-700/30 rounded-xl border border-gray-200 dark:border-gray-600">
+                <label className={`flex items-center space-x-3 cursor-pointer ${form.isHospital ? "opacity-50" : ""}`}>
+                  <input
+                    name="isDonor"
+                    type="checkbox"
+                    onChange={handleChange}
+                    disabled={form.isHospital}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">
+                    {t("register.register_as_donor")}
+                  </span>
+                </label>
 
-              <label className="flex items-center space-x-3 cursor-pointer">
-                <input
-                  name="isHospital"
-                  type="checkbox"
-                  onChange={(e) => {
-                    handleChange(e);
-                    if (e.target.checked) {
-                      setForm((prev) => ({
-                        ...prev,
-                        isDonor: false,
-                        bloodGroup: "",
-                      }));
-                    }
-                  }}
-                  className="form-checkbox h-5 w-5 text-red-400 rounded focus:ring-red-300 glass-interactive"
-                />
-                <span className="text-white/80">
-                  I want to register as a hospital
-                </span>
-              </label>
+                <label className="flex items-center space-x-3 cursor-pointer">
+                  <input
+                    name="isHospital"
+                    type="checkbox"
+                    onChange={(e) => {
+                      handleChange(e);
+                      if (e.target.checked) {
+                        setForm((prev) => ({
+                          ...prev,
+                          isDonor: false,
+                          bloodGroup: "",
+                        }));
+                      }
+                    }}
+                    className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded cursor-pointer"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">
+                    {t("register.register_as_hospital")}
+                  </span>
+                </label>
+              </div>
             </div>
 
             {/* Hospital-specific fields */}
             {form.isHospital && (
-              <div
-                className="glass-card-primary p-4 space-y-4"
-                ref={(el) => (fieldsRef.current[6] = el)}
-              >
-                <h3 className="text-sm font-semibold text-white/90">
-                  Hospital Information:
+              <div className="space-y-4 p-4 bg-blue-50 dark:bg-blue-900/10 rounded-xl border border-blue-100 dark:border-blue-800/50">
+                <h3 className="text-sm font-semibold text-blue-800 dark:text-blue-300">
+                  {t("register.hospital_information")}
                 </h3>
-                <input
-                  name="hospitalName"
-                  placeholder="Hospital Name"
-                  onChange={handleChange}
-                  required={form.isHospital}
-                  className="w-full px-4 py-3 glass-card text-white placeholder-white/60 border-0 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all duration-300"
-                />
-                <input
-                  name="hospitalAddress"
-                  placeholder="Hospital Address"
-                  onChange={handleChange}
-                  required={form.isHospital}
-                  className="w-full px-4 py-3 glass-card text-white placeholder-white/60 border-0 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all duration-300"
-                />
-                <input
-                  name="hospitalLicense"
-                  placeholder="Hospital License Number"
-                  onChange={handleChange}
-                  required={form.isHospital}
-                  className="w-full px-4 py-3 glass-card text-white placeholder-white/60 border-0 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all duration-300"
-                />
+                <div>
+                  <input
+                    name="hospitalName"
+                    type="text"
+                    placeholder={t("register.hospital_name")}
+                    onChange={handleChange}
+                    required={form.isHospital}
+                    className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <input
+                    name="hospitalAddress"
+                    type="text"
+                    placeholder={t("register.hospital_address")}
+                    onChange={handleChange}
+                    required={form.isHospital}
+                    className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <input
+                    name="hospitalLicense"
+                    type="text"
+                    placeholder={t("register.hospital_license")}
+                    onChange={handleChange}
+                    required={form.isHospital}
+                    className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
               </div>
             )}
 
             {error && (
-              <div className="glass-card-danger p-3 text-red-300 text-sm rounded-lg">
-                {error}
+              <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded-md">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+                  </div>
+                </div>
               </div>
             )}
 
             <button
               type="submit"
-              className="w-full glass-button py-4 text-white font-semibold text-lg rounded-xl transition-all duration-300 hover:scale-105 glass-interactive"
-              ref={(el) => (fieldsRef.current[7] = el)}
+              disabled={isLoading}
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              <span className="mr-2">🚀</span>
-              Create Account
+              {isLoading ? (
+                <span className="flex items-center">
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  {t("register.creating_account")}
+                </span>
+              ) : (
+                t("register.create_account")
+              )}
             </button>
 
-            <div className="text-center">
-              <span className="text-white/60">Already have an account? </span>
-              <button
-                type="button"
-                onClick={() => navigate("/login")}
-                className="text-blue-300 hover:text-blue-200 font-medium transition-colors"
-              >
-                Sign in here
-              </button>
+            <div className="text-center pt-2">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {t("register.already_have_account")}{" "}
+                <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
+                  {t("register.sign_in_here")}
+                </Link>
+              </p>
             </div>
           </form>
         </div>

@@ -6,7 +6,7 @@ import { requireAdmin } from "../middleware/adminAuth.js";
 
 const router = express.Router();
 
-// Check if current user is admin
+
 router.get("/check-admin", requireAdmin, async (req, res) => {
   try {
     res.json({
@@ -27,7 +27,7 @@ router.get("/check-admin", requireAdmin, async (req, res) => {
   }
 });
 
-// Get all users for admin management
+
 router.get("/users", requireAdmin, async (req, res) => {
   try {
     const users = await User.find({})
@@ -49,12 +49,12 @@ router.get("/users", requireAdmin, async (req, res) => {
   }
 });
 
-// Delete a user
+
 router.delete("/users/:userId", requireAdmin, async (req, res) => {
   try {
     const { userId } = req.params;
 
-    // Find the user first
+
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({
@@ -63,7 +63,7 @@ router.delete("/users/:userId", requireAdmin, async (req, res) => {
       });
     }
 
-    // Don't allow deleting yourself
+
     if (userId === req.user._id.toString()) {
       return res.status(400).json({
         success: false,
@@ -71,15 +71,15 @@ router.delete("/users/:userId", requireAdmin, async (req, res) => {
       });
     }
 
-    // Delete related offers
+
     await Offer.deleteMany({
       $or: [{ donor: userId }, { requester: userId }],
     });
 
-    // Delete related blood requests
+
     await BloodRequest.deleteMany({ requester: userId });
 
-    // Delete the user
+
     await User.findByIdAndDelete(userId);
 
     console.log(
@@ -105,7 +105,7 @@ router.delete("/users/:userId", requireAdmin, async (req, res) => {
   }
 });
 
-// Toggle admin status for a user
+
 router.put("/users/:userId/admin", requireAdmin, async (req, res) => {
   try {
     const { userId } = req.params;
@@ -119,7 +119,7 @@ router.put("/users/:userId/admin", requireAdmin, async (req, res) => {
       });
     }
 
-    // Don't allow removing admin from yourself
+
     if (userId === req.user._id.toString() && !isAdmin) {
       return res.status(400).json({
         success: false,
@@ -158,7 +158,7 @@ router.put("/users/:userId/admin", requireAdmin, async (req, res) => {
   }
 });
 
-// Get all blood requests for admin management
+
 router.get("/requests", requireAdmin, async (req, res) => {
   try {
     const requests = await BloodRequest.find({})
@@ -181,12 +181,12 @@ router.get("/requests", requireAdmin, async (req, res) => {
   }
 });
 
-// Delete a blood request
+
 router.delete("/requests/:requestId", requireAdmin, async (req, res) => {
   try {
     const { requestId } = req.params;
 
-    // Find the request first
+
     const request = await BloodRequest.findById(requestId);
     if (!request) {
       return res.status(404).json({
@@ -195,10 +195,10 @@ router.delete("/requests/:requestId", requireAdmin, async (req, res) => {
       });
     }
 
-    // Delete related offers
+
     await Offer.deleteMany({ bloodRequest: requestId });
 
-    // Delete the request
+
     await BloodRequest.findByIdAndDelete(requestId);
 
     console.log(
@@ -224,7 +224,7 @@ router.delete("/requests/:requestId", requireAdmin, async (req, res) => {
   }
 });
 
-// Toggle fulfillment status of a blood request
+
 router.put("/requests/:requestId/status", requireAdmin, async (req, res) => {
   try {
     const { requestId } = req.params;
@@ -268,10 +268,10 @@ router.put("/requests/:requestId/status", requireAdmin, async (req, res) => {
   }
 });
 
-// Admin cleanup endpoint - BE CAREFUL WITH THIS
+
 router.delete("/cleanup-test-data", requireAdmin, async (req, res) => {
   try {
-    // List of test user names/emails to remove
+
     const testIdentifiers = [
       "Alice Singh",
       "test1",
@@ -279,12 +279,12 @@ router.delete("/cleanup-test-data", requireAdmin, async (req, res) => {
       "test@example.com",
       "alice@test.com",
       "alice.singh@test.com",
-      // Add any other test identifiers you want to remove
+
     ];
 
     console.log("🧹 Starting cleanup of test data...");
 
-    // Find test users first
+
     const testUsers = await User.find({
       $or: [
         { name: { $in: testIdentifiers } },
@@ -295,7 +295,7 @@ router.delete("/cleanup-test-data", requireAdmin, async (req, res) => {
     const testUserIds = testUsers.map((user) => user._id);
     console.log(`Found ${testUsers.length} test users to delete`);
 
-    // Delete related offers first (to maintain referential integrity)
+
     const deletedOffers = await Offer.deleteMany({
       $or: [
         { donor: { $in: testUserIds } },
@@ -303,7 +303,7 @@ router.delete("/cleanup-test-data", requireAdmin, async (req, res) => {
       ],
     });
 
-    // Delete blood requests from test users
+
     const deletedRequests = await BloodRequest.deleteMany({
       $or: [
         { requester: { $in: testUserIds } },
@@ -311,7 +311,7 @@ router.delete("/cleanup-test-data", requireAdmin, async (req, res) => {
       ],
     });
 
-    // Delete test users
+
     const deletedUsers = await User.deleteMany({
       $or: [
         { name: { $in: testIdentifiers } },
@@ -344,7 +344,7 @@ router.delete("/cleanup-test-data", requireAdmin, async (req, res) => {
   }
 });
 
-// Get test data count (to check before cleanup)
+
 router.get("/test-data-count", requireAdmin, async (req, res) => {
   try {
     const testIdentifiers = [
@@ -401,12 +401,12 @@ router.get("/test-data-count", requireAdmin, async (req, res) => {
   }
 });
 
-// DANGER ZONE: Delete ALL users except the current admin
+
 router.delete("/delete-all-users", requireAdmin, async (req, res) => {
   try {
     console.log(`🚨 Admin ${req.user.name} requested to DELETE ALL USERS`);
 
-    // Find all users except the current admin
+
     const usersToDelete = await User.find({
       _id: { $ne: req.user._id },
     });
@@ -417,17 +417,17 @@ router.delete("/delete-all-users", requireAdmin, async (req, res) => {
       `Found ${usersToDelete.length} users to delete (excluding admin)`
     );
 
-    // Delete all offers related to these users
+
     const deletedOffers = await Offer.deleteMany({
       $or: [{ donor: { $in: userIds } }, { requester: { $in: userIds } }],
     });
 
-    // Delete all blood requests from these users
+
     const deletedRequests = await BloodRequest.deleteMany({
       requester: { $in: userIds },
     });
 
-    // Delete all users except the current admin
+
     const deletedUsers = await User.deleteMany({
       _id: { $ne: req.user._id },
     });
@@ -460,17 +460,17 @@ router.delete("/delete-all-users", requireAdmin, async (req, res) => {
   }
 });
 
-// DANGER ZONE: Delete ALL blood requests
+
 router.delete("/delete-all-requests", requireAdmin, async (req, res) => {
   try {
     console.log(
       `🚨 Admin ${req.user.name} requested to DELETE ALL BLOOD REQUESTS`
     );
 
-    // Delete all offers first (to maintain referential integrity)
+
     const deletedOffers = await Offer.deleteMany({});
 
-    // Delete all blood requests
+
     const deletedRequests = await BloodRequest.deleteMany({});
 
     console.log(`✅ BULK DELETE completed by admin ${req.user.name}:`);

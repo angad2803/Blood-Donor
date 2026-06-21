@@ -4,14 +4,14 @@ import User from "../models/User.js";
 import { addEmailJob } from "../queues/config.js";
 const router = express.Router();
 
-// Example protected route
+
 router.get("/profile", verifyToken, (req, res) => {
   res.json({
     message: "This is a protected route",
     userId: req.user.id,
   });
 });
-// GET NEARBY DONORS
+
 
 router.get("/donors", async (req, res) => {
   try {
@@ -27,7 +27,7 @@ router.get("/donors", async (req, res) => {
       bloodGroup,
       location,
       available: { $ne: false },
-    }).select("-password"); // exclude password from result
+    }).select("-password");
 
     res.status(200).json({ donors });
   } catch (err) {
@@ -35,7 +35,7 @@ router.get("/donors", async (req, res) => {
   }
 });
 
-// Get current user (for OAuth and dashboard)
+
 router.get("/me", verifyToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
@@ -46,7 +46,7 @@ router.get("/me", verifyToken, async (req, res) => {
   }
 });
 
-// Update user profile (for OAuth users completing their profile and account type selection)
+
 router.put("/profile", verifyToken, async (req, res) => {
   try {
     const {
@@ -60,7 +60,7 @@ router.put("/profile", verifyToken, async (req, res) => {
       needsAccountTypeSelection,
     } = req.body;
 
-    // Validate required fields based on user type
+
     if (isHospital) {
       if (!hospitalName || !hospitalAddress || !hospitalLicense || !location) {
         return res.status(400).json({
@@ -76,10 +76,10 @@ router.put("/profile", verifyToken, async (req, res) => {
       }
     }
 
-    // Prepare update object
+
     const updateData = {
       location,
-      isDonor: isHospital ? false : isDonor, // Hospitals can't be donors
+      isDonor: isHospital ? false : isDonor,
       isHospital: isHospital || false,
       needsAccountTypeSelection:
         needsAccountTypeSelection !== undefined
@@ -87,15 +87,15 @@ router.put("/profile", verifyToken, async (req, res) => {
           : false,
     };
 
-    // Add hospital-specific fields
+
     if (isHospital) {
       updateData.hospitalName = hospitalName;
       updateData.hospitalAddress = hospitalAddress;
       updateData.hospitalLicense = hospitalLicense;
-      updateData.bloodGroup = undefined; // Remove blood group for hospitals
+      updateData.bloodGroup = undefined;
     } else {
       updateData.bloodGroup = bloodGroup;
-      // Clear hospital fields for individual users
+
       updateData.hospitalName = undefined;
       updateData.hospitalAddress = undefined;
       updateData.hospitalLicense = undefined;
@@ -109,7 +109,7 @@ router.put("/profile", verifyToken, async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Queue profile update confirmation email
+
     try {
       await addEmailJob({
         to: updatedUser.email,
@@ -141,24 +141,24 @@ router.put("/profile", verifyToken, async (req, res) => {
   }
 });
 
-// Complete user profile (simplified endpoint for initial profile completion)
+
 router.put("/complete-profile", verifyToken, async (req, res) => {
   try {
     const { bloodGroup, location, isDonor } = req.body;
 
-    // Validate required fields
+
     if (!bloodGroup || !location) {
       return res.status(400).json({
         message: "Blood group and location are required",
       });
     }
 
-    // Prepare update object
+
     const updateData = {
       bloodGroup,
       location,
       isDonor: isDonor || false,
-      profileComplete: true, // Mark profile as complete
+      profileComplete: true,
     };
 
     const updatedUser = await User.findByIdAndUpdate(req.user.id, updateData, {
@@ -169,7 +169,7 @@ router.put("/complete-profile", verifyToken, async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Queue welcome email for profile completion
+
     try {
       await addEmailJob({
         to: updatedUser.email,
@@ -198,10 +198,10 @@ router.put("/complete-profile", verifyToken, async (req, res) => {
   }
 });
 
-// GET ALL DONORS (for hospitals)
+
 router.get("/all-donors", verifyToken, async (req, res) => {
   try {
-    // Check if user is a hospital
+
     const user = await User.findById(req.user.id);
     if (!user?.isHospital) {
       return res
@@ -213,21 +213,21 @@ router.get("/all-donors", verifyToken, async (req, res) => {
 
     let filter = { available: true };
 
-    // Filter by location if provided (preferably hospital's location)
+
     if (location) {
       filter.location = location;
     } else if (user.location) {
       filter.location = user.location;
     }
 
-    // Filter by blood group if provided
+
     if (bloodGroup) {
       filter.bloodGroup = bloodGroup;
     }
 
     const donors = await User.find(filter)
-      .select("-password -email") // exclude sensitive information
-      .sort({ lastDonationDate: 1 }); // Sort by last donation date, earliest first
+      .select("-password -email")
+      .sort({ lastDonationDate: 1 });
 
     res.status(200).json({
       donors,
@@ -240,7 +240,7 @@ router.get("/all-donors", verifyToken, async (req, res) => {
   }
 });
 
-// Update user location
+
 router.post("/location", verifyToken, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -253,7 +253,7 @@ router.post("/location", verifyToken, async (req, res) => {
       accuracy,
     });
 
-    // Validate coordinates
+
     if (!latitude || !longitude) {
       return res.status(400).json({
         success: false,
@@ -261,7 +261,7 @@ router.post("/location", verifyToken, async (req, res) => {
       });
     }
 
-    // Validate coordinate ranges
+
     if (
       latitude < -90 ||
       latitude > 90 ||
@@ -274,10 +274,10 @@ router.post("/location", verifyToken, async (req, res) => {
       });
     }
 
-    // Simple address format if not provided (avoid raw coordinates for privacy)
+
     let formattedAddress = address || "Location captured";
 
-    // Update user location
+
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       {
@@ -287,7 +287,7 @@ router.post("/location", verifyToken, async (req, res) => {
           "address.formattedAddress": formattedAddress,
           locationAccuracy: accuracy || 0,
           locationTimestamp: new Date(),
-          location: formattedAddress, // Keep for backward compatibility
+          location: formattedAddress,
         },
       },
       { new: true, runValidators: true }
@@ -322,7 +322,7 @@ router.post("/location", verifyToken, async (req, res) => {
   }
 });
 
-// Update user location (PUT method for compatibility)
+
 router.put("/location", verifyToken, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -335,7 +335,7 @@ router.put("/location", verifyToken, async (req, res) => {
       accuracy,
     });
 
-    // Validate coordinates
+
     if (!latitude || !longitude) {
       return res.status(400).json({
         success: false,
@@ -343,7 +343,7 @@ router.put("/location", verifyToken, async (req, res) => {
       });
     }
 
-    // Validate coordinate ranges
+
     if (
       latitude < -90 ||
       latitude > 90 ||
@@ -356,10 +356,10 @@ router.put("/location", verifyToken, async (req, res) => {
       });
     }
 
-    // Simple address format if not provided (avoid raw coordinates for privacy)
+
     let formattedAddress = address || "Location captured";
 
-    // Update user location
+
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       {
@@ -369,7 +369,7 @@ router.put("/location", verifyToken, async (req, res) => {
           "address.formattedAddress": formattedAddress,
           locationAccuracy: accuracy || 0,
           locationTimestamp: new Date(),
-          location: formattedAddress, // Keep for backward compatibility
+          location: formattedAddress,
         },
       },
       { new: true, runValidators: true }
@@ -404,12 +404,12 @@ router.put("/location", verifyToken, async (req, res) => {
   }
 });
 
-// Reverse geocode coordinates to address
+
 router.post("/reverse-geocode", verifyToken, async (req, res) => {
   try {
     const { latitude, longitude } = req.body;
 
-    // Validate coordinates
+
     if (!latitude || !longitude) {
       return res.status(400).json({
         success: false,
@@ -417,7 +417,7 @@ router.post("/reverse-geocode", verifyToken, async (req, res) => {
       });
     }
 
-    // Validate coordinate ranges
+
     if (
       latitude < -90 ||
       latitude > 90 ||
@@ -430,7 +430,7 @@ router.post("/reverse-geocode", verifyToken, async (req, res) => {
       });
     }
 
-    // Import geolocation service
+
     const { default: GeolocationService } = await import(
       "../utils/geolocationService.js"
     );
@@ -456,7 +456,7 @@ router.post("/reverse-geocode", verifyToken, async (req, res) => {
     } catch (geocodeError) {
       console.error("Reverse geocoding failed:", geocodeError);
 
-      // Fallback to coordinates if geocoding fails
+
       res.status(200).json({
         success: true,
         message: "Coordinates captured (address lookup failed)",
@@ -475,7 +475,7 @@ router.post("/reverse-geocode", verifyToken, async (req, res) => {
   }
 });
 
-// Find nearby donors using geolocation
+
 router.get("/nearby-donors", verifyToken, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -488,7 +488,7 @@ router.get("/nearby-donors", verifyToken, async (req, res) => {
       });
     }
 
-    // Check if user has location data
+
     if (
       !user.coordinates ||
       !user.coordinates.coordinates ||
@@ -503,10 +503,10 @@ router.get("/nearby-donors", verifyToken, async (req, res) => {
     }
 
     const {
-      maxDistance = 50000, // 50km default
+      maxDistance = 50000,
       limit = 20,
       bloodGroup,
-      sortBy = "distance", // distance, compatibility, mixed
+      sortBy = "distance",
       includeRoutes = false,
     } = req.query;
 
@@ -518,7 +518,7 @@ router.get("/nearby-donors", verifyToken, async (req, res) => {
       includeRoutes,
     });
 
-    // Use $near instead of $geoNear to avoid index conflicts
+
     const query = {
       available: { $ne: false },
       _id: { $ne: user._id },
@@ -530,33 +530,33 @@ router.get("/nearby-donors", verifyToken, async (req, res) => {
       },
     };
 
-    // Add blood group filter if specified
+
     if (bloodGroup) {
       query.bloodGroup = bloodGroup;
     }
 
-    // Execute the query
+
     let donorsQuery = User.find(query)
       .select(
         "name bloodGroup phone location coordinates address lastDonationDate available locationTimestamp"
       )
       .limit(parseInt(limit));
 
-    // Sort based on sortBy parameter (distance sorting is automatic with $near)
+
     if (sortBy === "compatibility") {
-      // For compatibility sorting, we need to handle it differently
+
       donorsQuery = donorsQuery.sort({ bloodGroup: 1 });
     }
 
     const donors = await donorsQuery;
 
-    // Calculate distances manually for each donor
+
     const donorsWithDistance = donors.map((donor) => {
       let distance = 0;
       if (donor.coordinates && donor.coordinates.coordinates) {
-        // Calculate distance using Haversine formula
-        const R = 6371e3; // Earth's radius in meters
-        const φ1 = (user.coordinates.coordinates[1] * Math.PI) / 180; // φ, λ in radians
+
+        const R = 6371e3;
+        const φ1 = (user.coordinates.coordinates[1] * Math.PI) / 180;
         const φ2 = (donor.coordinates.coordinates[1] * Math.PI) / 180;
         const Δφ =
           ((donor.coordinates.coordinates[1] -
@@ -574,7 +574,7 @@ router.get("/nearby-donors", verifyToken, async (req, res) => {
           Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-        distance = R * c; // in metres
+        distance = R * c;
       }
 
       return {
@@ -583,7 +583,7 @@ router.get("/nearby-donors", verifyToken, async (req, res) => {
       };
     });
 
-    // Apply custom sorting if needed
+
     if (sortBy === "compatibility") {
       donorsWithDistance.sort((a, b) => {
         const aScore =
@@ -631,9 +631,9 @@ router.get("/nearby-donors", verifyToken, async (req, res) => {
         return bMixedScore - aMixedScore;
       });
     }
-    // Distance sorting is already handled by $near
 
-    // Add route information if requested
+
+
     if (includeRoutes === "true" && donorsWithDistance.length > 0) {
       const geolocationService = (
         await import("../utils/geolocationService.js")
@@ -643,10 +643,10 @@ router.get("/nearby-donors", verifyToken, async (req, res) => {
         if (donor.coordinates && donor.coordinates.coordinates) {
           try {
             const route = await geolocationService.calculateRoute(
-              user.coordinates.coordinates[1], // user lat
-              user.coordinates.coordinates[0], // user lng
-              donor.coordinates.coordinates[1], // donor lat
-              donor.coordinates.coordinates[0] // donor lng
+              user.coordinates.coordinates[1],
+              user.coordinates.coordinates[0],
+              donor.coordinates.coordinates[1],
+              donor.coordinates.coordinates[0]
             );
             donor.routeInfo = route;
           } catch (error) {

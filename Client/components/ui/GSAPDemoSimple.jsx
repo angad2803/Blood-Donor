@@ -5,7 +5,7 @@ const GSAPDemoSimple = () => {
   const titleRef = useRef(null);
 
   useEffect(() => {
-    // Simple title animation
+
     if (titleRef.current) {
       gsap.fromTo(
         titleRef.current,

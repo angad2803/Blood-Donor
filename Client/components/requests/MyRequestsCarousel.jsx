@@ -24,7 +24,7 @@ const MyRequestsCarousel = ({
   const cardsRef = useRef([]);
 
   useEffect(() => {
-    // Animate cards entrance
+
     if (cardsRef.current.length > 0) {
       const validRefs = cardsRef.current.filter((ref) => ref !== null);
       if (validRefs.length > 0) {
@@ -45,7 +45,7 @@ const MyRequestsCarousel = ({
     }
   }, [myRequests]);
 
-  // Only show requests NOT created by the current user
+
   const filteredRequests = myRequests.filter(
     (req) => req.requester?._id !== user?._id
   );

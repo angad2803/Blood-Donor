@@ -12,6 +12,9 @@
 .env.test
 *.env
 
+# Allow .env.example template to be committed
+!.env.example
+
 # API Keys and secrets
 config/secrets.js
 config/keys.js
@@ -90,9 +93,10 @@ out/
 .vscode/tasks.json
 .vscode/.ropeproject
 
-# Development and test files (but keep docs/)
+# Development and test files
 Server/scripts/
 Server/tests/
+docs/
 *.test.js
 *-test.js
 test-*.js
@@ -173,6 +177,7 @@ sessions/
 .classpath
 .settings/
 .metadata/
+.gemini/
 
 # OS generated files
 .DS_Store

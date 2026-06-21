@@ -18,12 +18,12 @@ const UserSchema = new mongoose.Schema(
     googleId: {
       type: String,
       unique: true,
-      sparse: true, // allows multiple null values
+      sparse: true,
     },
     bloodGroup: {
       type: String,
       required: function () {
-        // Only require if not a Google OAuth user with default values
+
         return !(this.googleId && this.bloodGroup === "O+");
       },
       enum: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"],
@@ -31,11 +31,11 @@ const UserSchema = new mongoose.Schema(
     location: {
       type: String,
       required: function () {
-        // Only require if not a Google OAuth user with default values
+
         return !(this.googleId && this.location === "Unknown");
       },
     },
-    // Enhanced geolocation fields - GeoJSON Point
+
     coordinates: {
       type: {
         type: String,
@@ -44,8 +44,8 @@ const UserSchema = new mongoose.Schema(
       },
       coordinates: {
         type: [Number],
-        default: [0, 0], // [longitude, latitude]
-        index: "2dsphere", // Enable geospatial queries
+        default: [0, 0],
+        index: "2dsphere",
       },
     },
     address: {
@@ -57,7 +57,7 @@ const UserSchema = new mongoose.Schema(
       formattedAddress: { type: String },
     },
     locationAccuracy: {
-      type: Number, // accuracy in meters
+      type: Number,
       default: null,
     },
     locationTimestamp: {
@@ -66,7 +66,7 @@ const UserSchema = new mongoose.Schema(
     },
     locationPreferences: {
       shareRealTimeLocation: { type: Boolean, default: false },
-      maxTravelDistance: { type: Number, default: 50 }, // in kilometers
+      maxTravelDistance: { type: Number, default: 50 },
       preferredTravelMethods: [
         { type: String, enum: ["driving", "walking", "public_transport"] },
       ],
@@ -126,10 +126,10 @@ const UserSchema = new mongoose.Schema(
   }
 );
 
-// Create 2dsphere index for geospatial queries
+
 UserSchema.index({ coordinates: "2dsphere" });
 
-// Add methods for geolocation
+
 UserSchema.methods.updateLocation = function (
   lat,
   lng,
@@ -138,7 +138,7 @@ UserSchema.methods.updateLocation = function (
 ) {
   this.coordinates = {
     type: "Point",
-    coordinates: [lng, lat], // MongoDB uses [longitude, latitude]
+    coordinates: [lng, lat],
   };
   this.locationTimestamp = new Date();
   if (accuracy) this.locationAccuracy = accuracy;
@@ -147,8 +147,8 @@ UserSchema.methods.updateLocation = function (
 };
 
 UserSchema.methods.getDistanceFrom = function (targetCoords) {
-  // Simple distance calculation (in km)
-  const R = 6371; // Earth's radius in km
+
+  const R = 6371;
   const dLat =
     ((targetCoords[1] - this.coordinates.coordinates[1]) * Math.PI) / 180;
   const dLon =
@@ -163,4 +163,15 @@ UserSchema.methods.getDistanceFrom = function (targetCoords) {
   return R * c;
 };
 
-export default mongoose.model("User", UserSchema);
+
+if (!UserSchema.path('needsAccountTypeSelection')) {
+  UserSchema.add({
+    needsAccountTypeSelection: {
+      type: Boolean,
+      default: false
+    }
+  });
+}
+
+const User = mongoose.model("User", UserSchema);
+export default User;

@@ -47,13 +47,7 @@ const Dashboard = () => {
     setActiveTab,
     showMapView,
     setShowMapView,
-    showChatbot,
-    setShowChatbot,
-    chatbotNotification,
-    setChatbotNotification,
-    handleSendOffer,
     handleOpenChat,
-    handleGetDirections,
     useKeyboardShortcuts,
   } = useDashboardState();
 
@@ -70,7 +64,6 @@ const Dashboard = () => {
   const tabsRef = useRef(null);
   const ribbonRef = useRef(null);
   const mainContentRef = useRef(null);
-  const arcgisDirectionsRef = useRef(null);
 
   // Calculate available requests count for badge
   const availableRequestsCount = requests.filter(
@@ -91,17 +84,7 @@ const Dashboard = () => {
     );
   };
 
-  // Enhanced directions handler
-  const handleDirectionsClick = (request) => {
-    handleGetDirections(
-      request,
-      activeTab,
-      showMapView,
-      setActiveTab,
-      setShowMapView,
-      arcgisDirectionsRef
-    );
-  };
+
 
   // Setup keyboard shortcuts
   useKeyboardShortcuts(
@@ -228,8 +211,6 @@ const Dashboard = () => {
               setShowMapView={setShowMapView}
               handleSendOffer={handleSendOffer}
               handleOpenChat={handleOpenChat}
-              handleGetDirections={handleDirectionsClick}
-              arcgisDirectionsRef={arcgisDirectionsRef}
             />
           )}
 
@@ -241,7 +222,6 @@ const Dashboard = () => {
             acceptedOffers={acceptedOffers}
             handleAcceptOffer={handleAcceptOffer}
             handleOpenChat={handleOpenChat}
-            handleGetDirections={handleDirectionsClick}
           />
         </div>
       </div>
@@ -257,10 +237,6 @@ const Dashboard = () => {
         selectedChatRequest={selectedChatRequest}
         showShortcutsModal={showShortcutsModal}
         setShowShortcutsModal={setShowShortcutsModal}
-        showChatbot={showChatbot}
-        setShowChatbot={setShowChatbot}
-        chatbotNotification={chatbotNotification}
-        setChatbotNotification={setChatbotNotification}
         user={user}
       />
     </div>

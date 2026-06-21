@@ -21,19 +21,19 @@ const DashboardHeader = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4 opacity-80 hover:opacity-100 transition-opacity duration-300">
           <div className="flex items-center space-x-4">
-            {/* Logo Only */}
+            {}
             <div
               className="flex items-center cursor-pointer group"
               onClick={() => navigate("/")}
             >
-              {/* Logo - Larger Size */}
+              {}
               <div className="w-16 h-16 rounded-lg flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300 group-hover:scale-105 bg-transparent">
                 <img
                   src="/ChatGPT-Image-Jun-27_-2025_-10_06_09-PM.svg"
                   alt="Blood Donation App"
                   className="w-14 h-14 object-contain"
                   onError={(e) => {
-                    // Fallback to emoji if image doesn't load
+
                     e.target.style.display = "none";
                     e.target.nextSibling.style.display = "block";
                   }}
@@ -44,17 +44,17 @@ const DashboardHeader = ({
               </div>
             </div>
 
-            {/* User Info Card - Enhanced Visibility */}
+            {}
             <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 shadow-sm">
               <div className="flex items-center space-x-3">
-                {/* User Avatar - Larger */}
+                {}
                 <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center shadow-sm">
                   <span className="text-white font-bold text-base">
                     {user?.name?.charAt(0)?.toUpperCase()}
                   </span>
                 </div>
 
-                {/* User Details - Larger and More Visible */}
+                {}
                 <div>
                   <div className="flex items-center space-x-2">
                     <span className="text-base font-bold text-gray-900 dark:text-gray-100">
@@ -67,7 +67,7 @@ const DashboardHeader = ({
                     </div>
                   </div>
 
-                  {/* Location Info - More Visible */}
+                  {}
                   {user?.location && (
                     <div className="flex items-center space-x-1 mt-1">
                       <span className="text-sm text-red-500">📍</span>
@@ -81,12 +81,12 @@ const DashboardHeader = ({
             </div>
           </div>
 
-          {/* Right Side Actions - Smaller and less prominent */}
+          {}
           <div className="flex items-center space-x-2 opacity-70 hover:opacity-100 transition-opacity duration-300">
-            {/* Theme Toggle */}
+            {}
             <ThemeToggle className="mr-1" />
 
-            {/* Hospital-specific navigation */}
+            {}
             {user?.isHospital && (
               <button
                 onClick={() => navigate("/hospital/requests")}
@@ -106,7 +106,7 @@ const DashboardHeader = ({
               <span className="text-sm">⌨️</span>
             </button>
 
-            {/* GSAP Demo Button */}
+            {}
             <button
               onClick={() => navigate("/gsap-demo")}
               className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-2 py-1.5 rounded-md hover:from-purple-600 hover:to-pink-600 focus:outline-none focus:ring-1 focus:ring-purple-400 transition-all duration-200 flex items-center space-x-1 text-xs"
@@ -116,11 +116,11 @@ const DashboardHeader = ({
               <span>Demos</span>
             </button>
 
-            {/* Admin Cleanup Button - Only show for admin users */}
+            {}
             {user?.isAdmin && (
               <button
                 onClick={async () => {
-                  // Refresh user data to check current admin status
+
                   const freshUser = await refreshUserData();
                   if (freshUser?.isAdmin) {
                     navigate("/admin-cleanup");

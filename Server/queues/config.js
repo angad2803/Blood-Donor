@@ -1,16 +1,16 @@
 import { Queue } from "bullmq";
 import Redis from "ioredis";
 
-// Redis connection configuration
+
 const connection = new Redis({
   host: process.env.REDIS_HOST || "localhost",
   port: process.env.REDIS_PORT || 6379,
   password: process.env.REDIS_PASSWORD || undefined,
-  maxRetriesPerRequest: null, // Required for BullMQ
+  maxRetriesPerRequest: null,
   lazyConnect: true,
 });
 
-// Handle Redis connection events
+
 connection.on("connect", () => {
   console.log("✅ Redis connected successfully");
 });
@@ -22,7 +22,7 @@ connection.on("error", (err) => {
   );
 });
 
-// Create queues
+
 const urgentNotificationQueue = new Queue("urgent-blood-requests", {
   connection,
 });
@@ -30,7 +30,7 @@ const donorMatchingQueue = new Queue("donor-matching", { connection });
 const emailQueue = new Queue("email-notifications", { connection });
 const smsQueue = new Queue("sms-notifications", { connection });
 
-// Queue helper functions
+
 export async function addEmailJob(jobData, options = {}) {
   try {
     const job = await emailQueue.add("send-email", jobData, options);

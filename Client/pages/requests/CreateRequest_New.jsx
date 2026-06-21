@@ -16,83 +16,12 @@ const CreateRequest = () => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [locationData, setLocationData] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm({ ...form, [name]: value });
   };
 
-  const handleLocationFieldChange = async (e) => {
-    const value = e.target.value;
-    setForm({ ...form, location: value });
-
-    // Try to capture location when user starts typing
-    if (value.length > 3 && !locationData && navigator.geolocation) {
-      try {
-        const result = await new Promise((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(
-            (position) => {
-              const coordinates = {
-                latitude: position.coords.latitude,
-                longitude: position.coords.longitude,
-                accuracy: position.coords.accuracy,
-              };
-              resolve({ success: true, coordinates });
-            },
-            (error) => {
-              console.error("Geolocation error:", error);
-              reject(error);
-            }
-          );
-        });
-
-        if (result.success) {
-          setLocationData(result);
-        }
-      } catch (error) {
-        console.log("Geolocation capture failed:", error);
-      }
-    }
-  };
-
-  const handleCaptureLocation = async () => {
-    try {
-      toast.info("📍 Capturing your location...");
-      const result = await new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const coordinates = {
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude,
-              accuracy: position.coords.accuracy,
-            };
-            resolve({ success: true, coordinates });
-          },
-          (error) => {
-            console.error("Geolocation error:", error);
-            reject(error);
-          }
-        );
-      });
-
-      if (result.success) {
-        setLocationData(result);
-        setForm({
-          ...form,
-          location:
-            result.coordinates.address ||
-            result.coordinates.city ||
-            result.coordinates.region ||
-            "Location captured",
-        });
-        toast.success("✅ Location captured successfully!");
-      }
-    } catch (error) {
-      console.error("Location capture failed:", error);
-      toast.error("Failed to capture location. Please enter manually.");
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -102,14 +31,6 @@ const CreateRequest = () => {
     try {
       const requestData = { ...form };
 
-      // Include GPS coordinates if available
-      if (locationData && locationData.coordinates) {
-        requestData.coordinates = {
-          latitude: locationData.coordinates.latitude,
-          longitude: locationData.coordinates.longitude,
-          accuracy: locationData.coordinates.accuracy,
-        };
-      }
 
       await api.post("/request/create", requestData);
 
@@ -206,25 +127,12 @@ const CreateRequest = () => {
                   type="text"
                   name="location"
                   value={form.location}
-                  onChange={handleLocationFieldChange}
+                  onChange={handleChange}
                   required
                   placeholder="Enter hospital/clinic name and address"
-                  className="w-full px-4 py-3 pr-16 text-base font-medium border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-3 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-all"
+                  className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-3 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-all"
                 />
-                <button
-                  type="button"
-                  onClick={handleCaptureLocation}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-2xl text-red-600 hover:text-red-800 transition-colors"
-                  title="Capture GPS Location"
-                >
-                  📍
-                </button>
               </div>
-              {locationData && (
-                <p className="text-sm text-green-700 dark:text-green-400 mt-2 font-semibold">
-                  ✅ GPS location captured for precise matching
-                </p>
-              )}
             </div>
 
             {/* Urgency */}
@@ -305,10 +213,7 @@ const CreateRequest = () => {
                   <li>Your request will be visible to nearby donors</li>
                   <li>Donors can send you offers to help</li>
                   <li>You can accept the best offer and coordinate directly</li>
-                  <li>
-                    GPS location helps find the closest donors for faster
-                    response
-                  </li>
+
                 </ul>
               </div>
             </div>

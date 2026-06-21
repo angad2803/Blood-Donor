@@ -13,20 +13,18 @@ class GeolocationService {
     this.nearbyUrl =
       "https://geocode-api.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates";
 
-    // Fallback to free geocoding if ArcGIS not configured
+
     this.openStreetMapUrl = "https://nominatim.openstreetmap.org";
   }
 
-  /**
-   * Geocode an address to coordinates using ArcGIS
-   */
+
   async geocodeAddress(address) {
     try {
       if (!this.arcgisApiKey) {
         return await this.geocodeWithOpenStreetMap(address);
       }
 
-      // Enhance address for India
+
       const enhancedAddress = this.enhanceIndianAddress(address);
 
       const response = await axios.get(
@@ -36,8 +34,8 @@ class GeolocationService {
             f: "json",
             singleLine: enhancedAddress,
             outFields: "Addr_type,Type,Score,Match_addr,DisplayX,DisplayY",
-            countryCode: "IND", // Restrict to India for better results
-            category: "", // Allow all categories
+            countryCode: "IND",
+            category: "",
             maxLocations: 5,
             token: this.arcgisApiKey,
           },
@@ -59,14 +57,12 @@ class GeolocationService {
       throw new Error("No geocoding results found");
     } catch (error) {
       console.error("Geocoding error:", error);
-      // Fallback to OpenStreetMap
+
       return await this.geocodeWithOpenStreetMap(address);
     }
   }
 
-  /**
-   * Reverse geocode coordinates to address using ArcGIS
-   */
+
   async reverseGeocode(latitude, longitude) {
     try {
       if (!this.arcgisApiKey) {
@@ -103,9 +99,7 @@ class GeolocationService {
     }
   }
 
-  /**
-   * Calculate route and travel time between two points using ArcGIS
-   */
+
   async calculateRoute(
     startLat,
     startLng,
@@ -144,7 +138,7 @@ class GeolocationService {
 
         return {
           distance: route.attributes.Total_Kilometers,
-          duration: route.attributes.Total_TravelTime, // in minutes
+          duration: route.attributes.Total_TravelTime,
           geometry: route.geometry,
           directions: directions?.features?.map((f) => f.attributes.text) || [],
           source: "arcgis",
@@ -163,9 +157,7 @@ class GeolocationService {
     }
   }
 
-  /**
-   * Find nearby places (hospitals, clinics) using ArcGIS
-   */
+
   async findNearbyPlaces(
     latitude,
     longitude,
@@ -223,16 +215,14 @@ class GeolocationService {
     }
   }
 
-  /**
-   * Find optimal meeting point between donor and hospital
-   */
+
   async findOptimalMeetingPoint(donorLat, donorLng, hospitalLat, hospitalLng) {
     try {
-      // Calculate midpoint
+
       const midLat = (donorLat + hospitalLat) / 2;
       const midLng = (donorLng + hospitalLng) / 2;
 
-      // Find nearby suitable locations (hospitals, clinics, medical centers)
+
       const nearbyPlaces = await this.findNearbyPlaces(
         midLat,
         midLng,
@@ -241,11 +231,11 @@ class GeolocationService {
       );
 
       if (nearbyPlaces.length > 0) {
-        // Sort by distance from midpoint and return the closest
+
         return nearbyPlaces.sort((a, b) => a.distance - b.distance)[0];
       }
 
-      // If no suitable places found, return midpoint with reverse geocoding
+
       const address = await this.reverseGeocode(midLat, midLng);
 
       return {
@@ -262,7 +252,7 @@ class GeolocationService {
     }
   }
 
-  // Helper methods for ArcGIS
+
   getTravelModeCode(mode) {
     const modes = {
       driving: "FEgifRtFndKNcJMJ",
@@ -282,13 +272,9 @@ class GeolocationService {
     return categories[category] || categories.hospital;
   }
 
-  /**
-   * OpenStreetMap fallback methods for when ArcGIS is not available
-   */
 
-  /**
-   * Geocode address using OpenStreetMap Nominatim
-   */
+
+
   async geocodeWithOpenStreetMap(address) {
     try {
       const enhancedAddress = this.enhanceIndianAddress(address);
@@ -300,7 +286,7 @@ class GeolocationService {
             format: "json",
             limit: 1,
             addressdetails: 1,
-            countrycodes: "in", // Restrict to India
+            countrycodes: "in",
           },
           headers: {
             "User-Agent": "BloodDonorApp/1.0 (contact@blooddonorapp.com)",
@@ -327,9 +313,7 @@ class GeolocationService {
     }
   }
 
-  /**
-   * Reverse geocode using OpenStreetMap Nominatim
-   */
+
   async reverseGeocodeWithOpenStreetMap(latitude, longitude) {
     try {
       const response = await axios.get(
@@ -367,12 +351,10 @@ class GeolocationService {
     }
   }
 
-  /**
-   * Calculate route using OpenRouteService (fallback)
-   */
+
   async calculateRouteWithOpenStreetMap(startLat, startLng, endLat, endLng) {
     try {
-      // Using OSRM demo server (note: not for production use)
+
       const response = await axios.get(
         `http://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${endLng},${endLat}`,
         {
@@ -390,15 +372,15 @@ class GeolocationService {
       ) {
         const route = response.data.routes[0];
         return {
-          distance: route.distance / 1000, // Convert to kilometers
-          duration: route.duration / 60, // Convert to minutes
-          geometry: null, // OSRM demo doesn't provide geometry in this format
+          distance: route.distance / 1000,
+          duration: route.duration / 60,
+          geometry: null,
           directions: [],
           source: "osrm",
         };
       }
 
-      // Fallback to straight-line distance calculation
+
       const distance = this.calculateDistance(
         startLat,
         startLng,
@@ -407,14 +389,14 @@ class GeolocationService {
       );
       return {
         distance: distance,
-        duration: distance * 2, // Rough estimate: 2 minutes per km
+        duration: distance * 2,
         geometry: null,
         directions: [],
         source: "straight-line",
       };
     } catch (error) {
       console.error("OpenStreetMap routing error:", error);
-      // Fallback to straight-line distance
+
       const distance = this.calculateDistance(
         startLat,
         startLng,
@@ -423,7 +405,7 @@ class GeolocationService {
       );
       return {
         distance: distance,
-        duration: distance * 2, // Rough estimate: 2 minutes per km
+        duration: distance * 2,
         geometry: null,
         directions: [],
         source: "straight-line",
@@ -431,11 +413,9 @@ class GeolocationService {
     }
   }
 
-  /**
-   * Calculate distance between two points using Haversine formula
-   */
+
   calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371; // Earth's radius in kilometers
+    const R = 6371;
     const dLat = ((lat2 - lat1) * Math.PI) / 180;
     const dLon = ((lon2 - lon1) * Math.PI) / 180;
     const a =
@@ -448,18 +428,14 @@ class GeolocationService {
     return R * c;
   }
 
-  /**
-   * Validate coordinates
-   */
+
   isValidCoordinates(latitude, longitude) {
     return (
       latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180
     );
   }
 
-  /**
-   * Format coordinates for display
-   */
+
   formatCoordinates(latitude, longitude, precision = 6) {
     return {
       latitude: parseFloat(latitude.toFixed(precision)),
@@ -467,16 +443,14 @@ class GeolocationService {
     };
   }
 
-  /**
-   * Enhance Indian addresses for better geocoding
-   */
+
   enhanceIndianAddress(address) {
-    // If address doesn't contain "India", add it
+
     if (!address.toLowerCase().includes("india")) {
       address += ", India";
     }
 
-    // Common Indian address abbreviations
+
     const replacements = {
       rd: "Road",
       st: "Street",

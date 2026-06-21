@@ -8,8 +8,7 @@
     "server": "cd Server && npm start",
     "client": "cd Client && npm run dev",
     "build": "cd Client && npm run build",
-    "install-all": "npm install && cd Server && npm install && cd ../Client && npm install",
-    "deploy": "bash scripts/deploy.sh"
+    "install-all": "npm install && cd Server && npm install && cd ../Client && npm install"
   },
   "dependencies": {
     "@chakra-ui/react": "^3.20.0",

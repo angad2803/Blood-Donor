@@ -3,29 +3,19 @@ import React, {
   useEffect,
   useState,
   useCallback,
-  useRef,
 } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import api from "../../api/api.js";
-import ChatComponent from "../../components/chat/ChatComponent";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import { toast } from "react-toastify";
-import { gsap } from "gsap";
 
 const HospitalRequests = () => {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showChatModal, setShowChatModal] = useState(false);
-  const [selectedChatRequest, setSelectedChatRequest] = useState(null);
   const [filter, setFilter] = useState("all"); // all, urgent, critical
-
-  // GSAP Refs
-  const headerRef = useRef(null);
-  const cardsRef = useRef([]);
-  const filterRef = useRef(null);
 
   // Redirect non-hospital users
   useEffect(() => {
@@ -37,62 +27,7 @@ const HospitalRequests = () => {
     if (user?.isHospital) {
       fetchRequests();
     }
-  }, [user, navigate, fetchRequests]);
-
-  // GSAP animations
-  useEffect(() => {
-    if (headerRef.current) {
-      gsap.fromTo(
-        headerRef.current,
-        { opacity: 0, y: -50, rotationX: -15 },
-        { opacity: 1, y: 0, rotationX: 0, duration: 1, ease: "back.out(1.7)" }
-      );
-    }
-
-    if (filterRef.current) {
-      gsap.fromTo(
-        filterRef.current,
-        { opacity: 0, scale: 0.9 },
-        { opacity: 1, scale: 1, duration: 0.8, ease: "power2.out", delay: 0.3 }
-      );
-    }
-
-    // Animate cards when they load
-    setTimeout(() => {
-      if (cardsRef.current.length > 0) {
-        gsap.fromTo(
-          cardsRef.current,
-          { opacity: 0, y: 30, scale: 0.95 },
-          {
-            opacity: 1,
-            y: 0,
-            scale: 1,
-            duration: 0.6,
-            stagger: 0.1,
-            ease: "power2.out",
-          }
-        );
-      }
-    }, 100);
-
-    // Add floating particles
-    const particles = document.querySelectorAll(".hospital-particle");
-    particles.forEach((particle) => {
-      gsap.set(particle, {
-        x: Math.random() * window.innerWidth,
-        y: Math.random() * window.innerHeight,
-      });
-
-      gsap.to(particle, {
-        y: `+=${(Math.random() - 0.5) * 250}`,
-        x: `+=${(Math.random() - 0.5) * 100}`,
-        rotation: 360,
-        duration: Math.random() * 30 + 35,
-        repeat: -1,
-        ease: "none",
-      });
-    });
-  }, [requests]);
+  }, [user, navigate]);
 
   const fetchRequests = useCallback(async () => {
     try {
@@ -152,23 +87,18 @@ const HospitalRequests = () => {
     }
   };
 
-  const handleOpenChat = (request) => {
-    setSelectedChatRequest(request);
-    setShowChatModal(true);
-  };
-
   const getUrgencyColor = (urgency) => {
     switch (urgency?.toLowerCase()) {
       case "critical":
-        return "glass-card-danger text-red-200";
+        return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
       case "urgent":
-        return "glass-card text-orange-200 border-orange-400/30";
+        return "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400";
       case "high":
-        return "glass-card text-yellow-200 border-yellow-400/30";
+        return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
       case "medium":
-        return "glass-card-primary text-blue-200";
+        return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
       default:
-        return "glass-card text-white/80";
+        return "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300";
     }
   };
 
@@ -179,251 +109,205 @@ const HospitalRequests = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen plasma-bg flex items-center justify-center">
-        <div className="glass-card p-8 text-center">
-          <div className="text-4xl mb-4 neon-glow">🏥</div>
-          <p className="text-white/80 text-lg">Loading blood requests...</p>
-          <div className="loading-pulse mt-4">⏳</div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 text-center">
+          <div className="text-4xl mb-4 opacity-50">🏥</div>
+          <p className="text-gray-500 dark:text-gray-400 text-lg">Loading blood requests...</p>
+          <div className="mt-4 flex justify-center">
+            <svg className="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen plasma-bg relative overflow-hidden">
-      {/* Animated Background Particles */}
-      <div className="particles-bg">
-        {[...Array(15)].map((_, i) => (
-          <div
-            key={i}
-            className="particle hospital-particle"
-            style={{
-              width: Math.random() * 7 + 4 + "px",
-              height: Math.random() * 7 + 4 + "px",
-              background: `hsl(${Math.random() * 360}, 70%, 60%)`,
-              left: Math.random() * 100 + "%",
-              animationDelay: Math.random() * 20 + "s",
-              animationDuration: Math.random() * 15 + 25 + "s",
-            }}
-          />
-        ))}
-      </div>
-
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
       {/* Header */}
-      <div className="relative z-10">
-        <div
-          className="glass-header backdrop-blur-xl border-b border-white/20"
-          ref={headerRef}
-        >
-          <div className="max-w-7xl mx-auto px-6 py-6">
-            <div className="flex justify-between items-center">
-              {/* Main Title */}
-              <div className="flex items-center space-x-4">
-                <div className="glass-card w-16 h-16 rounded-full flex items-center justify-center glass-interactive">
-                  <span className="text-3xl neon-glow">🏥</span>
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-white mb-1 neon-glow">
-                    Hospital Blood Requests
-                  </h1>
-                  <p className="text-white text-sm font-medium">
-                    Manage and fulfill blood requests in your area
-                  </p>
-                </div>
+      <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            {/* Main Title */}
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center border border-blue-200 dark:border-blue-800">
+                <span className="text-2xl">🏥</span>
               </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  Hospital Blood Requests
+                </h1>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">
+                  Manage and fulfill blood requests in your area
+                </p>
+              </div>
+            </div>
 
-              {/* Hospital Info Card */}
-              <div className="glass-card-primary p-4 flex items-center space-x-4">
-                <div className="w-12 h-12 glass-card rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">
-                    {user?.hospitalName?.charAt(0)?.toUpperCase()}
-                  </span>
+            {/* Hospital Info Card */}
+            <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg border border-gray-200 dark:border-gray-600 flex items-center space-x-3">
+              <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300 rounded-full flex items-center justify-center font-bold">
+                {user?.hospitalName?.charAt(0)?.toUpperCase()}
+              </div>
+              <div>
+                <div className="font-medium text-gray-900 dark:text-white">
+                  {user?.hospitalName}
                 </div>
-                <div>
-                  <div className="flex items-center space-x-3">
-                    <span className="text-white font-medium">
-                      {user?.hospitalName}
-                    </span>
+                {user?.location && (
+                  <div className="flex items-center space-x-1 mt-0.5 text-xs text-gray-500 dark:text-gray-400 max-w-48 truncate">
+                    <span>📍</span>
+                    <span>{user.location}</span>
                   </div>
-                  {user?.location && (
-                    <div className="flex items-center space-x-1 mt-1">
-                      <span className="text-blue-300">📍</span>
-                      <span className="text-blue-200 text-sm truncate max-w-48">
-                        {user.location}
-                      </span>
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
+            </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center space-x-3">
-                <button
-                  onClick={() => navigate("/dashboard")}
-                  className="glass-button px-4 py-2 text-white/80 hover:text-white transition-colors"
-                >
-                  <span className="mr-2">🏠</span>
-                  Dashboard
-                </button>
-                <button
-                  onClick={logout}
-                  className="glass-button px-4 py-2 text-red-300 hover:text-red-200 transition-colors"
-                >
-                  <span className="mr-2">🚪</span>
-                  Logout
-                </button>
-              </div>
+            {/* Action Buttons */}
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => navigate("/dashboard")}
+                className="flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+              >
+                <span className="mr-2">🏠</span>
+                Dashboard
+              </button>
+              <button
+                onClick={logout}
+                className="flex items-center px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md hover:bg-red-100 dark:hover:bg-red-900/40 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+              >
+                <span className="mr-2">🚪</span>
+                Logout
+              </button>
             </div>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Filters */}
-        <div className="glass-card p-6 mb-8" ref={filterRef}>
-          <div className="flex items-center space-x-4">
-            <span className="text-white/80 font-medium">
-              Filter by urgency:
-            </span>
-            {[
-              { id: "all", label: "All Requests", variant: "glass-card" },
-              {
-                id: "critical",
-                label: "Critical",
-                variant: "glass-card-danger",
-              },
-              { id: "urgent", label: "Urgent", variant: "glass-card" },
-              { id: "high", label: "High", variant: "glass-card-primary" },
-            ].map((filterOption) => (
-              <button
-                key={filterOption.id}
-                onClick={() => setFilter(filterOption.id)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 glass-interactive ${
-                  filter === filterOption.id
-                    ? `${filterOption.variant} scale-105 ring-2 ring-white/30`
-                    : "glass-card hover:scale-105"
-                } text-white/90 hover:text-white`}
-              >
-                {filterOption.label}
-              </button>
-            ))}
-          </div>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8 flex flex-wrap items-center gap-4">
+          <span className="text-gray-700 dark:text-gray-300 font-medium">
+            Filter by urgency:
+          </span>
+          {[
+            { id: "all", label: "All Requests", variant: "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600" },
+            { id: "critical", label: "Critical", variant: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50" },
+            { id: "urgent", label: "Urgent", variant: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 hover:bg-orange-200 dark:hover:bg-orange-900/50" },
+            { id: "high", label: "High", variant: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 hover:bg-yellow-200 dark:hover:bg-yellow-900/50" },
+          ].map((filterOption) => (
+            <button
+              key={filterOption.id}
+              onClick={() => setFilter(filterOption.id)}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors border border-transparent ${
+                filter === filterOption.id
+                  ? `${filterOption.variant} ring-2 ring-offset-1 ring-blue-500`
+                  : filterOption.variant
+              }`}
+            >
+              {filterOption.label}
+            </button>
+          ))}
         </div>
 
         {/* Requests List */}
-        <div className="glass-card p-6">
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold text-white mb-2 neon-glow">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <div className="mb-6 border-b border-gray-100 dark:border-gray-700 pb-4">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
               Blood Requests ({filteredRequests.length})
             </h2>
-            <p className="text-white font-medium">
+            <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
               Active blood requests requiring hospital attention
             </p>
           </div>
-          <div className="space-y-6">
+
+          <div className="space-y-4">
             {filteredRequests.length === 0 ? (
               <div className="text-center py-12">
-                <div className="text-6xl mb-4 neon-glow">🩺</div>
-                <p className="text-white text-lg font-medium">
+                <div className="text-5xl mb-4 opacity-50">🩺</div>
+                <p className="text-gray-900 dark:text-white text-lg font-medium">
                   {filter === "all"
                     ? "No blood requests found"
                     : `No ${filter} priority requests found`}
                 </p>
-                <p className="text-white text-sm mt-2 font-medium">
+                <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">
                   Check back later or adjust your filters
                 </p>
               </div>
             ) : (
-              <div className="space-y-6">
-                {filteredRequests.map((request, index) => (
+              <div className="space-y-4">
+                {filteredRequests.map((request) => (
                   <div
                     key={request._id}
-                    className={`glass-card p-6 glass-interactive ${
-                      request.location?.toLowerCase() ===
-                      user?.location?.toLowerCase()
-                        ? "ring-2 ring-blue-400/30 glass-card-primary"
+                    className={`bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600 p-5 hover:shadow-md transition-shadow ${
+                      request.location?.toLowerCase() === user?.location?.toLowerCase()
+                        ? "border-l-4 border-l-blue-500"
                         : ""
                     }`}
-                    ref={(el) => (cardsRef.current[index] = el)}
                   >
-                    <div className="flex justify-between items-start mb-4">
+                    <div className="flex flex-col sm:flex-row justify-between items-start mb-4 gap-4">
                       <div className="flex items-center space-x-4">
-                        <div className="text-center glass-card-danger p-3 rounded-lg">
-                          <div className="text-2xl font-bold text-red-200 neon-glow">
+                        <div className="text-center bg-red-100 dark:bg-red-900/20 p-3 rounded-lg border border-red-200 dark:border-red-800">
+                          <div className="text-2xl font-bold text-red-700 dark:text-red-400">
                             {request.bloodGroup}
                           </div>
-                          <div className="text-xs text-red-300/80">
+                          <div className="text-[10px] uppercase font-semibold text-red-600 dark:text-red-500 mt-1">
                             Blood Type
                           </div>
                         </div>
                         <div>
-                          <h3 className="text-lg font-semibold text-white mb-1">
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
                             Request #{request._id.slice(-6)}
                           </h3>
-                          <div className="flex items-center space-x-2 mb-1">
-                            <span className="text-white/80">
-                              📍 {request.location}
+                          <div className="flex items-center flex-wrap gap-2 mb-1.5">
+                            <span className="text-sm text-gray-600 dark:text-gray-300 flex items-center">
+                              <span className="mr-1">📍</span> {request.location}
                             </span>
-                            {request.location?.toLowerCase() ===
-                              user?.location?.toLowerCase() && (
-                              <span className="glass-card-primary px-2 py-0.5 rounded-full text-blue-200 text-xs">
+                            {request.location?.toLowerCase() === user?.location?.toLowerCase() && (
+                              <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 px-2 py-0.5 rounded text-xs font-medium">
                                 Same Location
                               </span>
                             )}
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <span className="text-white text-sm font-medium">
-                              Requested by: {request.requester?.name}
-                            </span>
+                          <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
+                            <span className="mr-1">👤</span> Requested by: <span className="font-medium text-gray-900 dark:text-gray-200 ml-1">{request.requester?.name}</span>
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center space-x-3">
+                      <div className="flex flex-col items-end gap-2">
                         <span
-                          className={`px-3 py-1 rounded-full text-sm font-medium ${getUrgencyColor(
+                          className={`px-3 py-1 rounded-full text-xs font-bold border uppercase ${getUrgencyColor(
                             request.urgency
-                          )} ${request.urgency?.toLowerCase() === "critical" ? "heartbeat" : ""}`}
+                          )} ${request.urgency?.toLowerCase() === "critical" ? "animate-pulse" : ""}`}
                         >
-                          {request.urgency?.toUpperCase() || "NORMAL"}
+                          {request.urgency || "NORMAL"}
                         </span>
-                        <div className="text-right text-xs text-white font-medium">
-                          <div>
-                            {new Date(request.createdAt).toLocaleDateString()}
-                          </div>
-                          <div>
-                            {new Date(request.createdAt).toLocaleTimeString()}
-                          </div>
+                        <div className="text-right text-xs text-gray-500 dark:text-gray-400 font-medium">
+                          <div>{new Date(request.createdAt).toLocaleDateString()}</div>
+                          <div>{new Date(request.createdAt).toLocaleTimeString()}</div>
                         </div>
                       </div>
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex justify-between items-center pt-4 border-t border-white/20">
+                    <div className="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-600">
                       <div className="flex items-center space-x-3">
-                        <button
-                          onClick={() => handleOpenChat(request)}
-                          className="glass-button px-4 py-2 text-blue-300 hover:text-blue-200 transition-colors flex items-center space-x-2"
-                        >
-                          <span>💬</span>
-                          <span>Contact</span>
-                        </button>
-
                         {!request.fulfilled && (
                           <button
                             onClick={() => handleFulfillRequest(request._id)}
-                            className="glass-button px-4 py-2 text-green-300 hover:text-green-200 transition-colors flex items-center space-x-2 glass-interactive"
+                            className="bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2 rounded-md transition-colors text-sm flex items-center shadow-sm"
                           >
-                            <span>✅</span>
+                            <span className="mr-2">✅</span>
                             <span>Fulfill</span>
                           </button>
                         )}
                       </div>
 
                       {request.fulfilled && (
-                        <div className="glass-card-success px-4 py-2 rounded-lg text-green-300 font-medium flex items-center space-x-1">
-                          <span>✅</span>
+                        <div className="bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800 px-3 py-1.5 rounded-md text-sm font-medium flex items-center">
+                          <span className="mr-1.5">✅</span>
                           <span>Fulfilled</span>
                         </div>
                       )}
@@ -436,12 +320,7 @@ const HospitalRequests = () => {
         </div>
       </div>
 
-      {/* Chat Modal */}
-      <ChatComponent
-        bloodRequest={selectedChatRequest}
-        isOpen={showChatModal}
-        onClose={() => setShowChatModal(false)}
-      />
+
     </div>
   );
 };

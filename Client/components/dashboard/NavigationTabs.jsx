@@ -62,7 +62,7 @@ const NavigationTabs = ({
         `,
       }}
     >
-      {/* Animated gradient overlay */}
+      {}
       <div
         className="absolute inset-0 opacity-30"
         style={{
@@ -116,7 +116,7 @@ const NavigationTabs = ({
                     : "1px solid rgba(255, 255, 255, 0.2)",
               }}
             >
-              {/* Glass reflection effect */}
+              {}
               <div
                 className="absolute inset-0 opacity-30"
                 style={{
@@ -128,11 +128,11 @@ const NavigationTabs = ({
                 }}
               ></div>
 
-              {/* Content */}
+              {}
               <span className="text-lg relative z-10">{tab.icon}</span>
               <span className="relative z-10">{tab.label}</span>
 
-              {/* Badge for available requests */}
+              {}
               {tab.badge && tab.badge > 0 && (
                 <span
                   className="relative z-10 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-lg"
@@ -144,7 +144,7 @@ const NavigationTabs = ({
                 </span>
               )}
 
-              {/* Hover shimmer effect */}
+              {}
               <div
                 className="absolute inset-0 opacity-0 group-hover:opacity-50 transition-opacity duration-300"
                 style={{

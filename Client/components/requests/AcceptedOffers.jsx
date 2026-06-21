@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useContext, useRef } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import api from "../../api/api.js";
-import mapsDirectionsService from "../../utils/mapsDirectionsService";
 import { gsap } from "gsap";
 
-const AcceptedOffers = ({ onOpenChat, onGetDirections }) => {
+const AcceptedOffers = ({ onOpenChat }) => {
   const { user } = useContext(AuthContext);
   const [acceptedOffers, setAcceptedOffers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -17,7 +16,7 @@ const AcceptedOffers = ({ onOpenChat, onGetDirections }) => {
   }, []);
 
   useEffect(() => {
-    // Animate cards entrance (if you want animation for accepted offers)
+
     if (cardsRef.current && cardsRef.current.length > 0) {
       const validRefs = cardsRef.current.filter((ref) => ref);
       if (validRefs.length > 0) {
@@ -51,72 +50,7 @@ const AcceptedOffers = ({ onOpenChat, onGetDirections }) => {
     }
   };
 
-  const handleGetDirections = (offer) => {
-    const userCoords = user.coordinates?.coordinates;
-    const requesterCoords =
-      offer.bloodRequest.requester?.coordinates?.coordinates;
 
-    if (!userCoords || !requesterCoords) {
-      alert("Location information not available for directions");
-      return;
-    }
-
-    const [userLon, userLat] = userCoords;
-    const [reqLon, reqLat] = requesterCoords;
-
-    // Always pass the correct structure for embedded ArcGIS directions
-    if (onGetDirections) {
-      const requestForDirections = {
-        requester: {
-          coordinates: {
-            coordinates: [reqLon, reqLat],
-          },
-        },
-        location: offer.bloodRequest.location,
-        hospitalName:
-          offer.bloodRequest.hospitalName || offer.bloodRequest.location,
-      };
-      onGetDirections(requestForDirections);
-      return;
-    }
-
-    // Fallback to external maps if onGetDirections is not provided
-    const directionsInfo = mapsDirectionsService.getDirectionsInfo(
-      userLat,
-      userLon,
-      reqLat,
-      reqLon
-    );
-
-    // Open directions in maps app
-    mapsDirectionsService.openDirections(
-      userLat,
-      userLon,
-      reqLat,
-      reqLon,
-      directionsInfo.mode
-    );
-  };
-
-  const getDirectionsPreview = (offer) => {
-    const userCoords = user.coordinates?.coordinates;
-    const requesterCoords =
-      offer.bloodRequest.requester.coordinates?.coordinates;
-
-    if (!userCoords || !requesterCoords) {
-      return { distance: "N/A", mode: "unknown", icon: "📍" };
-    }
-
-    const [userLon, userLat] = userCoords;
-    const [reqLon, reqLat] = requesterCoords;
-
-    return mapsDirectionsService.getDirectionsInfo(
-      userLat,
-      userLon,
-      reqLat,
-      reqLon
-    );
-  };
 
   if (loading) {
     return (
@@ -157,10 +91,10 @@ const AcceptedOffers = ({ onOpenChat, onGetDirections }) => {
 
       <div className="p-6">
         {acceptedOffers.length === 0 ? (
-          <div className="text-center py-8">
+          <div className="text-center py-10 px-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
             <div className="text-6xl mb-4">🩸</div>
-            <p className="text-gray-500 mb-2">No accepted offers yet</p>
-            <p className="text-sm text-gray-400">
+            <p className="text-gray-700 dark:text-gray-300 font-semibold mb-2">No accepted offers yet</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm mx-auto">
               Once a requester accepts your donation offer, it will appear here
               with routing information
             </p>
@@ -168,8 +102,6 @@ const AcceptedOffers = ({ onOpenChat, onGetDirections }) => {
         ) : (
           <div className="space-y-4">
             {acceptedOffers.map((offer, index) => {
-              const directionsInfo = getDirectionsPreview(offer);
-
               return (
                 <div
                   key={offer._id}
@@ -218,25 +150,7 @@ const AcceptedOffers = ({ onOpenChat, onGetDirections }) => {
                       )}
                     </div>
 
-                    <div>
-                      <h4 className="font-medium text-gray-800 mb-2">
-                        Travel Information
-                      </h4>
-                      <div className="flex items-center mb-2">
-                        <span className="text-2xl mr-2">
-                          {directionsInfo.icon}
-                        </span>
-                        <div>
-                          <p className="text-sm font-medium">
-                            {directionsInfo.description}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {directionsInfo.distanceText} • ~
-                            {directionsInfo.estimatedTime} min
-                          </p>
-                        </div>
-                      </div>
-                    </div>
+
                   </div>
 
                   <div className="bg-white rounded-lg p-3 mb-4">
@@ -249,13 +163,6 @@ const AcceptedOffers = ({ onOpenChat, onGetDirections }) => {
                   </div>
 
                   <div className="flex gap-3">
-                    <button
-                      onClick={() => handleGetDirections(offer)}
-                      className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-center"
-                    >
-                      <span className="mr-2">🗺️</span>
-                      Get Directions
-                    </button>
 
                     <button
                       onClick={() =>

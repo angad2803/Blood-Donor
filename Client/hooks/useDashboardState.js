@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import mapsDirectionsService from "../utils/mapsDirectionsService";
 import { toast } from "react-toastify";
 
 export const useDashboardState = () => {
@@ -14,8 +13,6 @@ export const useDashboardState = () => {
   const [selectedChatRequest, setSelectedChatRequest] = useState(null);
   const [activeTab, setActiveTab] = useState("browse");
   const [showMapView, setShowMapView] = useState(false);
-  const [showChatbot, setShowChatbot] = useState(false);
-  const [chatbotNotification, setChatbotNotification] = useState(true);
 
   const handleSendOffer = (request) => {
     setSelectedRequest(request);
@@ -27,86 +24,6 @@ export const useDashboardState = () => {
     setShowChatModal(true);
   };
 
-  const getDistanceInfo = (request, user) => {
-    if (
-      !user.coordinates?.coordinates ||
-      !request.requester?.coordinates?.coordinates
-    ) {
-      return null;
-    }
-
-    const [userLon, userLat] = user.coordinates.coordinates;
-    const [reqLon, reqLat] = request.requester.coordinates.coordinates;
-
-    return mapsDirectionsService.getDirectionsInfo(
-      userLat,
-      userLon,
-      reqLat,
-      reqLon
-    );
-  };
-
-  const handleGetDirections = async (
-    request,
-    activeTab,
-    showMapView,
-    setActiveTab,
-    setShowMapView,
-    arcgisDirectionsRef
-  ) => {
-    if (!request.requester?.coordinates?.coordinates) {
-      // Fallback to external maps with address search
-      const encodedLocation = encodeURIComponent(request.location);
-      const googleMapsUrl = `https://www.google.com/maps/search/${encodedLocation}`;
-      window.open(googleMapsUrl, "_blank");
-      return;
-    }
-
-    const [reqLng, reqLat] = request.requester.coordinates.coordinates;
-
-    // Helper to try showing directions with retries
-    const tryShowDirections = async (retries = 10, delay = 800) => {
-      if (arcgisDirectionsRef.current) {
-        try {
-          await arcgisDirectionsRef.current(
-            reqLng,
-            reqLat,
-            request.hospitalName || request.location
-          );
-          toast.success("Directions shown on map!");
-          return true;
-        } catch {
-          if (retries > 0) {
-            setTimeout(() => tryShowDirections(retries - 1, delay), delay);
-          } else {
-            toast.error("Could not show directions on map");
-          }
-        }
-      } else if (retries > 0) {
-        setTimeout(() => tryShowDirections(retries - 1, delay), delay);
-      } else {
-        toast.error("Map not ready for directions");
-      }
-    };
-
-    // If not in browse tab, switch to browse tab and map view first
-    if (activeTab !== "browse") {
-      setActiveTab("browse");
-      setShowMapView(true);
-      setTimeout(() => tryShowDirections(10, 1200), 1800);
-      return;
-    }
-
-    // If not in map view, switch to map view first
-    if (!showMapView) {
-      setShowMapView(true);
-      setTimeout(() => tryShowDirections(10, 1000), 1200);
-      return;
-    }
-
-    // Try embedded directions if already in map view
-    tryShowDirections();
-  };
 
   const useKeyboardShortcuts = (
     setActiveTab,
@@ -182,14 +99,8 @@ export const useDashboardState = () => {
     setActiveTab,
     showMapView,
     setShowMapView,
-    showChatbot,
-    setShowChatbot,
-    chatbotNotification,
-    setChatbotNotification,
     handleSendOffer,
     handleOpenChat,
-    getDistanceInfo,
-    handleGetDirections,
     useKeyboardShortcuts,
   };
 };

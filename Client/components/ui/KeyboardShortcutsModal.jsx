@@ -57,7 +57,7 @@ const KeyboardShortcutsModal = ({ isOpen, onClose, user }) => {
         </div>
 
         <div className="space-y-4">
-          {/* Navigation Shortcuts */}
+          {}
           <div>
             <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
               Navigation
@@ -85,7 +85,7 @@ const KeyboardShortcutsModal = ({ isOpen, onClose, user }) => {
               ))}
           </div>
 
-          {/* Admin Shortcuts */}
+          {}
           {user?.isAdmin && (
             <div>
               <h3 className="text-sm font-semibold text-purple-700 dark:text-purple-300 mb-2">
@@ -109,7 +109,7 @@ const KeyboardShortcutsModal = ({ isOpen, onClose, user }) => {
             </div>
           )}
 
-          {/* Action Shortcuts */}
+          {}
           <div>
             <h3 className="text-sm font-semibold text-gray-600 mb-2">
               Actions

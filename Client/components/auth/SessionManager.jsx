@@ -13,12 +13,12 @@ const SessionManager = () => {
       const activeTabs = JSON.parse(localStorage.getItem("activeTabs") || "[]");
       const currentTime = Date.now();
 
-      // Find tabs with different users or multiple tabs with same user
+
       const conflicts = activeTabs.filter(
         (tab) =>
           tab.tabId !== tabId &&
-          currentTime - tab.timestamp < 30000 && // Active within last 30 seconds
-          tab.userId !== user._id // Different user
+          currentTime - tab.timestamp < 30000 &&
+          tab.userId !== user._id
       );
 
       if (conflicts.length > 0) {
@@ -29,19 +29,19 @@ const SessionManager = () => {
       }
     };
 
-    const interval = setInterval(checkConflictingSessions, 5000); // Check every 5 seconds
-    checkConflictingSessions(); // Initial check
+    const interval = setInterval(checkConflictingSessions, 5000);
+    checkConflictingSessions();
 
     return () => clearInterval(interval);
   }, [user, tabId]);
 
   const handleLogoutOtherSessions = () => {
-    // Clear all localStorage to force logout on other tabs
+
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     localStorage.removeItem("activeTabs");
 
-    // Trigger storage event for other tabs
+
     window.dispatchEvent(
       new StorageEvent("storage", {
         key: "token",

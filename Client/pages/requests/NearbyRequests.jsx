@@ -1,9 +1,7 @@
-import React, { useEffect, useState, useCallback, useRef } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import api from "../../api/api";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-toastify";
-import LocationManager from "../../components/maps/LocationManager";
-import { gsap } from "gsap";
 
 const NearbyRequests = () => {
   const { user } = useAuth();
@@ -13,34 +11,6 @@ const NearbyRequests = () => {
   const [userLocation, setUserLocation] = useState(null);
   const [searchRadius, setSearchRadius] = useState(50); // km
   const [urgencyFilter, setUrgencyFilter] = useState("");
-  const [includeRoutes, setIncludeRoutes] = useState(false);
-
-  // GSAP Refs
-  const headerRef = useRef(null);
-  const cardsRef = useRef([]);
-  const sidebarRef = useRef(null);
-
-  // Get user's current location
-  const getCurrentLocation = useCallback(() => {
-    if (!navigator.geolocation) {
-      setError("Geolocation is not supported by this browser.");
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        setUserLocation({ latitude, longitude });
-        setError("");
-      },
-      (error) => {
-        setError("Failed to get your location. Please enable location access.");
-        console.error("Geolocation error:", error);
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
-    );
-  }, []);
-
   // Auto-get location on component mount
   useEffect(() => {
     if (user) {
@@ -55,136 +25,77 @@ const NearbyRequests = () => {
           latitude: user.coordinates.coordinates[1],
           longitude: user.coordinates.coordinates[0],
         });
-      } else {
-        // Get current location
-        getCurrentLocation();
       }
     }
-  }, [user, getCurrentLocation]);
+  }, [user]);
 
   const fetchNearbyRequests = useCallback(async () => {
-    if (!userLocation && !user?.isDonor) {
-      setError(
-        "Location is required to find nearby requests. Please enable location access."
-      );
-      return;
-    }
-
     setError("");
     setLoading(true);
 
     try {
-      // Update user location on server if available
       if (userLocation) {
+        // Update user location on server if available
         await api.post("/user/location", {
           latitude: userLocation.latitude,
           longitude: userLocation.longitude,
           accuracy: 50,
         });
-      }
 
-      // Use the enhanced geolocation-based matching
-      const params = new URLSearchParams({
-        maxDistance: (searchRadius * 1000).toString(), // Convert km to meters
-        limit: "20",
-        includeRoutes: includeRoutes.toString(),
-      });
+        // Use the enhanced geolocation-based matching
+        const params = new URLSearchParams({
+          maxDistance: (searchRadius * 1000).toString(), // Convert km to meters
+          limit: "20",
+        });
 
-      if (urgencyFilter) {
-        params.append("urgencyFilter", urgencyFilter);
-      }
+        if (urgencyFilter) {
+          params.append("urgencyFilter", urgencyFilter);
+        }
 
-      const res = await api.get(`/match/nearby?${params}`);
+        const res = await api.get(`/match/nearby?${params}`);
 
-      if (res.data.success) {
-        setRequests(res.data.data.requests || []);
+        if (res.data.success) {
+          setRequests(res.data.data.requests || []);
 
-        if (res.data.data.requests.length === 0) {
-          setError(
-            res.data.message ||
-              `No blood requests found within ${searchRadius}km. Try expanding your search radius.`
-          );
+          if (res.data.data.requests.length === 0) {
+            setError(
+              res.data.message ||
+                `No blood requests found within ${searchRadius}km. Try expanding your search radius.`
+            );
+          }
+        } else {
+          setRequests([]);
+          setError(res.data.message || "No blood requests found in your area.");
         }
       } else {
-        setRequests([]);
-        setError(res.data.message || "No blood requests found in your area.");
+        // Fallback to getting all requests
+        const res = await api.get("/request/all");
+        if (res.data && res.data.requests) {
+          let reqs = res.data.requests;
+          if (urgencyFilter) {
+            reqs = reqs.filter(r => r.urgency === urgencyFilter);
+          }
+          setRequests(reqs);
+          if (reqs.length === 0) {
+            setError("No active blood requests found.");
+          }
+        } else {
+          setRequests([]);
+          setError("No blood requests found.");
+        }
       }
     } catch (err) {
-      console.error("Error fetching nearby requests:", err);
-      setError("Failed to find nearby requests. Please try again.");
+      console.error("Error fetching requests:", err);
+      setError("Failed to fetch requests. Please try again.");
       setRequests([]);
     }
     setLoading(false);
-  }, [user, userLocation, searchRadius, urgencyFilter, includeRoutes]);
+  }, [userLocation, searchRadius, urgencyFilter]);
 
-  // Auto-fetch when location is available
+  // Auto-fetch requests
   useEffect(() => {
-    if (user?.isDonor && userLocation) {
-      fetchNearbyRequests();
-    }
-  }, [user, userLocation, fetchNearbyRequests]);
-
-  // GSAP animations
-  useEffect(() => {
-    if (headerRef.current) {
-      gsap.fromTo(
-        headerRef.current,
-        { opacity: 0, y: -30, scale: 0.95 },
-        { opacity: 1, y: 0, scale: 1, duration: 1, ease: "back.out(1.7)" }
-      );
-    }
-
-    if (sidebarRef.current) {
-      gsap.fromTo(
-        sidebarRef.current,
-        { opacity: 0, x: -50, scale: 0.9 },
-        {
-          opacity: 1,
-          x: 0,
-          scale: 1,
-          duration: 0.8,
-          ease: "power2.out",
-          delay: 0.3,
-        }
-      );
-    }
-
-    // Animate cards when they load
-    setTimeout(() => {
-      if (cardsRef.current.length > 0) {
-        gsap.fromTo(
-          cardsRef.current,
-          { opacity: 0, y: 30, scale: 0.95 },
-          {
-            opacity: 1,
-            y: 0,
-            scale: 1,
-            duration: 0.6,
-            stagger: 0.1,
-            ease: "power2.out",
-          }
-        );
-      }
-    }, 100);
-
-    // Add floating particles
-    const particles = document.querySelectorAll(".nearby-particle");
-    particles.forEach((particle) => {
-      gsap.set(particle, {
-        x: Math.random() * window.innerWidth,
-        y: Math.random() * window.innerHeight,
-      });
-
-      gsap.to(particle, {
-        y: `+=${(Math.random() - 0.5) * 200}`,
-        x: `+=${(Math.random() - 0.5) * 100}`,
-        rotation: 360,
-        duration: Math.random() * 25 + 30,
-        repeat: -1,
-        ease: "none",
-      });
-    });
-  }, [requests]);
+    fetchNearbyRequests();
+  }, [fetchNearbyRequests]);
 
   const handleFulfill = async (id) => {
     try {
@@ -207,64 +118,36 @@ const NearbyRequests = () => {
     return `${(distance / 1000).toFixed(1)}km`;
   };
 
-  // Format route info for display
-  const formatRouteInfo = (routeInfo) => {
-    if (!routeInfo) return null;
-
-    const duration = Math.round(routeInfo.duration / 60); // Convert to minutes
-    const distance = formatDistance(routeInfo.distance);
-
-    return `${distance} • ${duration} min`;
-  };
-
   // Get urgency color
   const getUrgencyColor = (urgency) => {
     switch (urgency) {
       case "Emergency":
-        return "glass-card-danger text-red-200";
+        return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
       case "High":
-        return "glass-card text-orange-200 border-orange-400/30";
+        return "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400";
       case "Medium":
-        return "glass-card text-yellow-200 border-yellow-400/30";
+        return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
       case "Low":
-        return "glass-card-success text-green-200";
+        return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
       default:
-        return "glass-card text-white/80";
+        return "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300";
     }
   };
 
   return (
-    <div className="min-h-screen plasma-bg relative overflow-hidden">
-      {/* Animated Background Particles */}
-      <div className="particles-bg">
-        {[...Array(12)].map((_, i) => (
-          <div
-            key={i}
-            className="particle nearby-particle"
-            style={{
-              width: Math.random() * 6 + 4 + "px",
-              height: Math.random() * 6 + 4 + "px",
-              background: `hsl(${Math.random() * 360}, 70%, 60%)`,
-              left: Math.random() * 100 + "%",
-              animationDelay: Math.random() * 15 + "s",
-              animationDuration: Math.random() * 12 + 20 + "s",
-            }}
-          />
-        ))}
-      </div>
-
-      <div className="relative z-10 max-w-7xl mx-auto px-6 py-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
+      <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Header */}
-        <div className="mb-8 text-center" ref={headerRef}>
-          <div className="glass-card w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 glass-interactive">
-            <span className="text-4xl neon-glow">
+        <div className="mb-8 text-center">
+          <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-200 dark:border-blue-800">
+            <span className="text-3xl">
               {user?.isDonor ? "🩸" : "🏥"}
             </span>
           </div>
-          <h1 className="text-4xl font-bold text-white mb-2 neon-glow">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
             {user?.isDonor ? "Nearby Blood Requests" : "Blood Requests"}
           </h1>
-          <p className="text-white text-lg font-medium">
+          <p className="text-gray-500 dark:text-gray-400 text-lg">
             {user?.isDonor
               ? "Find blood requests near your location where you can help save lives"
               : "View blood requests in your area"}
@@ -274,43 +157,29 @@ const NearbyRequests = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Search Controls */}
           <div className="lg:col-span-1">
-            <div className="glass-card p-6" ref={sidebarRef}>
-              <h2 className="text-xl font-semibold mb-4 text-white neon-glow">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4 border-b border-gray-100 dark:border-gray-700 pb-2">
                 Search Settings
               </h2>
 
-              {/* Location Status */}
               {userLocation ? (
-                <div className="mb-4 glass-card-success p-3 rounded-lg">
-                  <p className="text-sm text-green-200">
+                <div className="mb-4 bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
+                  <p className="text-sm text-green-700 dark:text-green-400">
                     📍 <strong>Location:</strong>{" "}
-                    {userLocation.latitude.toFixed(4)},{" "}
-                    {userLocation.longitude.toFixed(4)}
+                    {user.location || "User Location"}
                   </p>
-                  <button
-                    onClick={getCurrentLocation}
-                    className="mt-2 text-sm text-green-300 hover:text-green-200 underline transition-colors"
-                  >
-                    Update Location
-                  </button>
                 </div>
               ) : (
-                <div className="mb-4 glass-card p-3 rounded-lg border border-yellow-400/30">
-                  <p className="text-sm text-yellow-200 mb-2">
-                    📍 Location access needed to find nearby requests
+                <div className="mb-4 bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                  <p className="text-sm text-yellow-700 dark:text-yellow-400 mb-2">
+                    📍 Location is required to find nearby requests
                   </p>
-                  <button
-                    onClick={getCurrentLocation}
-                    className="w-full glass-button py-2 px-4 text-white hover:scale-105 transition-all duration-300"
-                  >
-                    Get My Location
-                  </button>
                 </div>
               )}
 
               {/* Search Radius */}
               <div className="mb-4">
-                <label className="block text-sm font-medium text-white/80 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Search Radius: {searchRadius}km
                 </label>
                 <input
@@ -319,79 +188,57 @@ const NearbyRequests = () => {
                   max="100"
                   value={searchRadius}
                   onChange={(e) => setSearchRadius(parseInt(e.target.value))}
-                  className="w-full accent-red-400"
+                  className="w-full"
                 />
-                <div className="flex justify-between text-xs text-white font-medium mt-1">
+                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 font-medium mt-1">
                   <span>5km</span>
                   <span>100km</span>
                 </div>
               </div>
 
               {/* Urgency Filter */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-white/80 mb-2">
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Urgency Filter
                 </label>
                 <select
                   value={urgencyFilter}
                   onChange={(e) => setUrgencyFilter(e.target.value)}
-                  className="w-full p-2 glass-card text-white border-0 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all duration-300"
+                  className="w-full p-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 >
-                  <option value="" className="bg-gray-800">
-                    All Urgency Levels
-                  </option>
-                  <option value="Emergency" className="bg-gray-800">
-                    Emergency Only
-                  </option>
-                  <option value="High" className="bg-gray-800">
-                    High Priority
-                  </option>
-                  <option value="Medium" className="bg-gray-800">
-                    Medium Priority
-                  </option>
-                  <option value="Low" className="bg-gray-800">
-                    Low Priority
-                  </option>
+                  <option value="">All Urgency Levels</option>
+                  <option value="Emergency">Emergency Only</option>
+                  <option value="High">High Priority</option>
+                  <option value="Medium">Medium Priority</option>
+                  <option value="Low">Low Priority</option>
                 </select>
-              </div>
-
-              {/* Include Routes */}
-              <div className="mb-6">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={includeRoutes}
-                    onChange={(e) => setIncludeRoutes(e.target.checked)}
-                    className="mr-2 accent-red-400"
-                  />
-                  <span className="text-sm text-white/80">
-                    Include driving directions
-                  </span>
-                </label>
               </div>
 
               {/* Search Button */}
               <button
                 onClick={fetchNearbyRequests}
                 disabled={loading || (!userLocation && user?.isDonor)}
-                className="w-full glass-button py-3 px-4 text-white font-semibold transition-all duration-300 hover:scale-105 glass-interactive disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
                 {loading ? (
-                  <span className="flex items-center justify-center">
-                    <div className="loading-pulse mr-2">⏳</div>
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
                     Searching...
-                  </span>
+                  </>
                 ) : (
-                  <span>
+                  <>
                     <span className="mr-2">🔍</span>
                     Find Requests
-                  </span>
+                  </>
                 )}
               </button>
 
               {/* Quick Distance Buttons */}
-              <div className="mt-4">
-                <p className="text-sm font-medium text-white/80 mb-2">
+              <div className="mt-5">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Quick Distance:
                 </p>
                 <div className="grid grid-cols-3 gap-2">
@@ -399,10 +246,10 @@ const NearbyRequests = () => {
                     <button
                       key={distance}
                       onClick={() => setSearchRadius(distance)}
-                      className={`py-2 px-3 text-xs rounded transition-all duration-300 ${
+                      className={`py-2 px-3 text-xs rounded-md transition-colors border ${
                         searchRadius === distance
-                          ? "glass-card-danger text-red-200 scale-105"
-                          : "glass-card text-white/80 hover:scale-105"
+                          ? "bg-blue-50 border-blue-300 text-blue-700 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300 font-medium"
+                          : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600"
                       }`}
                     >
                       {distance}km
@@ -412,41 +259,36 @@ const NearbyRequests = () => {
               </div>
             </div>
 
-            {/* Location Manager Component */}
-            <div className="mt-6">
-              <div className="glass-card p-4">
-                <LocationManager />
-              </div>
-            </div>
+
           </div>
 
           {/* Results */}
           <div className="lg:col-span-2">
-            <div className="glass-card p-6">
-              <h2 className="text-xl font-semibold mb-4 text-white neon-glow">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4 border-b border-gray-100 dark:border-gray-700 pb-2">
                 Blood Requests ({requests.length})
               </h2>
 
               {error && (
-                <div className="mb-4 glass-card-danger p-4 rounded-lg">
-                  <p className="text-red-200">{error}</p>
+                <div className="mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4 rounded-lg">
+                  <p className="text-red-600 dark:text-red-400 text-sm font-medium">{error}</p>
                 </div>
               )}
 
               {loading ? (
-                <div className="text-center py-8">
-                  <div className="text-4xl mb-4 neon-glow">🔍</div>
-                  <p className="text-white/80 text-lg loading-pulse">
+                <div className="text-center py-10">
+                  <div className="text-4xl mb-4 opacity-50">🔍</div>
+                  <p className="text-gray-500 dark:text-gray-400">
                     Searching for nearby blood requests...
                   </p>
                 </div>
               ) : requests.length === 0 ? (
-                <div className="text-center py-8">
-                  <div className="text-6xl mb-4 neon-glow">🩸</div>
-                  <p className="text-white/80 text-lg font-medium">
+                <div className="text-center py-10">
+                  <div className="text-5xl mb-4 opacity-50">📋</div>
+                  <p className="text-gray-900 dark:text-white text-lg font-medium">
                     No blood requests found
                   </p>
-                  <p className="text-white text-sm mt-2 font-medium">
+                  <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
                     {user?.isDonor
                       ? "No one needs your blood type in your area right now. Thank you for being ready to help!"
                       : "Try expanding your search radius or check back later"}
@@ -454,79 +296,67 @@ const NearbyRequests = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {requests.map((request, index) => (
+                  {requests.map((request) => (
                     <div
                       key={request.id}
-                      className="glass-card p-4 glass-interactive hover:scale-105 transition-all duration-300"
-                      ref={(el) => (cardsRef.current[index] = el)}
+                      className="bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600 p-5 hover:shadow-md transition-shadow"
                     >
-                      <div className="flex items-start justify-between">
+                      <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
                         <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-3">
-                            <span className="glass-card-danger px-3 py-1 rounded-full text-sm font-medium text-red-200 neon-glow">
+                          <div className="flex flex-wrap items-center gap-2 mb-3">
+                            <span className="bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 px-2.5 py-1 rounded text-xs font-bold border border-red-200 dark:border-red-800">
                               {request.bloodGroup}
                             </span>
                             <span
-                              className={`px-3 py-1 rounded-full text-sm font-medium ${getUrgencyColor(
+                              className={`px-2.5 py-1 rounded text-xs font-bold border ${getUrgencyColor(
                                 request.urgency
-                              )} ${request.urgency === "Emergency" ? "heartbeat" : ""}`}
+                              )} ${request.urgency === "Emergency" ? "animate-pulse" : ""}`}
                             >
                               {request.urgency}
                             </span>
                             {request.distance && (
-                              <span className="glass-card-primary px-3 py-1 rounded-full text-sm font-medium text-blue-200">
+                              <span className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 px-2.5 py-1 rounded text-xs font-medium">
                                 📍 {formatDistance(request.distance)}
                               </span>
                             )}
                           </div>
 
-                          <h3 className="text-lg font-semibold text-white mb-2 neon-glow">
+                          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
                             {request.hospitalName || "Medical Emergency"}
                           </h3>
 
-                          <div className="space-y-1 text-sm text-white/80">
+                          <div className="space-y-1.5 text-sm text-gray-600 dark:text-gray-300">
                             {request.location && (
-                              <p>
-                                📍{" "}
-                                <strong className="text-white">
-                                  Location:
-                                </strong>{" "}
-                                {request.location}
+                              <p className="flex items-start">
+                                <span className="mr-1.5 mt-0.5">📍</span>
+                                <span><strong className="text-gray-900 dark:text-gray-100">Location:</strong> {request.location}</span>
                               </p>
                             )}
                             {request.requester?.name && (
-                              <p>
-                                👤{" "}
-                                <strong className="text-white">Contact:</strong>{" "}
-                                {request.requester.name}
+                              <p className="flex items-start">
+                                <span className="mr-1.5 mt-0.5">👤</span>
+                                <span><strong className="text-gray-900 dark:text-gray-100">Contact:</strong> {request.requester.name}</span>
                               </p>
                             )}
                             {request.contactInfo && (
-                              <p>
-                                📞{" "}
-                                <strong className="text-white">Phone:</strong>{" "}
-                                {request.contactInfo}
+                              <p className="flex items-start">
+                                <span className="mr-1.5 mt-0.5">📞</span>
+                                <span><strong className="text-gray-900 dark:text-gray-100">Phone:</strong> {request.contactInfo}</span>
                               </p>
                             )}
-                            {request.routeInfo && (
-                              <p>
-                                🛣️{" "}
-                                <strong className="text-white">Route:</strong>{" "}
-                                {formatRouteInfo(request.routeInfo)}
-                              </p>
-                            )}
-                            <p>
-                              📅 <strong className="text-white">Posted:</strong>{" "}
-                              {new Date(request.createdAt).toLocaleDateString()}
+
+                            <p className="flex items-start">
+                              <span className="mr-1.5 mt-0.5">📅</span>
+                              <span><strong className="text-gray-900 dark:text-gray-100">Posted:</strong> {new Date(request.createdAt).toLocaleDateString()}</span>
                             </p>
                           </div>
                         </div>
 
-                        <div className="flex flex-col gap-2 ml-4">
+                        <div className="flex flex-col gap-2 min-w-[120px]">
                           {user?.isDonor && (
                             <button
                               onClick={() => handleFulfill(request.id)}
-                              className="glass-button px-4 py-2 text-green-300 hover:text-green-200 transition-colors glass-interactive"
+                              className="bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2 rounded-md transition-colors text-sm flex items-center justify-center shadow-sm"
                             >
                               ✅ I Can Help
                             </button>
@@ -534,19 +364,9 @@ const NearbyRequests = () => {
                           {request.contactInfo && (
                             <a
                               href={`tel:${request.contactInfo}`}
-                              className="glass-button px-4 py-2 text-blue-300 hover:text-blue-200 transition-colors text-center"
+                              className="bg-gray-100 hover:bg-gray-200 text-gray-800 dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-white border border-gray-200 dark:border-gray-500 font-medium px-4 py-2 rounded-md transition-colors text-sm text-center flex items-center justify-center shadow-sm"
                             >
                               📞 Call
-                            </a>
-                          )}
-                          {request.coordinates && (
-                            <a
-                              href={`https://www.google.com/maps/dir/?api=1&destination=${request.coordinates.coordinates[1]},${request.coordinates.coordinates[0]}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="glass-button px-4 py-2 text-white/80 hover:text-white transition-colors text-center"
-                            >
-                              🗺️ Navigate
                             </a>
                           )}
                         </div>

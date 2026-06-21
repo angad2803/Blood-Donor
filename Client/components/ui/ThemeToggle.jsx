@@ -27,7 +27,7 @@ const ThemeToggle = ({ className = "" }) => {
         `}
       />
 
-      {/* Sun icon (light mode) */}
+      {}
       <span
         className={`
           absolute left-1 top-1 h-4 w-4 flex items-center justify-center
@@ -48,7 +48,7 @@ const ThemeToggle = ({ className = "" }) => {
         </svg>
       </span>
 
-      {/* Moon icon (dark mode) */}
+      {}
       <span
         className={`
           absolute right-1 top-1 h-4 w-4 flex items-center justify-center

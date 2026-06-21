@@ -1,20 +1,16 @@
-// Queue helper functions for blood donor app
+
 import { canDonateTo } from "./compatability.js";
 import User from "../models/User.js";
 
-/**
- * Find eligible donors for a blood request
- * @param {Object} request - Blood request object
- * @returns {Promise<Array>} Array of eligible donors
- */
+
 export async function findEligibleDonors(request) {
   try {
     const { bloodGroup, location } = request;
 
-    // Find donors who can donate to the requested blood group
+
     const eligibleBloodGroups = [];
 
-    // Check which blood groups can donate to the requested blood group
+
     const allBloodGroups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
     for (const group of allBloodGroups) {
@@ -23,12 +19,11 @@ export async function findEligibleDonors(request) {
       }
     }
 
-    // Find users with compatible blood groups
+
     const donors = await User.find({
       bloodGroup: { $in: eligibleBloodGroups },
       available: true,
-      // Add location-based filtering if needed
-      // location: { $regex: location, $options: 'i' }
+
     }).select("name email phone bloodGroup location");
 
     return donors;
@@ -38,16 +33,11 @@ export async function findEligibleDonors(request) {
   }
 }
 
-/**
- * Calculate priority score for notifications
- * @param {string} urgency - Urgency level
- * @param {string} bloodGroup - Blood group
- * @returns {number} Priority score (higher = more urgent)
- */
+
 export function calculatePriority(urgency, bloodGroup) {
   let score = 0;
 
-  // Base score by urgency
+
   switch (urgency) {
     case "Emergency":
       score = 100;
@@ -65,7 +55,7 @@ export function calculatePriority(urgency, bloodGroup) {
       score = 50;
   }
 
-  // Add extra score for rare blood groups
+
   if (bloodGroup === "AB-" || bloodGroup === "O-") {
     score += 20;
   }
@@ -73,12 +63,7 @@ export function calculatePriority(urgency, bloodGroup) {
   return score;
 }
 
-/**
- * Generate notification message based on urgency and context
- * @param {string} type - Notification type
- * @param {Object} data - Notification data
- * @returns {string} Formatted message
- */
+
 export function generateNotificationMessage(type, data) {
   const { urgency, bloodGroup, hospital, location } = data;
 
@@ -107,11 +92,7 @@ export function generateNotificationMessage(type, data) {
   }
 }
 
-/**
- * Get retry configuration based on urgency
- * @param {string} urgency - Urgency level
- * @returns {Object} Retry configuration
- */
+
 export function getRetryConfig(urgency) {
   const configs = {
     Emergency: {
@@ -151,44 +132,35 @@ export function getRetryConfig(urgency) {
   return configs[urgency] || configs["Medium"];
 }
 
-/**
- * Format phone number for SMS
- * @param {string} phone - Phone number
- * @returns {string} Formatted phone number
- */
+
 export function formatPhoneNumber(phone) {
   if (!phone) return null;
 
-  // Remove all non-digit characters
+
   const cleaned = phone.replace(/\D/g, "");
 
-  // Add country code if not present (assuming US/Canada)
+
   if (cleaned.length === 10) {
     return `+1${cleaned}`;
   } else if (cleaned.length === 11 && cleaned.startsWith("1")) {
     return `+${cleaned}`;
   }
 
-  return phone; // Return as-is if format is unclear
+  return phone;
 }
 
-/**
- * Check if notification should be sent based on user preferences
- * @param {Object} user - User object
- * @param {string} type - Notification type
- * @returns {boolean} Whether to send notification
- */
+
 export function shouldSendNotification(user, type) {
-  // Check user notification preferences
+
   const preferences = user.notificationPreferences || {};
 
   switch (type) {
     case "email":
-      return preferences.email !== false; // Default to true
+      return preferences.email !== false;
     case "sms":
-      return preferences.sms === true && user.phone; // Require explicit opt-in
+      return preferences.sms === true && user.phone;
     case "push":
-      return preferences.push !== false; // Default to true
+      return preferences.push !== false;
     default:
       return true;
   }

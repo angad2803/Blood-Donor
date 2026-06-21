@@ -5,7 +5,7 @@ import { OpenAI } from "openai";
 
 const router = express.Router();
 
-// AI Service - supports both OpenAI and Gemini
+
 class AIService {
   constructor() {
     this.geminiApiKey = process.env.GEMINI_API_KEY;
@@ -45,7 +45,7 @@ class AIService {
         return await this.generateOpenAIResponse(message, userContext);
       } else {
         console.log("⚠️ Using Mock Responses (AI not configured)");
-        // Fallback to mock responses
+
         return this.generateMockResponse(message, userContext);
       }
     } catch (error) {
@@ -209,7 +209,7 @@ Respond in a caring, knowledgeable tone as a blood donation expert who understan
   generateMockResponse(message, userContext) {
     const msg = message.toLowerCase();
 
-    // Enhanced responses specific to the Blood Donor app
+
     if (msg.includes("donation process") || msg.includes("how to donate")) {
       return {
         message: `🩸 **Blood Donation Process in Our App:**
@@ -444,7 +444,7 @@ Want to see current requests for ${bloodGroup}?`,
       };
     }
 
-    // Default response with app-specific context
+
     return {
       message: `🩸 **Welcome to Blood Donor App!**
 
@@ -519,9 +519,7 @@ ${userContext?.location ? `Location: ${userContext.location}` : "• Enable loca
 
 const aiService = new AIService();
 
-// @route   POST /api/ai/chat
-// @desc    Generate AI response for chatbot
-// @access  Private
+
 router.post("/chat", auth, async (req, res) => {
   try {
     const { message } = req.body;
@@ -533,7 +531,7 @@ router.post("/chat", auth, async (req, res) => {
       });
     }
 
-    // Get user context from the authenticated user
+
     const userContext = {
       name: req.user.name,
       bloodGroup: req.user.bloodGroup,
@@ -541,7 +539,7 @@ router.post("/chat", auth, async (req, res) => {
       isHospital: req.user.isHospital || false,
     };
 
-    // Generate AI response
+
     const response = await aiService.generateResponse(message, userContext);
 
     res.json({
@@ -566,9 +564,7 @@ router.post("/chat", auth, async (req, res) => {
   }
 });
 
-// @route   GET /api/ai/status
-// @desc    Check AI service status
-// @access  Private
+
 router.get("/status", auth, async (req, res) => {
   try {
     const hasGeminiKey = !!(

@@ -4,7 +4,7 @@ import verifyToken from "../middleware/auth.js";
 
 const router = express.Router();
 
-// GET messages for a room (chat for a request)
+
 router.get("/:requestId", verifyToken, async (req, res) => {
   try {
     const messages = await Message.find({ roomId: req.params.requestId }).sort({
@@ -18,11 +18,11 @@ router.get("/:requestId", verifyToken, async (req, res) => {
   }
 });
 
-// POST a new message
+
 router.post("/:requestId", verifyToken, async (req, res) => {
   try {
     const { text } = req.body;
-    const user = req.user; // from verifyToken middleware
+    const user = req.user;
 
     const newMsg = new Message({
       roomId: req.params.requestId,
@@ -33,7 +33,7 @@ router.post("/:requestId", verifyToken, async (req, res) => {
 
     const savedMessage = await newMsg.save();
 
-    // Get the Socket.IO instance and emit to room for persistence
+
     const io = req.app.get("io");
     if (io) {
       const messageData = {
@@ -45,7 +45,7 @@ router.post("/:requestId", verifyToken, async (req, res) => {
         timestamp: savedMessage.timestamp,
       };
 
-      // This ensures the message is also saved and confirmed via socket
+
       io.to(req.params.requestId).emit("message-saved", messageData);
     }
 

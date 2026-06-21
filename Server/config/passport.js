@@ -2,17 +2,18 @@ import dotenv from "dotenv";
 dotenv.config();
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import User from "../models/User.js"; // Make sure path is correct
+import User from "../models/User.js";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
 import { addEmailJob } from "../queues/config.js";
 
-// Google OAuth Strategy
+
 passport.use(
   new GoogleStrategy(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "/api/auth/google/callback", // Must match in Google Console
+      callbackURL: "/api/auth/google/callback",
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
@@ -20,7 +21,7 @@ passport.use(
           `🔍 OAuth callback for Google ID: ${profile.id}, Email: ${profile.emails[0].value}`
         );
 
-        // Find existing user or create a new one
+
         let user = await User.findOne({ googleId: profile.id });
         console.log(
           `🔍 User lookup by Google ID: ${
@@ -29,7 +30,7 @@ passport.use(
         );
 
         if (!user) {
-          // Check if a user with the same email exists
+
           let existingUser = await User.findOne({
             email: profile.emails[0].value,
           });
@@ -40,8 +41,8 @@ passport.use(
           );
 
           if (existingUser) {
-            // Link Google account to existing user
-            const wasLinked = !!existingUser.googleId; // Check if Google was already linked
+
+            const wasLinked = !!existingUser.googleId;
             existingUser.googleId = profile.id;
             await existingUser.save();
             user = existingUser;
@@ -49,7 +50,7 @@ passport.use(
               `🔗 Linked Google account to existing user: ${user.email}`
             );
 
-            // Send welcome email if this is the first time linking Google account
+
             if (!wasLinked) {
               try {
                 const shouldSendWelcomeEmail =
@@ -86,20 +87,23 @@ passport.use(
             console.log(
               `✨ Creating new Google user: ${profile.emails[0].value}`
             );
-            // Create new user with incomplete profile flag
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(Math.random().toString(36).slice(-8), salt);
+
+
             user = await User.create({
               googleId: profile.id,
               name: profile.displayName,
               email: profile.emails[0].value,
-              isDonor: false, // default, user will choose later
-              isHospital: false, // default, user will choose later
-              password: Math.random().toString(36).slice(-8), // random password
-              location: "Unknown", // default value to satisfy schema
-              bloodGroup: "O+", // default value to satisfy schema
-              needsAccountTypeSelection: true, // Flag to indicate user needs to choose account type
+              isDonor: false,
+              isHospital: false,
+              password: hashedPassword,
+              location: "Unknown",
+              bloodGroup: "O+",
+              needsAccountTypeSelection: true,
             });
 
-            // Send welcome email for new Google OAuth user
+
             try {
               const shouldSendWelcomeEmail =
                 process.env.ENABLE_WELCOME_EMAILS === "true";
@@ -129,13 +133,13 @@ passport.use(
                 "❌ Failed to queue welcome email for Google user:",
                 emailError
               );
-              // Don't fail OAuth if email fails
+
             }
           }
         } else {
           console.log(`👋 Existing Google user logging in: ${user.email}`);
 
-          // Send login notification email for OAuth users
+
           try {
             const shouldSendLoginEmail =
               process.env.SEND_LOGIN_EMAILS === "true";
@@ -163,7 +167,7 @@ passport.use(
           }
         }
 
-        // Generate JWT token
+
         const token = jwt.sign(
           {
             id: user._id,
@@ -174,7 +178,7 @@ passport.use(
           { expiresIn: "7d" }
         );
 
-        // Attach token to user
+
         done(null, { ...user.toObject(), token });
       } catch (err) {
         console.error(
@@ -187,7 +191,7 @@ passport.use(
   )
 );
 
-// Required for Passport sessions (not used in JWT flow, but safe to include)
+
 passport.serializeUser((user, done) => {
   done(null, user);
 });

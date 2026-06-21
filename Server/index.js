@@ -2,7 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import cors from "cors";
-import http from "http"; // ✅ Needed to create server for Socket.io
+import http from "http";
 import { Server } from "socket.io";
 
 import authRoutes from "./routes/auth.js";
@@ -11,14 +11,13 @@ import requestRoutes from "./routes/request.js";
 import offerRoutes from "./routes/offer.js";
 import match from "./routes/match.js";
 import messageRoutes from "./routes/message.js";
-import googleAuthRoutes from "./routes/googleAuth.js";
 import emailRoutes from "./routes/email.js";
-import adminRoutes from "./routes/admin.js"; // Add admin routes
-import aiRoutes from "./routes/ai.js"; // Add AI routes
+import adminRoutes from "./routes/admin.js";
+import aiRoutes from "./routes/ai.js";
 import passport from "passport";
-import "./config/passport.js"; // 👈 initialize passport config
+import "./config/passport.js";
 
-// Import BullMQ queue system
+
 import { startWorkers } from "./queues/workers.js";
 import { createBullBoardRouter } from "./queues/dashboard.js";
 import {
@@ -28,7 +27,8 @@ import {
   smsQueue,
 } from "./queues/config.js";
 
-// Config
+
+
 dotenv.config();
 console.log("🔄 Starting Blood Donor API...");
 console.log("📊 Environment:", process.env.NODE_ENV || "development");
@@ -39,10 +39,10 @@ console.log(
 
 const app = express();
 
-// Create server for `socket`.io
+
 const server = http.createServer(app);
 
-// ✅ Initialize Socket.io
+
 const io = new Server(server, {
   cors: {
     origin: ["http://localhost:5173", "http://localhost:3000"],
@@ -51,10 +51,10 @@ const io = new Server(server, {
   },
 });
 
-// Store io instance so we can use it in routes
+
 app.set("io", io);
 
-// Store queue instances so we can use them in routes
+
 app.set("urgentNotificationQueue", urgentNotificationQueue);
 app.set("donorMatchingQueue", donorMatchingQueue);
 app.set("emailQueue", emailQueue);
@@ -67,7 +67,7 @@ io.on("connection", (socket) => {
     socket.join(roomId);
     console.log(`User ${socket.id} joined room: ${roomId}`);
 
-    // Get room users and emit to room
+
     const room = io.sockets.adapter.rooms.get(roomId);
     const users = room ? Array.from(room).map((id) => ({ id })) : [];
     io.to(roomId).emit("room-users", users);
@@ -77,7 +77,7 @@ io.on("connection", (socket) => {
     socket.leave(roomId);
     console.log(`User ${socket.id} left room: ${roomId}`);
 
-    // Update room users after leaving
+
     const room = io.sockets.adapter.rooms.get(roomId);
     const users = room ? Array.from(room).map((id) => ({ id })) : [];
     io.to(roomId).emit("room-users", users);
@@ -86,8 +86,7 @@ io.on("connection", (socket) => {
   socket.on("send-message", (data) => {
     const { roomId, message } = data;
 
-    // Emit to ALL users in the room INCLUDING the sender
-    // This ensures everyone sees the message in real-time
+
     io.to(roomId).emit("receive-message", message);
 
     console.log(
@@ -106,7 +105,7 @@ io.on("connection", (socket) => {
   });
 });
 
-// Middleware
+
 app.use(
   cors({
     origin: ["http://localhost:5173", "http://localhost:3000"],
@@ -117,7 +116,7 @@ app.use(
 );
 app.use(express.json());
 
-// Mount Bull Board dashboard (before other routes)
+
 try {
   const { router: bullBoardRouter } = createBullBoardRouter();
   app.use("/admin/queues", bullBoardRouter);
@@ -127,26 +126,41 @@ try {
   console.log("⚠️ Continuing without queue dashboard...");
 }
 
-// Routes
+app.use(passport.initialize());
+
+
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/request", requestRoutes);
 app.use("/api/offer", offerRoutes);
 app.use("/api/match", match);
 app.use("/api/message", messageRoutes);
-app.use("/api/google-auth", googleAuthRoutes);
 app.use("/api/email", emailRoutes);
-app.use("/api/admin", adminRoutes); // Add admin routes
-app.use("/api/ai", aiRoutes); // Add AI routes
-app.use(passport.initialize());
+app.use("/api/admin", adminRoutes);
+app.use("/api/ai", aiRoutes);
 
-// MongoDB connection
+
 const connectDB = async () => {
   console.log("🔄 Starting database connection...");
   try {
     if (process.env.MONGO_URI) {
       await mongoose.connect(process.env.MONGO_URI);
       console.log("✅ MongoDB connected");
+      console.log("Mongo Host:", mongoose.connection.host);
+      console.log("Mongo DB:", mongoose.connection.name);
+      console.log("Mongo URI:", process.env.MONGO_URI);
+
+      try {
+        const User = (await import("./models/User.js")).default;
+        const BloodRequest = (await import("./models/BloodRequest.js")).default;
+        const Offer = (await import("./models/Offer.js")).default;
+
+        console.log("Users:", await User.countDocuments());
+        console.log("Requests:", await BloodRequest.countDocuments());
+        console.log("Offers:", await Offer.countDocuments());
+      } catch (err) {
+        console.error("Error fetching counts:", err);
+      }
     } else {
       console.log("⚠️ No MONGO_URI provided, running without database");
     }
@@ -154,7 +168,7 @@ const connectDB = async () => {
     console.error("❌ MongoDB connection error:", err);
     console.log("⚠️ Continuing without database connection...");
   }
-  // Always try to start workers (even if DB fails)
+
   console.log("🔄 Starting queue workers...");
   try {
     startWorkers();
@@ -165,16 +179,16 @@ const connectDB = async () => {
   }
 };
 
-// Connect to database
+
 connectDB();
 
-// Sample route
+
 app.get("/", (req, res) =>
   res.send("Blood Donor API is working - Queue Dashboard: /admin/queues")
 );
 
-// Start server
-export { io }; // optional, in case needed elsewhere
+
+export { io };
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`Server running on ${PORT}`));

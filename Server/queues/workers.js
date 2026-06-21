@@ -5,13 +5,13 @@ import BloodRequest from "../models/BloodRequest.js";
 import { canDonateTo } from "../utils/compatability.js";
 import { sendEmail } from "../utils/emailService.js";
 
-// Helper function to get compatible blood groups
+
 function getCompatibleBloodGroups(requestedType) {
   const allBloodGroups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
   return allBloodGroups.filter((group) => canDonateTo(group, requestedType));
 }
 
-// Urgent Blood Request Worker
+
 const urgentWorker = new Worker(
   "urgent-blood-requests",
   async (job) => {
@@ -27,7 +27,7 @@ const urgentWorker = new Worker(
     console.log(`🚨 Processing urgent ${bloodGroup} request in ${location}`);
 
     try {
-      // Find compatible donors in the same location
+
       const compatibleDonors = await User.find({
         location: location,
         available: { $ne: false },
@@ -38,12 +38,12 @@ const urgentWorker = new Worker(
         `Found ${compatibleDonors.length} compatible donors for ${bloodGroup}`
       );
 
-      // Send urgent email notifications to compatible donors
+
       const emailPromises = compatibleDonors.map(async (donor) => {
         try {
           await sendEmail(
             donor.email,
-            null, // subject will be generated from template
+            null,
             "urgent-donor-alert",
             {
               donorName: donor.name,
@@ -90,7 +90,7 @@ const urgentWorker = new Worker(
   { connection, concurrency: 5 }
 );
 
-// Donor Matching Worker
+
 const donorMatchingWorker = new Worker(
   "donor-matching",
   async (job) => {
@@ -125,7 +125,7 @@ const donorMatchingWorker = new Worker(
   { connection, concurrency: 3 }
 );
 
-// Email Worker
+
 const emailWorker = new Worker(
   "email-notifications",
   async (job) => {
@@ -156,7 +156,7 @@ const emailWorker = new Worker(
     } catch (error) {
       console.error(`❌ Error sending email to ${to}:`, error.message);
 
-      // Don't throw error for non-critical emails, just log and return failure
+
       if (priority === "low") {
         return {
           success: false,
@@ -167,19 +167,19 @@ const emailWorker = new Worker(
         };
       }
 
-      throw error; // Critical emails should retry
+      throw error;
     }
   },
   {
     connection,
     concurrency: 10,
     settings: {
-      retryProcessDelay: 5000, // Wait 5 seconds between retries
+      retryProcessDelay: 5000,
     },
   }
 );
 
-// Add worker event listeners for debugging
+
 emailWorker.on("ready", () => {
   console.log("📧 Email worker is ready and listening for jobs");
 });
@@ -192,7 +192,7 @@ emailWorker.on("stalled", (jobId) => {
   console.log(`⏰ Email job ${jobId} stalled`);
 });
 
-// SMS Worker
+
 const smsWorker = new Worker(
   "sms-notifications",
   async (job) => {
@@ -201,8 +201,7 @@ const smsWorker = new Worker(
     console.log(`📱 Processing SMS to ${to}`);
 
     try {
-      // In a real app, you would use a service like Twilio
-      // For now, we'll simulate sending the SMS
+
       console.log(`📱 SMS sent to ${to}: ${message}`);
 
       return {
@@ -219,7 +218,7 @@ const smsWorker = new Worker(
   { connection, concurrency: 5 }
 );
 
-// Start all workers
+
 export function startWorkers() {
   console.log("🔧 Starting BullMQ workers...");
 
@@ -258,7 +257,7 @@ export function startWorkers() {
   console.log("✅ All BullMQ workers started successfully");
 }
 
-// Graceful shutdown
+
 process.on("SIGTERM", async () => {
   console.log("🛑 Closing workers...");
   await Promise.all([

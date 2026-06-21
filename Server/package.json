@@ -4,7 +4,6 @@
     "@bull-board/api": "^6.10.1",
     "@bull-board/express": "^6.10.1",
     "@google/generative-ai": "^0.24.1",
-    "@sendgrid/mail": "^8.1.5",
     "axios": "^1.10.0",
     "bcryptjs": "^3.0.2",
     "bullmq": "^5.56.0",

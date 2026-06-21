@@ -15,12 +15,11 @@ import "swiper/css/effect-coverflow";
 const AcceptedOffersCarousel = ({
   acceptedOffers = [],
   onOpenChat,
-  onGetDirections,
 }) => {
   const swiperRef = useRef(null);
   const cardsRef = useRef([]);
 
-  // Filter out offers that don't have valid bloodRequest data
+
   const validOffers = acceptedOffers.filter(
     (offer) => offer && offer.bloodRequest && offer.bloodRequest._id
   );
@@ -48,10 +47,10 @@ const AcceptedOffersCarousel = ({
 
   if (validOffers.length === 0) {
     return (
-      <div className="text-center py-8">
+      <div className="text-center py-10 px-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
         <div className="text-6xl mb-4">🩸</div>
-        <p className="text-gray-500 mb-2">No accepted offers yet</p>
-        <p className="text-sm text-gray-400">
+        <p className="text-gray-700 dark:text-gray-300 font-semibold mb-2">No accepted offers yet</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm mx-auto">
           Once a requester accepts your donation offer, it will appear here with
           routing information
         </p>
@@ -124,12 +123,7 @@ const AcceptedOffersCarousel = ({
                     </p>
                   )}
                 </div>
-                <div>
-                  <h4 className="font-medium text-gray-800 mb-2">
-                    Travel Information
-                  </h4>
-                  {/* You can add directions info here if needed */}
-                </div>
+
               </div>
               <div className="bg-white rounded-lg p-3 mb-4">
                 <h4 className="font-medium text-gray-800 mb-2">
@@ -140,15 +134,7 @@ const AcceptedOffersCarousel = ({
                 </p>
               </div>
               <div className="flex gap-3">
-                <button
-                  onClick={() =>
-                    onGetDirections && onGetDirections(offer.bloodRequest)
-                  }
-                  className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-center"
-                >
-                  <span className="mr-2">🗺️</span>
-                  Get Directions
-                </button>
+
                 <button
                   onClick={() => onOpenChat && onOpenChat(offer.bloodRequest)}
                   className="flex-1 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 flex items-center justify-center"

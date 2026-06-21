@@ -9,7 +9,7 @@ import { donorMatchingQueue } from "../queues/config.js";
 
 const router = express.Router();
 
-// Legacy endpoint - kept for backward compatibility
+
 router.get("/", verifyToken, async (req, res) => {
   try {
     const donor = req.user;
@@ -38,7 +38,7 @@ router.get("/", verifyToken, async (req, res) => {
   }
 });
 
-// Enhanced geolocation-based matching
+
 router.get("/nearby", verifyToken, async (req, res) => {
   try {
     const donorId = req.user._id;
@@ -70,7 +70,7 @@ router.get("/nearby", verifyToken, async (req, res) => {
 
     const result = await matchingService.findNearbyRequests(donorId, options);
 
-    // Always return success, even if no requests found
+
     res.status(200).json({
       success: true,
       data: result,
@@ -83,7 +83,7 @@ router.get("/nearby", verifyToken, async (req, res) => {
   } catch (error) {
     console.error("Error finding nearby requests:", error);
 
-    // Return a user-friendly response instead of 500 error
+
     res.status(200).json({
       success: true,
       data: {
@@ -97,7 +97,7 @@ router.get("/nearby", verifyToken, async (req, res) => {
   }
 });
 
-// Find compatible donors for a blood request
+
 router.get("/donors/:requestId", verifyToken, async (req, res) => {
   try {
     const { requestId } = req.params;
@@ -133,7 +133,7 @@ router.get("/donors/:requestId", verifyToken, async (req, res) => {
   }
 });
 
-// Update donor's real-time location
+
 router.post("/location", verifyToken, async (req, res) => {
   try {
     const donorId = req.user._id;
@@ -166,7 +166,7 @@ router.post("/location", verifyToken, async (req, res) => {
   }
 });
 
-// Update user location
+
 router.post("/location", verifyToken, async (req, res) => {
   try {
     const userId = req.user._id;
@@ -179,7 +179,7 @@ router.post("/location", verifyToken, async (req, res) => {
       accuracy,
     });
 
-    // Validate coordinates
+
     if (!latitude || !longitude) {
       return res.status(400).json({
         success: false,
@@ -187,7 +187,7 @@ router.post("/location", verifyToken, async (req, res) => {
       });
     }
 
-    // Validate coordinate ranges
+
     if (
       latitude < -90 ||
       latitude > 90 ||
@@ -200,7 +200,7 @@ router.post("/location", verifyToken, async (req, res) => {
       });
     }
 
-    // Get address from coordinates if not provided
+
     let formattedAddress = address;
     if (!formattedAddress) {
       try {
@@ -215,7 +215,7 @@ router.post("/location", verifyToken, async (req, res) => {
       }
     }
 
-    // Update user location
+
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       {
@@ -225,7 +225,7 @@ router.post("/location", verifyToken, async (req, res) => {
           "address.formattedAddress": formattedAddress,
           locationAccuracy: accuracy || 0,
           locationTimestamp: new Date(),
-          location: formattedAddress, // Keep for backward compatibility
+          location: formattedAddress,
         },
       },
       { new: true, runValidators: true }
@@ -267,7 +267,7 @@ router.post("/location", verifyToken, async (req, res) => {
   }
 });
 
-// Find optimal meeting points
+
 router.get("/meeting-point/:requestId", verifyToken, async (req, res) => {
   try {
     const donorId = req.user._id;
@@ -291,7 +291,7 @@ router.get("/meeting-point/:requestId", verifyToken, async (req, res) => {
   }
 });
 
-// Geocode address to coordinates
+
 router.post("/geocode", verifyToken, async (req, res) => {
   try {
     const { address } = req.body;
@@ -318,7 +318,7 @@ router.post("/geocode", verifyToken, async (req, res) => {
   }
 });
 
-// Reverse geocode coordinates to address
+
 router.post("/reverse-geocode", verifyToken, async (req, res) => {
   try {
     const { latitude, longitude } = req.body;
@@ -348,7 +348,7 @@ router.post("/reverse-geocode", verifyToken, async (req, res) => {
   }
 });
 
-// Calculate route between two points
+
 router.post("/route", verifyToken, async (req, res) => {
   try {
     const {
@@ -387,7 +387,7 @@ router.post("/route", verifyToken, async (req, res) => {
   }
 });
 
-// Find nearby places (hospitals, clinics)
+
 router.get("/nearby-places", verifyToken, async (req, res) => {
   try {
     const {
@@ -424,13 +424,13 @@ router.get("/nearby-places", verifyToken, async (req, res) => {
   }
 });
 
-// Notify nearby donors about urgent request
+
 router.post("/notify-donors/:requestId", verifyToken, async (req, res) => {
   try {
     const { requestId } = req.params;
     const { maxDistance = 50000 } = req.body;
 
-    // Verify user has permission (hospital or request owner)
+
     const request = await BloodRequest.findById(requestId);
     if (!request) {
       return res.status(404).json({
