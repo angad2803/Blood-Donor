@@ -30,6 +30,7 @@ import SessionManager from "../components/auth/SessionManager";
 import ErrorBoundary from "../components/ui/ErrorBoundary";
 import AdminCleanup from "../components/admin/AdminCleanup";
 import Admin from "../pages/admin/Admin";
+import LandingPage from "../pages/landing/LandingPage";
 
 function App() {
   const { token, isLoading } = useContext(AuthContext);
@@ -135,13 +136,8 @@ function App() {
               }
             />
 
-            {}
-            <Route
-              path="/"
-              element={
-                token ? <Navigate to="/dashboard" /> : <Navigate to="/login" />
-              }
-            />
+            {/* Landing page — always accessible */}
+            <Route path="/" element={<LandingPage />} />
           </Routes>
           <ToastContainer
             position="top-right"
