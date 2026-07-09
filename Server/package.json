@@ -24,8 +24,8 @@
     "nodemon": "^3.1.10"
   },
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js",
+    "start": "node -r dotenv/config index.js",
+    "dev": "nodemon -r dotenv/config index.js",
     "build": "echo 'No build step required for Node.js backend'"
   }
 }

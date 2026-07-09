@@ -1,37 +1,7 @@
+import "dotenv/config";
 import express from "express";
-import dotenv from "dotenv";
-const dotenvResult = dotenv.config();
 
-// Temporary network instrumentation: detect any TCP connect attempts to localhost:6379
-// This helps find which module is attempting to connect to Redis on 127.0.0.1.
-import net from "net";
-const originalConnect = net.Socket.prototype.connect;
-net.Socket.prototype.connect = function (...args) {
-  try {
-    let host, port;
-    if (typeof args[0] === "object") {
-      const opts = args[0];
-      host = opts.host || opts.hostname || opts.hostName;
-      port = opts.port;
-    } else {
-      port = args[0];
-      host = args[1] && typeof args[1] === "string" ? args[1] : undefined;
-    }
-
-    if (
-      (host === "127.0.0.1" || host === "localhost") &&
-      Number(port) === 6379
-    ) {
-      console.error(
-        "DETECTED TCP connect to localhost:6379 — stack trace follows:",
-      );
-      console.error(new Error().stack);
-    }
-  } catch (e) {
-    // ignore instrumentation failures
-  }
-  return originalConnect.apply(this, args);
-};
+// (Removed temporary network instrumentation)
 import mongoose from "mongoose";
 import cors from "cors";
 import http from "http";

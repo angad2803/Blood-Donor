@@ -1,98 +1,50 @@
 import { Queue } from "bullmq";
 import Redis from "ioredis";
 
-console.log("REDIS_URL configured:", !!process.env.REDIS_URL);
+// Verification: print REDIS_URL early to confirm dotenv was loaded before this module runs.
+// NOTE: This is intentional for verification; keep only while we confirm startup ordering.
+console.log("process.env.REDIS_URL=", process.env.REDIS_URL);
+
 if (!process.env.REDIS_URL) {
   throw new Error("REDIS_URL is missing.");
 }
 
-// Create a single shared IORedis connection using Upstash REDIS_URL
+// Create a single shared IORedis connection using Upstash REDIS_URL.
+// Use eager connect and await it synchronously (top-level await) so that
+// no BullMQ objects initialize before Redis is ready. This prevents
+// BullMQ from creating fallback/localhost clients during startup.
 const connection = new Redis(process.env.REDIS_URL, {
   maxRetriesPerRequest: null,
-  lazyConnect: true,
+  lazyConnect: false,
 });
 
-// Ensure the client actively connects and surface errors early
-connection
-  .connect()
-  .then(() => {
-    console.log("✅ Redis connected successfully (shared client)");
-  })
-  .catch((err) => {
-    console.error(
-      "❌ Redis initial connect error:",
-      err && err.message ? err.message : err,
-    );
-    console.log(
-      "💡 Queue system will not work without Redis. Please check your REDIS_URL.",
-    );
-  });
+try {
+  await connection.connect();
+  console.log("✅ Redis connected");
+} catch (err) {
+  console.error(
+    "❌ Redis initial connect error:",
+    err && err.message ? err.message : err,
+  );
+  console.log(
+    "💡 Queue system will not work without Redis. Please check your REDIS_URL.",
+  );
+}
 
 connection.on("error", (err) => {
   console.error(
-    "❌ Redis connection error (shared client):",
+    "❌ Redis connection error:",
     err && err.message ? err.message : err,
   );
 });
 
-// Provide a createClient factory for BullMQ so it creates separate clients correctly
-const connectionOptions = {
-  createClient: function (type) {
-    if (!process.env.REDIS_URL) {
-      console.error(
-        `createClient called but REDIS_URL is missing (type=${type})`,
-      );
-      throw new Error("REDIS_URL is missing.");
-    }
-
-    const extractHost = (uri) => {
-      try {
-        let s = uri.replace(/^rediss?:\/\//i, "");
-        if (s.includes("@")) s = s.split("@").pop();
-        s = s.split("/")[0];
-        s = s.split("?")[0];
-        return s;
-      } catch (e) {
-        return "(unknown)";
-      }
-    };
-
-    console.log(
-      `createClient called (type=${type}), REDIS host: ${extractHost(process.env.REDIS_URL)}`,
-    );
-
-    // types: 'client', 'subscriber', 'bclient'
-    // Always create a new IORedis client using REDIS_URL to avoid defaulting to localhost
-    const client = new Redis(process.env.REDIS_URL, {
-      maxRetriesPerRequest: null,
-      lazyConnect: true,
-    });
-    client.on("error", (err) => {
-      console.error(
-        `❌ Redis client error (type=${type}):`,
-        err && err.message ? err.message : err,
-      );
-    });
-    return client;
-  },
-};
-
-// Create queues — use the shared `connection` so constructors receive the same client
+// Create queues — after Redis is connected — use the shared `connection`
 const urgentNotificationQueue = new Queue("urgent-blood-requests", {
   connection,
 });
-
-const donorMatchingQueue = new Queue("donor-matching", {
-  connection,
-});
-
-const emailQueue = new Queue("email-notifications", {
-  connection,
-});
-
-const smsQueue = new Queue("sms-notifications", {
-  connection,
-});
+const donorMatchingQueue = new Queue("donor-matching", { connection });
+const emailQueue = new Queue("email-notifications", { connection });
+const smsQueue = new Queue("sms-notifications", { connection });
 
 // Email queue helper functions
 export async function addEmailJob(jobData, options = {}) {
@@ -127,5 +79,4 @@ export {
   donorMatchingQueue,
   emailQueue,
   smsQueue,
-  connectionOptions,
 };

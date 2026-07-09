@@ -10,8 +10,7 @@ function getCompatibleBloodGroups(requestedType) {
   return allBloodGroups.filter((group) => canDonateTo(group, requestedType));
 }
 
-console.log("Worker Redis URL:", !!process.env.REDIS_URL);
-console.log("Worker connection object:", connection && connection.options);
+// Workers use the shared Redis `connection` from queues/config.js
 
 const urgentWorker = new Worker(
   "urgent-blood-requests",
