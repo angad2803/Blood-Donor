@@ -34,98 +34,60 @@ const DEFAULT_CLIENT_ORIGINS = [
 ];
 
 const getClientOrigins = () => {
-  const connectDB = async () => {
-    console.log("🔄 Starting database connection...");
+  const configuredOrigins = (
+    process.env.CLIENT_URLS ||
+    process.env.CLIENT_URL ||
+    ""
+  )
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
 
-    // Diagnostic: dotenv loaded?
-    console.log(
-      "DOTENV LOADED:",
-      dotenvResult && dotenvResult.parsed ? true : dotenvResult && dotenvResult.error ? `ERROR: ${dotenvResult.error.message}` : false,
-    );
+  return configuredOrigins.length > 0
+    ? configuredOrigins
+    : DEFAULT_CLIENT_ORIGINS;
+};
 
-    // Accept multiple common env var names to avoid deployment mistakes
-    const mongoUri =
-      process.env.MONGO_URI || process.env.MONGODB_URI || process.env.DATABASE_URL;
+const clientOrigins = getClientOrigins();
 
-    // Diagnostic: presence of MONGO_URI
-    console.log("MONGO_URI present:", !!process.env.MONGO_URI);
+console.log("🔄 Starting Blood Donor API...");
+console.log("📊 Environment:", process.env.NODE_ENV || "development");
+console.log(
+  "️ Mongo URI:",
+  process.env.MONGO_URI ? "✅ Configured" : "❌ Missing",
+);
 
-    // Diagnostic: Node version and cwd
-    console.log("Node version:", process.version);
-    console.log("CWD:", process.cwd());
+const app = express();
 
-    // Helper: extract hostname only from Mongo URI without credentials
-    const extractMongoHost = (uri) => {
-      try {
-        if (!uri) return null;
-        // remove scheme
-        let s = uri.replace(/^mongodb\+srv:\/\//i, "").replace(/^mongodb:\/\//i, "");
-        // if credentials present, strip everything before '@'
-        if (s.includes("@")) s = s.split("@").pop();
-        // hostname is before the first '/'
-        s = s.split("/")[0];
-        // drop any query params
-        s = s.split("?")[0];
-        return s;
-      } catch (e) {
-        return null;
-      }
-    };
+const server = http.createServer(app);
 
-    const hostOnly = extractMongoHost(mongoUri);
-    console.log("Mongo host (extracted, no creds):", hostOnly || "(none)");
+const io = new Server(server, {
+  cors: {
+    origin: clientOrigins,
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  },
+});
 
-    if (!mongoUri) {
-      console.error("ERROR: MONGO_URI is undefined. Check Render Environment Variables.");
-      throw new Error("MongoDB connection string missing");
-    }
+app.set("io", io);
 
-    try {
-      // Use conservative timeouts to fail fast and provide useful diagnostics
-      await mongoose.connect(mongoUri, {
-        serverSelectionTimeoutMS: 10000,
-        socketTimeoutMS: 45000,
-        family: 4, // prefer IPv4 — helps in some cloud DNS setups
-      });
+app.set("urgentNotificationQueue", urgentNotificationQueue);
+app.set("donorMatchingQueue", donorMatchingQueue);
+app.set("emailQueue", emailQueue);
+app.set("smsQueue", smsQueue);
 
-      console.log("MongoDB Connected");
-      console.log("mongoose.connection.host:", mongoose.connection.host);
-      console.log("mongoose.connection.name:", mongoose.connection.name);
+io.on("connection", (socket) => {
+  console.log("🧠 New client connected:", socket.id);
 
-      try {
-        const User = (await import("./models/User.js")).default;
-        const BloodRequest = (await import("./models/BloodRequest.js")).default;
-        const Offer = (await import("./models/Offer.js")).default;
+  socket.on("join-room", (roomId) => {
+    socket.join(roomId);
+    console.log(`User ${socket.id} joined room: ${roomId}`);
 
-        console.log("Users:", await User.countDocuments());
-        console.log("Requests:", await BloodRequest.countDocuments());
-        console.log("Offers:", await Offer.countDocuments());
-      } catch (err) {
-        console.error("Error fetching counts:", err);
-      }
-    } catch (err) {
-      // Detailed diagnostics without leaking credentials
-      console.error("MongoDB connection failed — diagnostics follows:");
-      try {
-        console.error("err.message:", err && err.message ? err.message : undefined);
-        console.error("err.name:", err && err.name ? err.name : undefined);
-        console.error("err.code:", err && err.code ? err.code : undefined);
-        console.error("err.cause:", err && err.cause ? err.cause : undefined);
-        console.error("err.reason:", err && err.reason ? err.reason : undefined);
-        console.error("err.stack:", err && err.stack ? err.stack : undefined);
-      } catch (inner) {
-        console.error("Error while printing diagnostics:", inner);
-      }
+    const room = io.sockets.adapter.rooms.get(roomId);
+    const users = room ? Array.from(room).map((id) => ({ id })) : [];
+    io.to(roomId).emit("room-users", users);
+  });
 
-      try {
-        console.error("Attempted Mongo host:", hostOnly || "(unknown)");
-      } catch (e) {
-        // ignore
-      }
-
-      console.error("Check: correct MONGO_URI in environment, Atlas user/credentials, DNS/SRV resolution, or network/DNS from host.");
-      throw err; // Stop execution if DB connection fails
-    }
   socket.on("leave-room", (roomId) => {
     socket.leave(roomId);
     console.log(`User ${socket.id} left room: ${roomId}`);
