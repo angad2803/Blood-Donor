@@ -1,5 +1,5 @@
 import { Worker } from "bullmq";
-import { connection } from "./config.js";
+import { connectionOptions } from "./config.js";
 import User from "../models/User.js";
 import BloodRequest from "../models/BloodRequest.js";
 import { canDonateTo } from "../utils/compatability.js";
@@ -78,7 +78,7 @@ const urgentWorker = new Worker(
       throw error;
     }
   },
-  { connection, concurrency: 5 },
+  { connection: connectionOptions, concurrency: 5 },
 );
 
 const donorMatchingWorker = new Worker(
@@ -112,7 +112,7 @@ const donorMatchingWorker = new Worker(
       throw error;
     }
   },
-  { connection, concurrency: 3 },
+  { connection: connectionOptions, concurrency: 3 },
 );
 
 const emailWorker = new Worker(
@@ -159,7 +159,7 @@ const emailWorker = new Worker(
     }
   },
   {
-    connection,
+    connection: connectionOptions,
     concurrency: 10,
     settings: {
       retryProcessDelay: 5000,
@@ -200,7 +200,7 @@ const smsWorker = new Worker(
       throw error;
     }
   },
-  { connection, concurrency: 5 },
+  { connection: connectionOptions, concurrency: 5 },
 );
 
 export function startWorkers() {

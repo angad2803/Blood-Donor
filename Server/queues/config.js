@@ -1,38 +1,56 @@
 import { Queue } from "bullmq";
 import Redis from "ioredis";
 
-// Create Redis connection using Upstash REDIS_URL
+console.log("REDIS_URL configured:", !!process.env.REDIS_URL);
+if (!process.env.REDIS_URL) {
+  throw new Error("REDIS_URL is missing.");
+}
+
+// Create a single shared IORedis connection using Upstash REDIS_URL
 const connection = new Redis(process.env.REDIS_URL, {
   maxRetriesPerRequest: null,
-  lazyConnect: true,
 });
 
-connection.on("connect", () => {
-  console.log("✅ Redis connected successfully");
+// Ensure the client actively connects and surface errors early
+connection.connect().then(() => {
+  console.log("✅ Redis connected successfully (shared client)");
+}).catch((err) => {
+  console.error("❌ Redis initial connect error:", err && err.message ? err.message : err);
+  console.log("💡 Queue system will not work without Redis. Please check your REDIS_URL.");
 });
 
 connection.on("error", (err) => {
-  console.error("❌ Redis connection error:", err.message);
-  console.log(
-    "💡 Queue system will not work without Redis. Please check your REDIS_URL.",
-  );
+  console.error("❌ Redis connection error (shared client):", err && err.message ? err.message : err);
 });
 
-// Create queues
+// Provide a createClient factory for BullMQ so it creates separate clients correctly
+const connectionOptions = {
+  createClient: function (type) {
+    // types: 'client', 'subscriber', 'bclient'
+    // Always create a new IORedis client using REDIS_URL to avoid defaulting to localhost
+    const client = new Redis(process.env.REDIS_URL, { maxRetriesPerRequest: null });
+    client.on("error", (err) => {
+      console.error(`❌ Redis client error (type=${type}):`, err && err.message ? err.message : err);
+    });
+    return client;
+  },
+};
+
+// Create queues — use connectionOptions factory so BullMQ creates clients with REDIS_URL
 const urgentNotificationQueue = new Queue("urgent-blood-requests", {
-  connection,
+  connection: connectionOptions,
 });
 
 const donorMatchingQueue = new Queue("donor-matching", {
-  connection,
+  connection: connectionOptions,
 });
 
 const emailQueue = new Queue("email-notifications", {
-  connection,
+  connection: connectionOptions,
 });
 
 const smsQueue = new Queue("sms-notifications", {
-  connection,
+  connection: connectionOptions,
 });
 
 // Email queue helper functions
@@ -68,4 +86,5 @@ export {
   donorMatchingQueue,
   emailQueue,
   smsQueue,
+  connectionOptions,
 };
