@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import api from "../../api/api.js";
 import {
   Bell,
   Mail,
@@ -19,7 +20,6 @@ const EmailTestingDashboard = () => {
   const [testEmail, setTestEmail] = useState("");
   const [queueStatus, setQueueStatus] = useState(null);
 
-
   useEffect(() => {
     loadEmailConfig();
     loadQueueStatus();
@@ -27,12 +27,8 @@ const EmailTestingDashboard = () => {
 
   const loadEmailConfig = async () => {
     try {
-      const response = await fetch("/api/email/config", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-      const data = await response.json();
+      const response = await api.get("/email/config");
+      const data = response.data;
       if (data.success) {
         setEmailConfig(data.configuration);
       }
@@ -43,12 +39,8 @@ const EmailTestingDashboard = () => {
 
   const loadQueueStatus = async () => {
     try {
-      const response = await fetch("/api/email/queue/status", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-      const data = await response.json();
+      const response = await api.get("/email/queue/status");
+      const data = response.data;
       if (data.success) {
         setQueueStatus(data.queueStatus);
       }
@@ -65,16 +57,8 @@ const EmailTestingDashboard = () => {
 
     setLoading(true);
     try {
-      const response = await fetch("/api/email/test", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({ email: testEmail }),
-      });
-
-      const data = await response.json();
+      const response = await api.post("/email/test", { email: testEmail });
+      const data = response.data;
       setResults((prev) => ({
         ...prev,
         testEmail: data,
@@ -91,14 +75,8 @@ const EmailTestingDashboard = () => {
   const sendVerificationEmail = async () => {
     setLoading(true);
     try {
-      const response = await fetch("/api/email/verify", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-
-      const data = await response.json();
+      const response = await api.post("/email/verify");
+      const data = response.data;
       setResults((prev) => ({
         ...prev,
         verification: data,
@@ -115,14 +93,8 @@ const EmailTestingDashboard = () => {
   const sendDonationReminders = async () => {
     setLoading(true);
     try {
-      const response = await fetch("/api/email/reminder/donation", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-
-      const data = await response.json();
+      const response = await api.post("/email/reminder/donation");
+      const data = response.data;
       setResults((prev) => ({
         ...prev,
         reminders: data,
@@ -144,31 +116,22 @@ const EmailTestingDashboard = () => {
 
     setLoading(true);
     try {
-      const response = await fetch("/api/email/queue", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+      const response = await api.post("/email/queue", {
+        to: testEmail,
+        subject: `Queue Test Email - ${priority} priority`,
+        template: "welcome-donor",
+        priority: priority,
+        data: {
+          name: "Queue Test User",
+          bloodGroup: "O+",
+          location: "Test City",
         },
-        body: JSON.stringify({
-          to: testEmail,
-          subject: `Queue Test Email - ${priority} priority`,
-          template: "welcome-donor",
-          priority: priority,
-          data: {
-            name: "Queue Test User",
-            bloodGroup: "O+",
-            location: "Test City",
-          },
-        }),
       });
-
-      const data = await response.json();
+      const data = response.data;
       setResults((prev) => ({
         ...prev,
         queueTest: data,
       }));
-
 
       setTimeout(loadQueueStatus, 1000);
     } catch (error) {
