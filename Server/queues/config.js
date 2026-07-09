@@ -1,10 +1,6 @@
 import { Queue } from "bullmq";
 import Redis from "ioredis";
 
-// Verification: print REDIS_URL early to confirm dotenv was loaded before this module runs.
-// NOTE: This is intentional for verification; keep only while we confirm startup ordering.
-console.log("process.env.REDIS_URL=", process.env.REDIS_URL);
-
 if (!process.env.REDIS_URL) {
   throw new Error("REDIS_URL is missing.");
 }

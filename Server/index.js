@@ -51,12 +51,7 @@ const getClientOrigins = () => {
 
 const clientOrigins = getClientOrigins();
 
-console.log("🔄 Starting Blood Donor API...");
-console.log("📊 Environment:", process.env.NODE_ENV || "development");
-console.log(
-  "️ Mongo URI:",
-  process.env.MONGO_URI ? "✅ Configured" : "❌ Missing",
-);
+// Startup
 
 const app = express();
 
@@ -175,39 +170,11 @@ const connectDB = async () => {
     });
 
     console.log("✅ MongoDB connected");
-    try {
-      console.log("Mongo Host:", mongoose.connection.host);
-      console.log("Mongo DB:", mongoose.connection.name);
-    } catch (e) {
-      // ignore
-    }
-
-    try {
-      const User = (await import("./models/User.js")).default;
-      const BloodRequest = (await import("./models/BloodRequest.js")).default;
-      const Offer = (await import("./models/Offer.js")).default;
-
-      console.log("Users:", await User.countDocuments());
-      console.log("Requests:", await BloodRequest.countDocuments());
-      console.log("Offers:", await Offer.countDocuments());
-    } catch (err) {
-      console.error("Error fetching counts:", err);
-    }
   } catch (err) {
-    // Provide diagnostics without leaking credentials
+    // Provide a concise error message
     console.error(
       "❌ MongoDB connection error:",
       err && err.message ? err.message : err,
-    );
-    try {
-      // Try to extract host from SRV URI safely
-      const host = mongoUri.replace(/^mongodb\+srv:\/\//, "").split("/")[0];
-      console.error("Attempted Mongo host:", host);
-    } catch (e) {
-      // ignore
-    }
-    console.error(
-      "Check: correct MONGO_URI in environment, Atlas user/credentials, DNS/SRV resolution, or network/DNS from host.",
     );
     throw err; // Stop execution if DB connection fails
   }
