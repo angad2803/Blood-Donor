@@ -109,3 +109,35 @@ To start with minimal costs:
 6. **Email (Nodemailer via Gmail)**: Free. Cost: $0.
 
 **Estimated Initial Total Cost**: ~$5 / month.
+
+## Quick: Deploy Backend to Render & Frontend to Vercel
+
+Follow these concise steps to get a working production deployment quickly.
+
+- **Prepare secrets and services**: create a MongoDB Atlas cluster, a Redis provider (Upstash or Redis on Render), and Google OAuth credentials. Note your connection strings and API keys.
+
+- **Backend (Render)**:
+  - Create a new **Web Service** in Render and connect your repository/branch.
+  - Environment: `Node` (no build step required for this repo). Set the **Start Command** to:
+
+    ```bash
+    npm install
+    npm start
+    ```
+
+  - Add the following environment variables in the Render dashboard (copy from `Server/.env.example`): `MONGO_URI`, `REDIS_URL`, `JWT_SECRET`, `CLIENT_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USER`, `EMAIL_PASS`, `SUPPORT_EMAIL`, `ARCGIS_API_KEY`, `AI_PROVIDER`, and either `OPENAI_API_KEY` or `GEMINI_API_KEY`.
+  - After the service is live, note the backend URL (e.g., `https://my-backend.onrender.com`).
+
+  - In Google Cloud Console, add the callback URL for OAuth: `https://<your-backend>/api/auth/google/callback` and the authorized origin `https://<your-frontend>`.
+
+- **Frontend (Vercel)**:
+  - Create a new project in Vercel and connect the `Client/` directory or the repository (Vercel auto-detects Vite).
+  - Set the **Build Command** to `npm run build` and **Output Directory** to `Client/dist` (Vite default is `dist`). Vercel usually infers this automatically for Vite projects.
+  - In Vercel Environment Variables, set `VITE_API_URL` to your Render backend origin (e.g., `https://my-backend.onrender.com`). Optionally add `VITE_OPENAI_API_KEY` or `VITE_GEMINI_API_KEY` if using AI features.
+
+- **Final linkage & checks**:
+  - Update the backend `CLIENT_URL` (or `CLIENT_URLS`) on Render to the Vercel frontend URL (e.g., `https://my-frontend.vercel.app`) so server-side email links and CORS work correctly.
+  - Confirm Google OAuth settings include both the backend and frontend URLs.
+  - Visit your Vercel URL and try a full signup/login flow. Check backend logs on Render for errors.
+
+---

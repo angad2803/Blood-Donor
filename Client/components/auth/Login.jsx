@@ -2,6 +2,7 @@ import React, { useState, useContext, useEffect, useRef } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { gsap } from "gsap";
+import { getGoogleAuthUrl } from "../../utils/runtimeConfig.js";
 
 export default function Login() {
   const { login } = useContext(AuthContext);
@@ -11,7 +12,6 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-
   const titleRef = useRef(null);
   const bloodEmojiRef = useRef(null);
   const cardRef = useRef(null);
@@ -19,9 +19,7 @@ export default function Login() {
   const particlesRef = useRef(null);
 
   useEffect(() => {
-
     const tl = gsap.timeline();
-
 
     tl.fromTo(
       bloodEmojiRef.current,
@@ -32,30 +30,29 @@ export default function Login() {
         opacity: 1,
         duration: 1.2,
         ease: "elastic.out(1, 0.8)",
-      }
+      },
     )
 
       .fromTo(
         titleRef.current,
         { opacity: 0, y: -50 },
         { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" },
-        "-=0.6"
+        "-=0.6",
       )
 
       .fromTo(
         cardRef.current,
         { opacity: 0, y: 100, scale: 0.8 },
         { opacity: 1, y: 0, scale: 1, duration: 1, ease: "power3.out" },
-        "-=0.4"
+        "-=0.4",
       )
 
       .fromTo(
         formRef.current.querySelectorAll("input, button"),
         { opacity: 0, x: -30 },
         { opacity: 1, x: 0, duration: 0.6, stagger: 0.1, ease: "power2.out" },
-        "-=0.5"
+        "-=0.5",
       );
-
 
     gsap.to(bloodEmojiRef.current, {
       scale: 1.1,
@@ -65,7 +62,6 @@ export default function Login() {
       repeat: -1,
     });
 
-
     gsap.to(cardRef.current, {
       y: -10,
       duration: 3,
@@ -73,7 +69,6 @@ export default function Login() {
       yoyo: true,
       repeat: -1,
     });
-
 
     if (particlesRef.current) {
       const particles =
@@ -105,7 +100,6 @@ export default function Login() {
     setError("");
     setLoading(true);
 
-
     gsap.to(formRef.current, {
       scale: 0.95,
       opacity: 0.7,
@@ -117,7 +111,6 @@ export default function Login() {
     setLoading(false);
 
     if (result.success) {
-
       gsap.to(cardRef.current, {
         scale: 1.05,
         rotation: 2,
@@ -138,7 +131,6 @@ export default function Login() {
     } else {
       setError(result.message || "Login failed");
 
-
       gsap.to(cardRef.current, {
         x: -10,
         duration: 0.1,
@@ -148,7 +140,6 @@ export default function Login() {
         onComplete: () => gsap.set(cardRef.current, { x: 0 }),
       });
     }
-
 
     gsap.to(formRef.current, {
       scale: 1,
@@ -312,10 +303,7 @@ export default function Login() {
           <div className="flex-grow h-px bg-white/30" />
         </div>
 
-        <a
-          href="http://localhost:5000/api/auth/google"
-          className="w-full block"
-        >
+        <a href={getGoogleAuthUrl()} className="w-full block">
           <button
             type="button"
             className="w-full py-4 flex items-center justify-center gap-3 text-lg font-semibold rounded-lg bg-[#DB4437] text-white shadow-lg hover:brightness-110 hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#DB4437]/60 active:scale-95"

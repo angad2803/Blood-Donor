@@ -1,7 +1,8 @@
 import axios from "axios";
+import { getApiBaseUrl } from "../utils/runtimeConfig.js";
 
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
+  baseURL: getApiBaseUrl(),
   withCredentials: true,
 });
 
@@ -31,7 +32,7 @@ API.interceptors.response.use(
           detail: {
             message: error.response.data?.message || "Admin privileges revoked",
           },
-        })
+        }),
       );
     }
 
@@ -48,12 +49,12 @@ API.interceptors.response.use(
       window.dispatchEvent(
         new CustomEvent("forceLogout", {
           detail: { message: "Session expired" },
-        })
+        }),
       );
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default API;

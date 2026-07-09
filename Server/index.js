@@ -20,12 +20,35 @@ import "./config/passport.js";
 
 import { startWorkers } from "./queues/workers.js";
 import { createBullBoardRouter } from "./queues/dashboard.js";
+import { requireAdmin } from "./middleware/adminAuth.js";
 import {
   urgentNotificationQueue,
   donorMatchingQueue,
   emailQueue,
   smsQueue,
 } from "./queues/config.js";
+
+const DEFAULT_CLIENT_ORIGINS = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+];
+
+const getClientOrigins = () => {
+  const configuredOrigins = (
+    process.env.CLIENT_URLS ||
+    process.env.CLIENT_URL ||
+    ""
+  )
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  return configuredOrigins.length > 0
+    ? configuredOrigins
+    : DEFAULT_CLIENT_ORIGINS;
+};
+
+const clientOrigins = getClientOrigins();
 
 console.log("🔄 Starting Blood Donor API...");
 console.log("📊 Environment:", process.env.NODE_ENV || "development");
@@ -40,7 +63,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:5173", "http://localhost:3000"],
+    origin: clientOrigins,
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   },
@@ -97,7 +120,7 @@ io.on("connection", (socket) => {
 
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://localhost:3000"],
+    origin: clientOrigins,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -107,8 +130,8 @@ app.use(express.json());
 
 try {
   const { router: bullBoardRouter } = createBullBoardRouter();
-  app.use("/admin/queues", bullBoardRouter);
-  console.log("✅ Bull Board dashboard mounted at /admin/queues");
+  app.use("/admin/queues", requireAdmin, bullBoardRouter);
+  console.log("✅ Bull Board dashboard mounted at /admin/queues (admin-only)");
 } catch (err) {
   console.error("❌ Bull Board dashboard error:", err);
   console.log("⚠️ Continuing without queue dashboard...");

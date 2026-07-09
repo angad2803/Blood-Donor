@@ -7,49 +7,45 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { addEmailJob } from "../queues/config.js";
 
-
 passport.use(
   new GoogleStrategy(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "/api/auth/google/callback",
+      callbackURL:
+        process.env.GOOGLE_CALLBACK_URL || "/api/auth/google/callback",
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
         console.log(
-          `🔍 OAuth callback for Google ID: ${profile.id}, Email: ${profile.emails[0].value}`
+          `🔍 OAuth callback for Google ID: ${profile.id}, Email: ${profile.emails[0].value}`,
         );
-
 
         let user = await User.findOne({ googleId: profile.id });
         console.log(
           `🔍 User lookup by Google ID: ${
             user ? "Found existing user" : "No user found"
-          }`
+          }`,
         );
 
         if (!user) {
-
           let existingUser = await User.findOne({
             email: profile.emails[0].value,
           });
           console.log(
             `🔍 User lookup by email: ${
               existingUser ? "Found existing user" : "No user found"
-            }`
+            }`,
           );
 
           if (existingUser) {
-
             const wasLinked = !!existingUser.googleId;
             existingUser.googleId = profile.id;
             await existingUser.save();
             user = existingUser;
             console.log(
-              `🔗 Linked Google account to existing user: ${user.email}`
+              `🔗 Linked Google account to existing user: ${user.email}`,
             );
-
 
             if (!wasLinked) {
               try {
@@ -69,27 +65,29 @@ passport.use(
                     },
                   });
                   console.log(
-                    `✅ Google account link email queued for: ${user.email}`
+                    `✅ Google account link email queued for: ${user.email}`,
                   );
                 } else {
                   console.log(
-                    `⏭️ Welcome email disabled for linked Google user: ${user.email}`
+                    `⏭️ Welcome email disabled for linked Google user: ${user.email}`,
                   );
                 }
               } catch (emailError) {
                 console.error(
                   "❌ Failed to queue Google link email:",
-                  emailError
+                  emailError,
                 );
               }
             }
           } else {
             console.log(
-              `✨ Creating new Google user: ${profile.emails[0].value}`
+              `✨ Creating new Google user: ${profile.emails[0].value}`,
             );
             const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash(Math.random().toString(36).slice(-8), salt);
-
+            const hashedPassword = await bcrypt.hash(
+              Math.random().toString(36).slice(-8),
+              salt,
+            );
 
             user = await User.create({
               googleId: profile.id,
@@ -102,7 +100,6 @@ passport.use(
               bloodGroup: "O+",
               needsAccountTypeSelection: true,
             });
-
 
             try {
               const shouldSendWelcomeEmail =
@@ -121,24 +118,22 @@ passport.use(
                   },
                 });
                 console.log(
-                  `✅ Welcome email queued for new Google user: ${user.email}`
+                  `✅ Welcome email queued for new Google user: ${user.email}`,
                 );
               } else {
                 console.log(
-                  `⏭️ Welcome email disabled for Google user: ${user.email}`
+                  `⏭️ Welcome email disabled for Google user: ${user.email}`,
                 );
               }
             } catch (emailError) {
               console.error(
                 "❌ Failed to queue welcome email for Google user:",
-                emailError
+                emailError,
               );
-
             }
           }
         } else {
           console.log(`👋 Existing Google user logging in: ${user.email}`);
-
 
           try {
             const shouldSendLoginEmail =
@@ -157,7 +152,7 @@ passport.use(
                 },
               });
               console.log(
-                `✅ OAuth login notification queued for: ${user.email}`
+                `✅ OAuth login notification queued for: ${user.email}`,
               );
             } else {
               console.log(`⏭️ Login notifications disabled for: ${user.email}`);
@@ -167,7 +162,6 @@ passport.use(
           }
         }
 
-
         const token = jwt.sign(
           {
             id: user._id,
@@ -175,22 +169,20 @@ passport.use(
             isHospital: user.isHospital,
           },
           process.env.JWT_SECRET,
-          { expiresIn: "7d" }
+          { expiresIn: "7d" },
         );
-
 
         done(null, { ...user.toObject(), token });
       } catch (err) {
         console.error(
           "Google OAuth error:",
-          err && err.response ? err.response.data : err
+          err && err.response ? err.response.data : err,
         );
         done(err, null);
       }
-    }
-  )
+    },
+  ),
 );
-
 
 passport.serializeUser((user, done) => {
   done(null, user);
