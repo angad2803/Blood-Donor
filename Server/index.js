@@ -28,7 +28,6 @@ import {
   emailQueue,
   smsQueue,
 } from "./queues/config.js";
-
 const DEFAULT_CLIENT_ORIGINS = [
   "http://localhost:5173",
   "http://localhost:3000",
@@ -41,15 +40,38 @@ const getClientOrigins = () => {
     ""
   )
     .split(",")
-    .map((origin) => origin.trim())
+    .map((origin) => origin.trim().replace(/\/$/, "")) // Remove trailing slash
     .filter(Boolean);
 
   return [...new Set([...DEFAULT_CLIENT_ORIGINS, ...configuredOrigins])];
 };
 
 const clientOrigins = getClientOrigins();
+
+console.log("✅ Allowed CORS Origins:", clientOrigins);
+
 const corsOptions = {
-  origin: clientOrigins,
+  origin(origin, callback) {
+    // Allow requests with no Origin (Postman, curl, server-to-server)
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    const normalizedOrigin = origin.replace(/\/$/, "");
+
+    console.log("🌐 Incoming Origin:", normalizedOrigin);
+
+    if (clientOrigins.includes(normalizedOrigin)) {
+      return callback(null, true);
+    }
+
+    console.log("❌ Blocked Origin:", normalizedOrigin);
+
+    return callback(
+      new Error(`Origin ${normalizedOrigin} not allowed by CORS`),
+    );
+  },
+
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
