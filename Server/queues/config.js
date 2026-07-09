@@ -9,28 +9,69 @@ if (!process.env.REDIS_URL) {
 // Create a single shared IORedis connection using Upstash REDIS_URL
 const connection = new Redis(process.env.REDIS_URL, {
   maxRetriesPerRequest: null,
+  lazyConnect: true,
 });
 
 // Ensure the client actively connects and surface errors early
-connection.connect().then(() => {
-  console.log("✅ Redis connected successfully (shared client)");
-}).catch((err) => {
-  console.error("❌ Redis initial connect error:", err && err.message ? err.message : err);
-  console.log("💡 Queue system will not work without Redis. Please check your REDIS_URL.");
-});
+connection
+  .connect()
+  .then(() => {
+    console.log("✅ Redis connected successfully (shared client)");
+  })
+  .catch((err) => {
+    console.error(
+      "❌ Redis initial connect error:",
+      err && err.message ? err.message : err,
+    );
+    console.log(
+      "💡 Queue system will not work without Redis. Please check your REDIS_URL.",
+    );
+  });
 
 connection.on("error", (err) => {
-  console.error("❌ Redis connection error (shared client):", err && err.message ? err.message : err);
+  console.error(
+    "❌ Redis connection error (shared client):",
+    err && err.message ? err.message : err,
+  );
 });
 
 // Provide a createClient factory for BullMQ so it creates separate clients correctly
 const connectionOptions = {
   createClient: function (type) {
+    if (!process.env.REDIS_URL) {
+      console.error(
+        `createClient called but REDIS_URL is missing (type=${type})`,
+      );
+      throw new Error("REDIS_URL is missing.");
+    }
+
+    const extractHost = (uri) => {
+      try {
+        let s = uri.replace(/^rediss?:\/\//i, "");
+        if (s.includes("@")) s = s.split("@").pop();
+        s = s.split("/")[0];
+        s = s.split("?")[0];
+        return s;
+      } catch (e) {
+        return "(unknown)";
+      }
+    };
+
+    console.log(
+      `createClient called (type=${type}), REDIS host: ${extractHost(process.env.REDIS_URL)}`,
+    );
+
     // types: 'client', 'subscriber', 'bclient'
     // Always create a new IORedis client using REDIS_URL to avoid defaulting to localhost
-    const client = new Redis(process.env.REDIS_URL, { maxRetriesPerRequest: null });
+    const client = new Redis(process.env.REDIS_URL, {
+      maxRetriesPerRequest: null,
+      lazyConnect: true,
+    });
     client.on("error", (err) => {
-      console.error(`❌ Redis client error (type=${type}):`, err && err.message ? err.message : err);
+      console.error(
+        `❌ Redis client error (type=${type}):`,
+        err && err.message ? err.message : err,
+      );
     });
     return client;
   },
