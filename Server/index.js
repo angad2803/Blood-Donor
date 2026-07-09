@@ -44,12 +44,17 @@ const getClientOrigins = () => {
     .map((origin) => origin.trim())
     .filter(Boolean);
 
-  return configuredOrigins.length > 0
-    ? configuredOrigins
-    : DEFAULT_CLIENT_ORIGINS;
+  return [...new Set([...DEFAULT_CLIENT_ORIGINS, ...configuredOrigins])];
 };
 
 const clientOrigins = getClientOrigins();
+const corsOptions = {
+  origin: clientOrigins,
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  optionsSuccessStatus: 204,
+};
 
 // Startup
 
@@ -58,11 +63,7 @@ const app = express();
 const server = http.createServer(app);
 
 const io = new Server(server, {
-  cors: {
-    origin: clientOrigins,
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true,
-  },
+  cors: corsOptions,
 });
 
 app.set("io", io);
@@ -114,14 +115,8 @@ io.on("connection", (socket) => {
   });
 });
 
-app.use(
-  cors({
-    origin: clientOrigins,
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  }),
-);
+app.use(cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
 app.use(express.json());
 
 try {

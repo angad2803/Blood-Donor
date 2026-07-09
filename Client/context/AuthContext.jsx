@@ -4,6 +4,7 @@ import React, {
   useEffect,
   useContext,
   useCallback,
+  useRef,
 } from "react";
 import api from "../api/api.js";
 import { toast } from "react-toastify";
@@ -23,8 +24,9 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const locationPromptedRef = useRef(false);
   const [tabId] = useState(
-    () => `tab_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    () => `tab_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
   ); // Generate unique tab ID
 
   // Load user and token from sessionStorage first, then localStorage as fallback
@@ -104,7 +106,7 @@ export const AuthProvider = ({ children }) => {
       // Store in localStorage to communicate with other tabs
       const activeTabs = JSON.parse(localStorage.getItem("activeTabs") || "[]");
       const filteredTabs = activeTabs.filter(
-        (tab) => tab.userId === user._id && Date.now() - tab.timestamp < 60000 // Remove tabs older than 1 minute
+        (tab) => tab.userId === user._id && Date.now() - tab.timestamp < 60000, // Remove tabs older than 1 minute
       );
 
       const updatedTabs = [...filteredTabs, tabInfo];
@@ -113,7 +115,7 @@ export const AuthProvider = ({ children }) => {
       // Clean up on unmount
       return () => {
         const currentTabs = JSON.parse(
-          localStorage.getItem("activeTabs") || "[]"
+          localStorage.getItem("activeTabs") || "[]",
         );
         const cleanedTabs = currentTabs.filter((tab) => tab.tabId !== tabId);
         localStorage.setItem("activeTabs", JSON.stringify(cleanedTabs));
@@ -140,6 +142,8 @@ export const AuthProvider = ({ children }) => {
       // Update context
       setUser(user);
       setToken(token);
+
+      syncBrowserLocation();
 
       return { success: true, user }; // Return user data as well
     } catch (err) {
@@ -192,6 +196,46 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem("user", JSON.stringify(updatedUserData));
     sessionStorage.setItem("user", JSON.stringify(updatedUserData));
   };
+
+  const syncBrowserLocation = useCallback(() => {
+    if (
+      locationPromptedRef.current ||
+      typeof window === "undefined" ||
+      !window.isSecureContext ||
+      !("geolocation" in navigator)
+    ) {
+      return;
+    }
+
+    locationPromptedRef.current = true;
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const response = await api.put("/user/location", {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy || 0,
+          });
+
+          const updatedUser = response.data?.data?.user || response.data?.user;
+          if (updatedUser) {
+            updateUser(updatedUser);
+          }
+        } catch (error) {
+          console.error("Failed to sync browser location:", error);
+        }
+      },
+      (error) => {
+        console.warn("Location permission unavailable or denied:", error);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      },
+    );
+  }, [updateUser]);
 
   // Function to refresh user data from server
   const refreshUserData = useCallback(async () => {
