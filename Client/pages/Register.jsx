@@ -1,0 +1,174 @@
+import React, { useState } from "react";
+import api from "../api/api.js";
+import { useNavigate } from "react-router-dom";
+
+const Register = () => {
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    bloodGroup: "",
+    location: "",
+    isDonor: false,
+    isHospital: false,
+    hospitalName: "",
+    hospitalAddress: "",
+    hospitalLicense: "",
+  });
+
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setForm({ ...form, [name]: type === "checkbox" ? checked : value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    try {
+      await api.post("/auth/register", form);
+      navigate("/login");
+    } catch (err) {
+      setError(err.response?.data?.message || "Registration failed");
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-blue-50">
+      <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-md">
+        <h2 className="text-2xl font-semibold text-center text-blue-700 mb-6">
+          Register
+        </h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input
+            name="name"
+            placeholder="Name"
+            onChange={handleChange}
+            required
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+          <input
+            name="email"
+            type="email"
+            placeholder="Email"
+            onChange={handleChange}
+            required
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+          <input
+            name="password"
+            type="password"
+            placeholder="Password"
+            onChange={handleChange}
+            required
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+          <input
+            name="bloodGroup"
+            placeholder="Blood Group (e.g., A+)"
+            onChange={handleChange}
+            required={!form.isHospital}
+            disabled={form.isHospital}
+            className={`w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 ${
+              form.isHospital ? "bg-gray-100 cursor-not-allowed" : ""
+            }`}
+          />
+          <input
+            name="location"
+            placeholder="Location (e.g., Mumbai)"
+            onChange={handleChange}
+            required
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+
+          {/* User Type Selection */}
+          <div className="space-y-3 p-4 border border-gray-200 rounded-md bg-gray-50">
+            <h3 className="text-sm font-medium text-gray-700">
+              Select Account Type:
+            </h3>
+            <label className="flex items-center space-x-2">
+              <input
+                name="isDonor"
+                type="checkbox"
+                onChange={handleChange}
+                disabled={form.isHospital}
+                className="form-checkbox"
+              />
+              <span className={form.isHospital ? "text-gray-400" : ""}>
+                I want to register as a donor
+              </span>
+            </label>
+            <label className="flex items-center space-x-2">
+              <input
+                name="isHospital"
+                type="checkbox"
+                onChange={(e) => {
+                  handleChange(e);
+                  if (e.target.checked) {
+                    setForm((prev) => ({
+                      ...prev,
+                      isDonor: false,
+                      bloodGroup: "",
+                    }));
+                  }
+                }}
+                className="form-checkbox"
+              />
+              <span>I want to register as a hospital</span>
+            </label>
+          </div>
+
+          {/* Hospital-specific fields */}
+          {form.isHospital && (
+            <div className="space-y-4 p-4 border border-blue-200 rounded-md bg-blue-50">
+              <h3 className="text-sm font-medium text-blue-700">
+                Hospital Information:
+              </h3>
+              <input
+                name="hospitalName"
+                placeholder="Hospital Name"
+                onChange={handleChange}
+                required={form.isHospital}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+              <input
+                name="hospitalAddress"
+                placeholder="Hospital Address"
+                onChange={handleChange}
+                required={form.isHospital}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+              <input
+                name="hospitalLicense"
+                placeholder="Hospital License Number"
+                onChange={handleChange}
+                required={form.isHospital}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+            </div>
+          )}
+          <button
+            type="submit"
+            className="w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded-md shadow-md hover:bg-blue-700 transition duration-200"
+          >
+            Register
+          </button>
+          {error && (
+            <p className="text-red-500 text-sm text-center mt-2">{error}</p>
+          )}
+        </form>
+        <div className="mt-4 flex justify-center">
+          <a href="http://localhost:5000/api/auth/google">
+            <button className="bg-red-500 text-white px-4 py-2 rounded">
+              Login with Google
+            </button>
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Register;
