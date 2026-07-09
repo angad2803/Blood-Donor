@@ -18,18 +18,10 @@ const connection = new Redis(process.env.REDIS_URL, {
   lazyConnect: false,
 });
 
-try {
-  await connection.connect();
-  console.log("✅ Redis connected");
-} catch (err) {
-  console.error(
-    "❌ Redis initial connect error:",
-    err && err.message ? err.message : err,
-  );
-  console.log(
-    "💡 Queue system will not work without Redis. Please check your REDIS_URL.",
-  );
-}
+// Listen for readiness and errors — do NOT call `connect()` here.
+connection.on("ready", () => {
+  console.log("✅ Redis connected (shared client)");
+});
 
 connection.on("error", (err) => {
   console.error(
