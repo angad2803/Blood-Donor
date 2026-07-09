@@ -6,7 +6,9 @@ import api from "../api/api.js";
 import { io } from "socket.io-client";
 import { canDonateTo } from "../../Server/utils/compatability.js";
 
-const socket = io("http://localhost:5000");
+const socket = io(import.meta.env.VITE_API_URL, {
+  withCredentials: true,
+});
 
 const Dashboard = () => {
   const { user, logout, logoutCurrentTab, loginWithToken, tabId } =

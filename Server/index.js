@@ -31,6 +31,7 @@ import {
 const DEFAULT_CLIENT_ORIGINS = [
   "http://localhost:5173",
   "http://localhost:3000",
+  "https://blood-donor-smoky.vercel.app",
 ];
 
 const getClientOrigins = () => {
@@ -114,17 +115,6 @@ io.on("connection", (socket) => {
     const room = io.sockets.adapter.rooms.get(roomId);
     const users = room ? Array.from(room).map((id) => ({ id })) : [];
     io.to(roomId).emit("room-users", users);
-  });
-
-  socket.on("send-message", (data) => {
-    const { roomId, message } = data;
-
-    io.to(roomId).emit("receive-message", message);
-
-    console.log(
-      `Message sent to room ${roomId}:`,
-      message.text?.substring(0, 50) + "...",
-    );
   });
 
   socket.on("typing", (data) => {

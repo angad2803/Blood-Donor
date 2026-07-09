@@ -5,7 +5,9 @@ import { io } from "socket.io-client";
 import api from "../api/api";
 import { toast } from "react-toastify";
 
-const socket = io("http://localhost:5000");
+const socket = io(import.meta.env.VITE_API_URL, {
+  withCredentials: true,
+});
 
 const ChatPage = () => {
   const { requestId } = useParams();
@@ -20,13 +22,13 @@ const ChatPage = () => {
   useEffect(() => {
     socket.emit("join-room", requestId);
 
-    socket.on("receive-message", (message) => {
+    socket.on("message-saved", (message) => {
       setMessages((prev) => [...prev, message]);
     });
 
     return () => {
       socket.emit("leave-room", requestId);
-      socket.off("receive-message");
+      socket.off("message-saved");
     };
   }, [requestId]);
 
@@ -61,27 +63,12 @@ const ChatPage = () => {
   const handleSend = async () => {
     if (!input.trim()) return;
 
-    const messageData = {
-      text: input,
-      sender: user._id,
-      roomId: requestId,
-      name: user.name,
-      timestamp: new Date().toISOString(),
-    };
-
-    // Emit to socket for real-time delivery
-    socket.emit("send-message", {
-      roomId: requestId,
-      message: messageData,
-    });
-
-    // Add to local state immediately for better UX
-    setMessages((prev) => [...prev, messageData]);
+    const messageText = input;
     setInput("");
 
     // Save to database
     try {
-      await api.post(`/message/${requestId}`, { text: input });
+      await api.post(`/message/${requestId}`, { text: messageText });
     } catch (err) {
       console.error("Failed to save message", err);
       toast.error("Failed to save message");
