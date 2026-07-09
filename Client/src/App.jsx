@@ -31,6 +31,7 @@ import ErrorBoundary from "../components/ui/ErrorBoundary";
 import AdminCleanup from "../components/admin/AdminCleanup";
 import Admin from "../pages/admin/Admin";
 import LandingPage from "../pages/landing/LandingPage";
+import ChatPage from "../pages/ChatPage";
 
 function App() {
   const { token, isLoading } = useContext(AuthContext);
@@ -138,6 +139,16 @@ function App() {
 
             {/* Landing page — always accessible */}
             <Route path="/" element={<LandingPage />} />
+            
+            {/* Chat Route */}
+            <Route
+              path="/chat/:requestId"
+              element={
+                <PrivateRoute>
+                  <ChatPage />
+                </PrivateRoute>
+              }
+            />
           </Routes>
           <ToastContainer
             position="top-right"

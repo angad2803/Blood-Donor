@@ -9,8 +9,6 @@ export const useDashboardState = () => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [showOfferModal, setShowOfferModal] = useState(false);
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
-  const [showChatModal, setShowChatModal] = useState(false);
-  const [selectedChatRequest, setSelectedChatRequest] = useState(null);
   const [activeTab, setActiveTab] = useState("browse");
   const [showMapView, setShowMapView] = useState(false);
 
@@ -20,8 +18,7 @@ export const useDashboardState = () => {
   };
 
   const handleOpenChat = (request) => {
-    setSelectedChatRequest(request);
-    setShowChatModal(true);
+    navigate(`/chat/${request._id}`);
   };
 
 
@@ -29,7 +26,6 @@ export const useDashboardState = () => {
     setActiveTab,
     setShowShortcutsModal,
     setShowOfferModal,
-    setShowChatModal,
     navigate
   ) => {
     useEffect(() => {
@@ -63,7 +59,6 @@ export const useDashboardState = () => {
             case "Escape":
               setShowShortcutsModal(false);
               setShowOfferModal(false);
-              setShowChatModal(false);
               break;
             default:
               break;
@@ -77,7 +72,6 @@ export const useDashboardState = () => {
       setActiveTab,
       setShowShortcutsModal,
       setShowOfferModal,
-      setShowChatModal,
       navigate,
     ]);
   };
@@ -91,10 +85,6 @@ export const useDashboardState = () => {
     setShowOfferModal,
     showShortcutsModal,
     setShowShortcutsModal,
-    showChatModal,
-    setShowChatModal,
-    selectedChatRequest,
-    setSelectedChatRequest,
     activeTab,
     setActiveTab,
     showMapView,

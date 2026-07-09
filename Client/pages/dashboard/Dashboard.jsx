@@ -41,9 +41,6 @@ const Dashboard = () => {
     setShowOfferModal,
     showShortcutsModal,
     setShowShortcutsModal,
-    showChatModal,
-    setShowChatModal,
-    selectedChatRequest,
     activeTab,
     setActiveTab,
     showMapView,
@@ -74,7 +71,6 @@ const Dashboard = () => {
     setActiveTab,
     setShowShortcutsModal,
     setShowOfferModal,
-    setShowChatModal,
     (path) => (window.location.href = path)
   );
 
@@ -169,9 +165,6 @@ const Dashboard = () => {
         setShowOfferModal={setShowOfferModal}
         selectedRequest={selectedRequest}
         handleOfferSent={handleOfferSent}
-        showChatModal={showChatModal}
-        setShowChatModal={setShowChatModal}
-        selectedChatRequest={selectedChatRequest}
         showShortcutsModal={showShortcutsModal}
         setShowShortcutsModal={setShowShortcutsModal}
         user={user}
