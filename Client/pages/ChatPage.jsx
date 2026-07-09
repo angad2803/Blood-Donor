@@ -4,6 +4,7 @@ import { AuthContext } from "../context/AuthContext";
 import { io } from "socket.io-client";
 import api from "../api/api";
 import { toast } from "react-toastify";
+import { useTranslation } from "react-i18next";
 
 const socket = io(import.meta.env.VITE_API_URL, {
   withCredentials: true,
@@ -12,6 +13,7 @@ const socket = io(import.meta.env.VITE_API_URL, {
 const ChatPage = () => {
   const { requestId } = useParams();
   const { user } = useContext(AuthContext);
+  const { t } = useTranslation();
 
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -47,7 +49,7 @@ const ChatPage = () => {
         setRequestInfo(request);
       } catch (err) {
         console.error("Failed to load chat data", err);
-        toast.error("Failed to load chat data");
+        toast.error(t("chat.error_load", "Failed to load chat data"));
       } finally {
         setLoading(false);
       }
@@ -71,7 +73,7 @@ const ChatPage = () => {
       await api.post(`/message/${requestId}`, { text: messageText });
     } catch (err) {
       console.error("Failed to save message", err);
-      toast.error("Failed to save message");
+      toast.error(t("chat.error_save", "Failed to save message"));
     }
   };
 
@@ -80,7 +82,7 @@ const ChatPage = () => {
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading chat...</p>
+          <p className="text-gray-600">{t("chat.loading", "Loading chat...")}</p>
         </div>
       </div>
     );
@@ -94,12 +96,12 @@ const ChatPage = () => {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-semibold mb-1">
-                💬 Blood Request Chat
+                💬 {t("chat.title", "Blood Request Chat")}
               </h2>
               {requestInfo && (
                 <div className="text-sm opacity-90">
                   <span className="font-medium">{requestInfo.bloodGroup}</span>{" "}
-                  at <span className="font-medium">{requestInfo.location}</span>{" "}
+                  {t("chat.at", "at")} <span className="font-medium">{requestInfo.location}</span>{" "}
                   •{" "}
                   <span
                     className={`px-2 py-1 rounded text-xs ${
@@ -117,11 +119,11 @@ const ChatPage = () => {
                   <div className="mt-1 text-xs">
                     {requestInfo.requester._id === user._id ? (
                       <span className="bg-blue-500 bg-opacity-30 px-2 py-1 rounded">
-                        📋 Your Request
+                        📋 {t("chat.your_request", "Your Request")}
                       </span>
                     ) : (
                       <span className="bg-green-500 bg-opacity-30 px-2 py-1 rounded">
-                        🩸 Helping Request by {requestInfo.requester.name}
+                        🩸 {t("chat.helping_request", "Helping Request by")} {requestInfo.requester.name}
                       </span>
                     )}
                   </div>
@@ -132,7 +134,7 @@ const ChatPage = () => {
               to="/dashboard"
               className="bg-white bg-opacity-20 hover:bg-opacity-30 transition px-3 py-2 rounded text-sm"
             >
-              ← Back to Dashboard
+              ← {t("chat.back", "Back to Dashboard")}
             </Link>
           </div>
         </div>
@@ -142,43 +144,39 @@ const ChatPage = () => {
           {messages.length === 0 ? (
             <div className="text-center text-gray-500 mt-8">
               <div className="text-4xl mb-2">💬</div>
-              <p className="text-lg font-medium mb-2">Welcome to the chat!</p>
+              <p className="text-lg font-medium mb-2">{t("chat.welcome", "Welcome to the chat!")}</p>
               {requestInfo && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto">
                   {requestInfo.requester._id === user._id ? (
                     <div>
                       <p className="text-sm text-blue-700 mb-2">
-                        <strong>This is your blood request chat room.</strong>
+                        <strong>{t("chat.your_room_desc", "This is your blood request chat room.")}</strong>
                       </p>
                       <p className="text-xs text-blue-600">
-                        • Potential donors can find and join this chat to
-                        coordinate with you
+                        • {t("chat.donor_join", "Potential donors can find and join this chat to coordinate with you")}
                         <br />
-                        • Share additional details, location specifics, or
-                        timing
-                        <br />• All messages are saved for your reference
+                        • {t("chat.share_details", "Share additional details, location specifics, or timing")}
+                        <br />• {t("chat.saved", "All messages are saved for your reference")}
                       </p>
                     </div>
                   ) : (
                     <div>
                       <p className="text-sm text-blue-700 mb-2">
                         <strong>
-                          You're helping {requestInfo.requester.name} with their
-                          blood request.
+                          {t("chat.helping_msg", "You're helping")} {requestInfo.requester.name} {t("chat.with_request", "with their blood request.")}
                         </strong>
                       </p>
                       <p className="text-xs text-blue-600">
-                        • Use this chat to coordinate donation details
+                        • {t("chat.coord_details", "Use this chat to coordinate donation details")}
                         <br />
-                        • Ask about timing, location, or specific requirements
-                        <br />• The requester will see your messages in
-                        real-time
+                        • {t("chat.ask_details", "Ask about timing, location, or specific requirements")}
+                        <br />• {t("chat.realtime", "The requester will see your messages in real-time")}
                       </p>
                     </div>
                   )}
                 </div>
               )}
-              <p className="text-sm mt-4">Start the conversation below!</p>
+              <p className="text-sm mt-4">{t("chat.start_conversation", "Start the conversation below!")}</p>
             </div>
           ) : (
             messages.map((msg, index) => (

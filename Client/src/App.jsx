@@ -32,10 +32,12 @@ import AdminCleanup from "../components/admin/AdminCleanup";
 import Admin from "../pages/admin/Admin";
 import LandingPage from "../pages/landing/LandingPage";
 import ChatPage from "../pages/ChatPage";
+import { useTranslation } from "react-i18next";
 
 function App() {
   const { token, isLoading } = useContext(AuthContext);
   const { initializeTheme } = useThemeStore();
+  const { t } = useTranslation();
 
 
   useEffect(() => {
@@ -47,7 +49,7 @@ function App() {
     return (
       <div className="loading-container">
         <div className="loading-spinner"></div>
-        <div className="loading-text">Loading...</div>
+        <div className="loading-text">{t("loading", "Loading...")}</div>
       </div>
     );
   }

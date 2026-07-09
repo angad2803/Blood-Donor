@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import api from "../api/api.js";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const Register = () => {
+  const { t } = useTranslation();
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -97,7 +99,7 @@ const Register = () => {
                 className="form-checkbox"
               />
               <span className={form.isHospital ? "text-gray-400" : ""}>
-                I want to register as a donor
+                {t("register.donor_opt", "I want to register as a donor")}
               </span>
             </label>
             <label className="flex items-center space-x-2">
@@ -116,7 +118,7 @@ const Register = () => {
                 }}
                 className="form-checkbox"
               />
-              <span>I want to register as a hospital</span>
+              <span>{t("register.hospital_opt", "I want to register as a hospital")}</span>
             </label>
           </div>
 
