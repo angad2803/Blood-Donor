@@ -1,6 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
-dotenv.config();
+const dotenvResult = dotenv.config();
 import mongoose from "mongoose";
 import cors from "cors";
 import http from "http";
@@ -34,60 +34,98 @@ const DEFAULT_CLIENT_ORIGINS = [
 ];
 
 const getClientOrigins = () => {
-  const configuredOrigins = (
-    process.env.CLIENT_URLS ||
-    process.env.CLIENT_URL ||
-    ""
-  )
-    .split(",")
-    .map((origin) => origin.trim())
-    .filter(Boolean);
+  const connectDB = async () => {
+    console.log("🔄 Starting database connection...");
 
-  return configuredOrigins.length > 0
-    ? configuredOrigins
-    : DEFAULT_CLIENT_ORIGINS;
-};
+    // Diagnostic: dotenv loaded?
+    console.log(
+      "DOTENV LOADED:",
+      dotenvResult && dotenvResult.parsed ? true : dotenvResult && dotenvResult.error ? `ERROR: ${dotenvResult.error.message}` : false,
+    );
 
-const clientOrigins = getClientOrigins();
+    // Accept multiple common env var names to avoid deployment mistakes
+    const mongoUri =
+      process.env.MONGO_URI || process.env.MONGODB_URI || process.env.DATABASE_URL;
 
-console.log("🔄 Starting Blood Donor API...");
-console.log("📊 Environment:", process.env.NODE_ENV || "development");
-console.log(
-  "️ Mongo URI:",
-  process.env.MONGO_URI ? "✅ Configured" : "❌ Missing",
-);
+    // Diagnostic: presence of MONGO_URI
+    console.log("MONGO_URI present:", !!process.env.MONGO_URI);
 
-const app = express();
+    // Diagnostic: Node version and cwd
+    console.log("Node version:", process.version);
+    console.log("CWD:", process.cwd());
 
-const server = http.createServer(app);
+    // Helper: extract hostname only from Mongo URI without credentials
+    const extractMongoHost = (uri) => {
+      try {
+        if (!uri) return null;
+        // remove scheme
+        let s = uri.replace(/^mongodb\+srv:\/\//i, "").replace(/^mongodb:\/\//i, "");
+        // if credentials present, strip everything before '@'
+        if (s.includes("@")) s = s.split("@").pop();
+        // hostname is before the first '/'
+        s = s.split("/")[0];
+        // drop any query params
+        s = s.split("?")[0];
+        return s;
+      } catch (e) {
+        return null;
+      }
+    };
 
-const io = new Server(server, {
-  cors: {
-    origin: clientOrigins,
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true,
-  },
-});
+    const hostOnly = extractMongoHost(mongoUri);
+    console.log("Mongo host (extracted, no creds):", hostOnly || "(none)");
 
-app.set("io", io);
+    if (!mongoUri) {
+      console.error("ERROR: MONGO_URI is undefined. Check Render Environment Variables.");
+      throw new Error("MongoDB connection string missing");
+    }
 
-app.set("urgentNotificationQueue", urgentNotificationQueue);
-app.set("donorMatchingQueue", donorMatchingQueue);
-app.set("emailQueue", emailQueue);
-app.set("smsQueue", smsQueue);
+    try {
+      // Use conservative timeouts to fail fast and provide useful diagnostics
+      await mongoose.connect(mongoUri, {
+        serverSelectionTimeoutMS: 10000,
+        socketTimeoutMS: 45000,
+        family: 4, // prefer IPv4 — helps in some cloud DNS setups
+      });
 
-io.on("connection", (socket) => {
-  console.log("🧠 New client connected:", socket.id);
+      console.log("MongoDB Connected");
+      console.log("mongoose.connection.host:", mongoose.connection.host);
+      console.log("mongoose.connection.name:", mongoose.connection.name);
 
-  socket.on("join-room", (roomId) => {
-    socket.join(roomId);
-    console.log(`User ${socket.id} joined room: ${roomId}`);
+      try {
+        const User = (await import("./models/User.js")).default;
+        const BloodRequest = (await import("./models/BloodRequest.js")).default;
+        const Offer = (await import("./models/Offer.js")).default;
 
-    const room = io.sockets.adapter.rooms.get(roomId);
-    const users = room ? Array.from(room).map((id) => ({ id })) : [];
-    io.to(roomId).emit("room-users", users);
-  });
+        console.log("Users:", await User.countDocuments());
+        console.log("Requests:", await BloodRequest.countDocuments());
+        console.log("Offers:", await Offer.countDocuments());
+      } catch (err) {
+        console.error("Error fetching counts:", err);
+      }
+    } catch (err) {
+      // Detailed diagnostics without leaking credentials
+      console.error("MongoDB connection failed — diagnostics follows:");
+      try {
+        console.error("err.message:", err && err.message ? err.message : undefined);
+        console.error("err.name:", err && err.name ? err.name : undefined);
+        console.error("err.code:", err && err.code ? err.code : undefined);
+        console.error("err.cause:", err && err.cause ? err.cause : undefined);
+        console.error("err.reason:", err && err.reason ? err.reason : undefined);
+        console.error("err.stack:", err && err.stack ? err.stack : undefined);
+      } catch (inner) {
+        console.error("Error while printing diagnostics:", inner);
+      }
 
+      try {
+        console.error("Attempted Mongo host:", hostOnly || "(unknown)");
+      } catch (e) {
+        // ignore
+      }
+
+      console.error("Check: correct MONGO_URI in environment, Atlas user/credentials, DNS/SRV resolution, or network/DNS from host.");
+      throw err; // Stop execution if DB connection fails
+    }
   socket.on("leave-room", (roomId) => {
     socket.leave(roomId);
     console.log(`User ${socket.id} left room: ${roomId}`);
@@ -151,30 +189,63 @@ app.use("/api/ai", aiRoutes);
 
 const connectDB = async () => {
   console.log("🔄 Starting database connection...");
+
+  // Accept multiple common env var names to avoid deployment mistakes
+  const mongoUri =
+    process.env.MONGO_URI ||
+    process.env.MONGODB_URI ||
+    process.env.DATABASE_URL;
+
+  if (!mongoUri) {
+    console.error(
+      "❌ No MongoDB connection string found. Set MONGO_URI (or MONGODB_URI / DATABASE_URL) in your environment.",
+    );
+    throw new Error("MongoDB connection string missing");
+  }
+
   try {
-    if (process.env.MONGO_URI) {
-      await mongoose.connect(process.env.MONGO_URI);
-      console.log("✅ MongoDB connected");
+    // Use conservative timeouts to fail fast and provide useful diagnostics
+    await mongoose.connect(mongoUri, {
+      serverSelectionTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
+      family: 4, // prefer IPv4 — helps in some cloud DNS setups
+    });
+
+    console.log("✅ MongoDB connected");
+    try {
       console.log("Mongo Host:", mongoose.connection.host);
       console.log("Mongo DB:", mongoose.connection.name);
+    } catch (e) {
+      // ignore
+    }
 
-      try {
-        const User = (await import("./models/User.js")).default;
-        const BloodRequest = (await import("./models/BloodRequest.js")).default;
-        const Offer = (await import("./models/Offer.js")).default;
+    try {
+      const User = (await import("./models/User.js")).default;
+      const BloodRequest = (await import("./models/BloodRequest.js")).default;
+      const Offer = (await import("./models/Offer.js")).default;
 
-        console.log("Users:", await User.countDocuments());
-        console.log("Requests:", await BloodRequest.countDocuments());
-        console.log("Offers:", await Offer.countDocuments());
-      } catch (err) {
-        console.error("Error fetching counts:", err);
-      }
-    } else {
-      console.error("❌ No MONGO_URI provided in environment variables!");
-      throw new Error("MONGO_URI is missing");
+      console.log("Users:", await User.countDocuments());
+      console.log("Requests:", await BloodRequest.countDocuments());
+      console.log("Offers:", await Offer.countDocuments());
+    } catch (err) {
+      console.error("Error fetching counts:", err);
     }
   } catch (err) {
-    console.error("❌ MongoDB connection error:", err);
+    // Provide diagnostics without leaking credentials
+    console.error(
+      "❌ MongoDB connection error:",
+      err && err.message ? err.message : err,
+    );
+    try {
+      // Try to extract host from SRV URI safely
+      const host = mongoUri.replace(/^mongodb\+srv:\/\//, "").split("/")[0];
+      console.error("Attempted Mongo host:", host);
+    } catch (e) {
+      // ignore
+    }
+    console.error(
+      "Check: correct MONGO_URI in environment, Atlas user/credentials, DNS/SRV resolution, or network/DNS from host.",
+    );
     throw err; // Stop execution if DB connection fails
   }
 
