@@ -1,5 +1,5 @@
 import { Worker } from "bullmq";
-import { connectionOptions } from "./config.js";
+import { connection } from "./config.js";
 import User from "../models/User.js";
 import BloodRequest from "../models/BloodRequest.js";
 import { canDonateTo } from "../utils/compatability.js";
@@ -9,6 +9,9 @@ function getCompatibleBloodGroups(requestedType) {
   const allBloodGroups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
   return allBloodGroups.filter((group) => canDonateTo(group, requestedType));
 }
+
+console.log("Worker Redis URL:", !!process.env.REDIS_URL);
+console.log("Worker connection object:", connection && connection.options);
 
 const urgentWorker = new Worker(
   "urgent-blood-requests",
@@ -78,7 +81,7 @@ const urgentWorker = new Worker(
       throw error;
     }
   },
-  { connection: connectionOptions, concurrency: 5 },
+  { connection, concurrency: 5 },
 );
 
 const donorMatchingWorker = new Worker(
@@ -112,7 +115,7 @@ const donorMatchingWorker = new Worker(
       throw error;
     }
   },
-  { connection: connectionOptions, concurrency: 3 },
+  { connection, concurrency: 3 },
 );
 
 const emailWorker = new Worker(
@@ -158,13 +161,7 @@ const emailWorker = new Worker(
       throw error;
     }
   },
-  {
-    connection: connectionOptions,
-    concurrency: 10,
-    settings: {
-      retryProcessDelay: 5000,
-    },
-  },
+  { connection, concurrency: 10, settings: { retryProcessDelay: 5000 } },
 );
 
 emailWorker.on("ready", () => {
@@ -200,7 +197,7 @@ const smsWorker = new Worker(
       throw error;
     }
   },
-  { connection: connectionOptions, concurrency: 5 },
+  { connection, concurrency: 5 },
 );
 
 export function startWorkers() {

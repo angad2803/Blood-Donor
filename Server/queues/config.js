@@ -77,21 +77,21 @@ const connectionOptions = {
   },
 };
 
-// Create queues — use connectionOptions factory so BullMQ creates clients with REDIS_URL
+// Create queues — use the shared `connection` so constructors receive the same client
 const urgentNotificationQueue = new Queue("urgent-blood-requests", {
-  connection: connectionOptions,
+  connection,
 });
 
 const donorMatchingQueue = new Queue("donor-matching", {
-  connection: connectionOptions,
+  connection,
 });
 
 const emailQueue = new Queue("email-notifications", {
-  connection: connectionOptions,
+  connection,
 });
 
 const smsQueue = new Queue("sms-notifications", {
-  connection: connectionOptions,
+  connection,
 });
 
 // Email queue helper functions
