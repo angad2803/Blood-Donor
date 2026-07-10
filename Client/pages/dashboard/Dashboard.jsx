@@ -34,6 +34,7 @@ const Dashboard = () => {
     fetchMyRequests,
     handleOfferSent,
     handleAcceptOffer,
+    handleRejectOffer,
   } = useDashboardData();
 
   const {
@@ -167,6 +168,7 @@ const Dashboard = () => {
             myOffers={myOffers}
             acceptedOffers={acceptedOffers}
             handleAcceptOffer={handleAcceptOffer}
+            handleRejectOffer={handleRejectOffer}
             handleOpenChat={handleOpenChat}
             user={user}
           />

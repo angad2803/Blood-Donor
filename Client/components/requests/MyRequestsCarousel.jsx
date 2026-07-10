@@ -17,6 +17,7 @@ const MyRequestsCarousel = ({
   myRequests = [],
   onOpenChat,
   onAcceptOffer,
+  onRejectOffer,
   user,
 }) => {
   const navigate = useNavigate();
@@ -184,6 +185,13 @@ const MyRequestsCarousel = ({
                             >
                               <span className="mr-1">✅</span>
                               Accept Offer
+                            </button>
+                            <button
+                              onClick={() => onRejectOffer(offer._id)}
+                              className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 flex items-center"
+                            >
+                              <span className="mr-1">❌</span>
+                              Reject
                             </button>
                             <button
                               onClick={() => onOpenChat(req)}

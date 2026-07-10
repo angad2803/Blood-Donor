@@ -287,6 +287,74 @@ router.post("/accept/:offerId", verifyToken, async (req, res) => {
   }
 });
 
+router.post("/reject/:offerId", verifyToken, async (req, res) => {
+  try {
+    const { offerId } = req.params;
+    const userId = req.user._id;
+
+    const offer = await Offer.findById(offerId).populate("bloodRequest");
+    if (!offer) {
+      return res.status(404).json({ message: "Offer not found" });
+    }
+
+    if (offer.bloodRequest.requester.toString() !== userId.toString()) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    if (offer.bloodRequest.fulfilled) {
+      return res
+        .status(400)
+        .json({ message: "Blood request already fulfilled" });
+    }
+
+    offer.status = "rejected";
+    offer.respondedAt = new Date();
+    await offer.save();
+
+    await offer.populate("donor", "name bloodGroup location coordinates");
+
+    try {
+      const donor = await User.findById(offer.donor);
+      if (donor) {
+        await addEmailJob({
+          to: donor.email,
+          template: "offer-rejected",
+          data: {
+            donorName: donor.name,
+            bloodGroup: offer.bloodRequest.bloodGroup,
+            location: offer.bloodRequest.location,
+            offerId: offer._id,
+          },
+        });
+        console.log(`📧 Rejection notification queued for donor ${donor.email}`);
+      }
+    } catch (emailError) {
+      console.error("❌ Failed to queue rejection notification:", emailError);
+    }
+
+    try {
+      const io = req.app.get("io");
+      if (io) {
+        const donorUserId = typeof offer.donor === "object" ? offer.donor._id : offer.donor;
+        io.to(`user:${donorUserId}`).emit("offer:rejected", {
+          offerId: offer._id,
+          requestId: offer.bloodRequest._id,
+        });
+      }
+    } catch (socketError) {
+      console.error("❌ Failed to emit socket events:", socketError);
+    }
+
+    res.json({
+      message: "Offer rejected successfully",
+      offer,
+    });
+  } catch (error) {
+    console.error("Error rejecting offer:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
 
 router.get("/my-offers", verifyToken, async (req, res) => {
   try {

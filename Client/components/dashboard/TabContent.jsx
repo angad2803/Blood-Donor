@@ -9,6 +9,7 @@ const TabContent = ({
   myOffers,
   acceptedOffers,
   handleAcceptOffer,
+  handleRejectOffer,
   handleOpenChat,
   user,
 }) => {
@@ -19,6 +20,7 @@ const TabContent = ({
           <MyRequestsCarousel
             myRequests={myRequests}
             onAcceptOffer={handleAcceptOffer}
+            onRejectOffer={handleRejectOffer}
             onOpenChat={handleOpenChat}
             user={user}
           />

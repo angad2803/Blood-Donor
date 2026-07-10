@@ -25,7 +25,7 @@ const QuickStats = ({ requests, myRequests, myOffers }) => {
       bgGradient: "bg-blue-50 dark:bg-blue-900/20",
     },
     {
-      label: "Pending Offers",
+      label: "Sent Offers",
       value: pendingOffers,
       icon: "⏳",
       color: "text-orange-500 dark:text-orange-400",

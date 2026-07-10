@@ -31,16 +31,7 @@ const CreateRequest = () => {
     fetchRequests();
   }, []);
 
-  const markFulfilled = async (id) => {
-    try {
-      await api.put(`/request/${id}`);
-      setRequests((prev) =>
-        prev.map((req) => (req._id === id ? { ...req, fulfilled: true } : req))
-      );
-    } catch (err) {
-      console.error("Error marking fulfilled", err);
-    }
-  };
+  // The markFulfilled function is removed as requests should be fulfilled by accepting offers
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -279,12 +270,9 @@ const CreateRequest = () => {
                         <span className="mr-1">✔</span> Fulfilled
                       </span>
                     ) : (
-                      <button
-                        onClick={() => markFulfilled(req._id)}
-                        className="text-sm font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 px-4 py-2 rounded-md transition-colors"
-                      >
-                        Mark Fulfilled
-                      </button>
+                      <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-3 py-1.5 rounded-md text-sm font-medium">
+                        Active
+                      </span>
                     )}
                   </div>
                 </div>

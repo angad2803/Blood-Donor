@@ -143,9 +143,12 @@ router.put("/:requestId/fulfill", verifyToken, async (req, res) => {
     const { hospitalName } = req.body;
 
 
-    if (!req.user.isHospital) {
+    // NOTE: This endpoint is deprecated for hospitals. Hospitals should create a request
+    // and accept offers from donors. We leave this here for backwards compatibility or
+    // other specific admin/staff overrides if needed, but the primary flow is via offers.
+    if (!req.user.isHospital && !req.user.isAdmin) {
       return res.status(403).json({
-        message: "Only hospitals can fulfill blood requests",
+        message: "Access denied",
       });
     }
 

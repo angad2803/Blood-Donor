@@ -124,6 +124,18 @@ export const useDashboardData = () => {
       setRequests((prev) => prev.filter((r) => r._id !== requestId));
     });
 
+    // An offer I sent was rejected — refresh my offers
+    socket.on("offer:rejected", ({ offerId, requestId }) => {
+      console.log("📡 socket: offer:rejected", offerId);
+      // Update myOffers status optimistically
+      setMyOffers((prev) =>
+        prev.map((o) =>
+          o._id === offerId ? { ...o, status: "rejected" } : o
+        )
+      );
+      fetchMyOffers();
+    });
+
     // A request I made was fulfilled (I accepted someone's offer) — update myRequests
     socket.on("request:fulfilled", ({ requestId }) => {
       console.log("📡 socket: request:fulfilled", requestId);
@@ -142,6 +154,7 @@ export const useDashboardData = () => {
       socket.off("my-request:created");
       socket.off("request:offer-received");
       socket.off("offer:accepted");
+      socket.off("offer:rejected");
       socket.off("request:fulfilled");
     };
   }, [fetchMyRequests, fetchAcceptedOffers]);
@@ -212,6 +225,31 @@ export const useDashboardData = () => {
     [fetchAcceptedOffers, fetchMyRequests]
   );
 
+  /**
+   * Called when a requester clicks "Reject Offer" on a pending offer card.
+   */
+  const handleRejectOffer = useCallback(
+    async (offerId) => {
+      try {
+        await api.post(`/offer/reject/${offerId}`);
+        // Optimistic update
+        setMyRequests((prev) =>
+          prev.map((r) => ({
+            ...r,
+            offers: r.offers ? r.offers.map((o) =>
+              o._id === offerId ? { ...o, status: "rejected" } : o
+            ) : r.offers,
+          }))
+        );
+        toast.info("Offer has been rejected.");
+      } catch (err) {
+        toast.error(err.response?.data?.message || "Failed to reject offer");
+        fetchMyRequests();
+      }
+    },
+    [fetchMyRequests]
+  );
+
   return {
     requests,
     myRequests,
@@ -226,6 +264,7 @@ export const useDashboardData = () => {
     fetchAcceptedOffers,
     handleOfferSent,
     handleAcceptOffer,
+    handleRejectOffer,
     // Expose setters for components that want to push optimistic updates
     setRequests,
     setMyRequests,
