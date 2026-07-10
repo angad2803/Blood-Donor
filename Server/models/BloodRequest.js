@@ -16,8 +16,8 @@ const bloodRequestSchema = new mongoose.Schema({
   },
   urgency: {
     type: String,
-    enum: ["Low", "Medium", "High", "Emergency"],
-    default: "Medium",
+    enum: ["Low", "Medium", "High", "Emergency", "Normal", "Urgent"],
+    default: "Normal",
   },
   createdAt: {
     type: Date,

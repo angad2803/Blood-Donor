@@ -208,4 +208,44 @@ router.put("/:requestId/fulfill", verifyToken, async (req, res) => {
   }
 });
 
+router.put("/:requestId", verifyToken, async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    const userId = req.user._id;
+
+    const bloodRequest = await BloodRequest.findById(requestId);
+
+    if (!bloodRequest) {
+      return res.status(404).json({ message: "Blood request not found" });
+    }
+
+    if (bloodRequest.requester.toString() !== userId.toString()) {
+      return res.status(403).json({ message: "Only the requester can mark this as fulfilled" });
+    }
+
+    if (bloodRequest.fulfilled) {
+      return res.status(400).json({ message: "Blood request is already fulfilled" });
+    }
+
+    bloodRequest.fulfilled = true;
+    bloodRequest.fulfilledAt = new Date();
+    await bloodRequest.save();
+
+    // Real-time update
+    const io = req.app.get("io");
+    if (io) {
+      io.to(`user:${userId}`).emit("request:fulfilled", { requestId: bloodRequest._id });
+      io.emit("request:fulfilled", { requestId: bloodRequest._id });
+    }
+
+    res.json({
+      message: "Blood request marked as fulfilled successfully",
+      request: bloodRequest,
+    });
+  } catch (error) {
+    console.error("Error marking request as fulfilled:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
 export default router;
