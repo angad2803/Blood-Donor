@@ -3,9 +3,11 @@ import { useNavigate } from "react-router-dom";
 import api from "../../api/api";
 import { AuthContext } from "../../context/AuthContext";
 import { toast } from "react-toastify";
+import { useTranslation } from "react-i18next";
 
 
 const AccountTypeSelection = () => {
+  const { t } = useTranslation();
   const { user, updateUser } = useContext(AuthContext);
   const navigate = useNavigate();
   const [selectedType, setSelectedType] = useState("");
@@ -19,6 +21,8 @@ const AccountTypeSelection = () => {
   const [isDonor, setIsDonor] = useState(false);
 
   const [loading, setLoading] = useState(false);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [locationError, setLocationError] = useState("");
 
   // Initialize form data from user
   useEffect(() => {
@@ -28,6 +32,43 @@ const AccountTypeSelection = () => {
       setIsDonor(user.isDonor || false);
     }
   }, [user]);
+
+  // Auto-detect location
+  useEffect(() => {
+    // Only detect if location is not already set by user context
+    if (!user?.location && navigator.geolocation) {
+      setLocationLoading(true);
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            const { latitude, longitude } = position.coords;
+            const response = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+            );
+            const data = await response.json();
+
+            if (data && data.address) {
+              const { city, town, village, state, suburb } = data.address;
+              const locationStr = [city || town || village || suburb, state]
+                .filter(Boolean)
+                .join(", ");
+              if (locationStr) {
+                setLocation(locationStr);
+              }
+            }
+          } catch (error) {
+            setLocationError("Failed to auto-detect location.");
+          } finally {
+            setLocationLoading(false);
+          }
+        },
+        (error) => {
+          setLocationError("Location permission denied. Please enter manually.");
+          setLocationLoading(false);
+        }
+      );
+    }
+  }, [user?.location]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -97,7 +138,7 @@ const AccountTypeSelection = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Account Type Selection */}
             <div className="space-y-4">
-              <label className="text-gray-700 dark:text-gray-300 font-semibold block">Account Type:</label>
+              <label className="text-gray-700 dark:text-gray-300 font-semibold block">{t("register.account_type", "Account Type:")}</label>
 
               <div
                 className={`bg-gray-50 dark:bg-gray-700/50 border rounded-lg p-4 cursor-pointer transition-all duration-200 ${
@@ -117,7 +158,7 @@ const AccountTypeSelection = () => {
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 mr-3"
                   />
                   <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white">Individual User</h3>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">{t("register.individual_user", "Individual User")}</h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                       Create blood requests or become a donor
                     </p>
@@ -143,7 +184,7 @@ const AccountTypeSelection = () => {
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 mr-3"
                   />
                   <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white">Hospital</h3>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">{t("register.hospital", "Hospital")}</h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                       Manage blood requests for your hospital
                     </p>
@@ -165,7 +206,7 @@ const AccountTypeSelection = () => {
                   required
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
-                  <option value="">Select Blood Group</option>
+                  <option value="">{t("register.select_blood_group", "Select Blood Group")}</option>
                   <option value="A+">A+</option>
                   <option value="A-">A-</option>
                   <option value="B+">B+</option>
@@ -177,7 +218,18 @@ const AccountTypeSelection = () => {
                 </select>
 
                 <div className="space-y-2">
-                  <label className="text-gray-700 dark:text-gray-300 font-medium text-sm">Location</label>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="text-gray-700 dark:text-gray-300 font-medium text-sm">{t("register.location", "Location")}</label>
+                    {locationLoading && (
+                      <span className="text-xs text-blue-500 flex items-center">
+                        <svg className="animate-spin -ml-1 mr-1 h-3 w-3 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Detecting...
+                      </span>
+                    )}
+                  </div>
                   <div className="relative">
                     <input
                       type="text"
@@ -188,6 +240,9 @@ const AccountTypeSelection = () => {
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
+                  {locationError && (
+                    <p className="mt-1 text-xs text-red-500 dark:text-red-400">{locationError}</p>
+                  )}
                 </div>
 
                 <label className="flex items-center space-x-3 bg-gray-50 dark:bg-gray-700/50 p-3 rounded-md border border-gray-200 dark:border-gray-600">
@@ -254,9 +309,20 @@ const AccountTypeSelection = () => {
                 />
 
                 <div className="space-y-2">
-                  <label className="text-gray-700 dark:text-gray-300 font-medium text-sm">
-                    Hospital Location
-                  </label>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="text-gray-700 dark:text-gray-300 font-medium text-sm">
+                      {t("register.hospital_location", "Hospital Location")}
+                    </label>
+                    {locationLoading && (
+                      <span className="text-xs text-blue-500 flex items-center">
+                        <svg className="animate-spin -ml-1 mr-1 h-3 w-3 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Detecting...
+                      </span>
+                    )}
+                  </div>
                   <div className="relative">
                     <input
                       type="text"
@@ -267,6 +333,9 @@ const AccountTypeSelection = () => {
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
+                  {locationError && (
+                    <p className="mt-1 text-xs text-red-500 dark:text-red-400">{locationError}</p>
+                  )}
                 </div>
               </div>
             )}
