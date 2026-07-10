@@ -2,8 +2,10 @@ import { useEffect, useContext, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import api from "../../api/api";
+import { useTranslation } from "react-i18next";
 
 const OAuthSuccess = () => {
+  const { t } = useTranslation();
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const { loginWithToken } = useContext(AuthContext);
@@ -53,7 +55,7 @@ const OAuthSuccess = () => {
     <div className="min-h-screen flex items-center justify-center bg-blue-50">
       <div className="text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-        <p className="text-gray-600">Setting up your account...</p>
+        <p className="text-gray-600">{t("oauth.setting_up_account", "Setting up your account...")}</p>
       </div>
     </div>
   );
