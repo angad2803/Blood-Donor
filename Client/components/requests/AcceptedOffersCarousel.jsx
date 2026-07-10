@@ -77,37 +77,37 @@ const AcceptedOffersCarousel = ({
           <SwiperSlide key={offer._id}>
             <div
               ref={(el) => (cardsRef.current[idx] = el)}
-              className="border border-green-200 rounded-lg p-4 bg-green-50 blood-card"
+              className="border border-green-200 dark:border-green-800 rounded-lg p-4 bg-green-50 dark:bg-green-900/20 blood-card"
             >
               <div className="flex justify-between items-start mb-3">
                 <div>
-                  <h3 className="font-semibold text-green-800 flex items-center">
+                  <h3 className="font-semibold text-green-800 dark:text-green-300 flex items-center">
                     <span className="mr-2">🩸</span>
                     {offer.bloodRequest?.bloodGroup || "Unknown"} Blood Donation
                   </h3>
-                  <p className="text-sm text-green-600">
+                  <p className="text-sm text-green-600 dark:text-green-400">
                     Accepted on{" "}
                     {offer.respondedAt
                       ? new Date(offer.respondedAt).toLocaleDateString()
                       : "Date not available"}
                   </p>
                 </div>
-                <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
+                <span className="bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300 px-2 py-1 rounded-full text-xs font-medium">
                   Confirmed
                 </span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
-                  <h4 className="font-medium text-gray-800 mb-2">
+                  <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-2">
                     {offer.donor?._id === user?._id ? "Requester Details" : "Donor Details"}
                   </h4>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
                     <strong>Name:</strong>{" "}
                     {offer.donor?._id === user?._id 
                       ? (offer.bloodRequest?.requester?.name || "Name not available")
                       : (offer.donor?.name || "Name not available")}
                   </p>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
                     <strong>Location:</strong>{" "}
                     {offer.donor?._id === user?._id 
                       ? (offer.bloodRequest?.requester?.location || offer.bloodRequest?.location || "Location not available")
@@ -115,11 +115,11 @@ const AcceptedOffersCarousel = ({
                   </p>
                   {offer.donor?._id === user?._id ? (
                     offer.bloodRequest?.requester?.phone && (
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
                         <strong>Phone:</strong>
                         <a
                           href={`tel:${offer.bloodRequest.requester.phone}`}
-                          className="text-blue-600 hover:underline ml-1"
+                          className="text-blue-600 dark:text-blue-400 hover:underline ml-1"
                         >
                           {offer.bloodRequest.requester.phone}
                         </a>
@@ -127,11 +127,11 @@ const AcceptedOffersCarousel = ({
                     )
                   ) : (
                     offer.donor?.phone && (
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
                         <strong>Phone:</strong>
                         <a
                           href={`tel:${offer.donor.phone}`}
-                          className="text-blue-600 hover:underline ml-1"
+                          className="text-blue-600 dark:text-blue-400 hover:underline ml-1"
                         >
                           {offer.donor.phone}
                         </a>
@@ -141,11 +141,11 @@ const AcceptedOffersCarousel = ({
                 </div>
 
               </div>
-              <div className="bg-white rounded-lg p-3 mb-4">
-                <h4 className="font-medium text-gray-800 mb-2">
+              <div className="bg-white dark:bg-gray-700/50 rounded-lg p-3 mb-4">
+                <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-2">
                   {offer.donor?._id === user?._id ? "Your Offer Message" : "Donor's Message"}
                 </h4>
-                <p className="text-sm text-gray-600 italic">
+                <p className="text-sm text-gray-600 dark:text-gray-300 italic">
                   "{offer.message || "No message provided"}"
                 </p>
               </div>

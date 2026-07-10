@@ -1,4 +1,5 @@
 import React from "react";
+import useThemeStore from "../../stores/themeStore";
 
 const NavigationTabs = ({
   activeTab,
@@ -7,6 +8,7 @@ const NavigationTabs = ({
   ribbonRef,
   availableRequestsCount,
 }) => {
+  const { isDarkMode } = useThemeStore();
   const tabs = [
     {
       id: "browse",
@@ -98,6 +100,11 @@ const NavigationTabs = ({
                         rgba(59, 130, 246, 0.9) 0%, 
                         rgba(99, 102, 241, 0.9) 50%, 
                         rgba(139, 92, 246, 0.9) 100%
+                      )`
+                    : isDarkMode
+                    ? `linear-gradient(135deg, 
+                        rgba(31, 41, 55, 0.7) 0%, 
+                        rgba(31, 41, 55, 0.5) 100%
                       )`
                     : `linear-gradient(135deg, 
                         rgba(255, 255, 255, 0.7) 0%, 

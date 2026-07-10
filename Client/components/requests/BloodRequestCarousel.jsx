@@ -73,29 +73,29 @@ const BloodRequestCarousel = ({
     switch (urgency?.toLowerCase()) {
       case "emergency":
         return {
-          bg: "bg-red-100",
-          text: "text-red-800",
+          bg: "bg-red-100 dark:bg-red-900/30",
+          text: "text-red-800 dark:text-red-300",
           border: "border-red-500",
           pulse: true,
         };
       case "high":
         return {
-          bg: "bg-orange-100",
-          text: "text-orange-800",
+          bg: "bg-orange-100 dark:bg-orange-900/30",
+          text: "text-orange-800 dark:text-orange-300",
           border: "border-orange-500",
           pulse: false,
         };
       case "medium":
         return {
-          bg: "bg-yellow-100",
-          text: "text-yellow-800",
+          bg: "bg-yellow-100 dark:bg-yellow-900/30",
+          text: "text-yellow-800 dark:text-yellow-300",
           border: "border-yellow-500",
           pulse: false,
         };
       default:
         return {
-          bg: "bg-green-100",
-          text: "text-green-800",
+          bg: "bg-green-100 dark:bg-green-900/30",
+          text: "text-green-800 dark:text-green-300",
           border: "border-green-500",
           pulse: false,
         };
@@ -108,7 +108,7 @@ const BloodRequestCarousel = ({
       <div className="blood-request-carousel">
         <div className="carousel-loading">
           <div className="spinner"></div>
-          <p className="ml-4 text-gray-600">Loading blood requests...</p>
+          <p className="ml-4 text-gray-600 dark:text-gray-400">Loading blood requests...</p>
         </div>
       </div>
     );
@@ -116,25 +116,25 @@ const BloodRequestCarousel = ({
 
   if (requests.length === 0) {
     return (
-      <div className="relative bg-gradient-to-br from-green-50 to-emerald-100 backdrop-blur-xl border-2 border-green-200 rounded-3xl shadow-lg p-12 text-center">
+      <div className="relative bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20 backdrop-blur-xl border-2 border-green-200 dark:border-green-800 rounded-3xl shadow-lg p-12 text-center">
         {}
-        <div className="absolute inset-0 bg-gradient-to-r from-green-100/50 to-emerald-100/50 rounded-3xl"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-green-100/50 to-emerald-100/50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-3xl"></div>
 
         <div className="relative z-10">
           {}
           <div className="text-8xl mb-6 animate-bounce">✅</div>
 
           {}
-          <h3 className="text-2xl font-bold text-green-900 mb-4">
+          <h3 className="text-2xl font-bold text-green-900 dark:text-green-300 mb-4">
             🎉 Amazing! All Requests Fulfilled! 🎉
           </h3>
 
-          <div className="bg-white/60 backdrop-blur-md border border-green-300 rounded-xl p-6 mb-6">
-            <p className="text-lg text-green-800 font-semibold mb-2">
+          <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-md border border-green-300 dark:border-green-700 rounded-xl p-6 mb-6">
+            <p className="text-lg text-green-800 dark:text-green-300 font-semibold mb-2">
               Thanks to heroes like you, there are no urgent blood requests at
               the moment!
             </p>
-            <p className="text-green-700">
+            <p className="text-green-700 dark:text-green-400">
               Keep checking back - new requests may appear at any time and lives
               depend on quick responses.
             </p>
@@ -142,12 +142,12 @@ const BloodRequestCarousel = ({
 
           {}
           <div className="space-y-4">
-            <div className="bg-white/50 backdrop-blur-md border border-green-200 rounded-xl p-4">
-              <h4 className="font-bold text-green-900 mb-2 flex items-center justify-center">
+            <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-md border border-green-200 dark:border-green-700 rounded-xl p-4">
+              <h4 className="font-bold text-green-900 dark:text-green-300 mb-2 flex items-center justify-center">
                 <span className="mr-2">💡</span>
                 Stay Ready to Help
               </h4>
-              <p className="text-green-800 text-sm">
+              <p className="text-green-800 dark:text-green-400 text-sm">
                 • Update your profile to match with compatible requests <br/>
                 • Enable notifications for urgent blood requests <br/>
                 • Share this platform with other potential donors
@@ -164,15 +164,15 @@ const BloodRequestCarousel = ({
       {}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-xl font-bold text-gray-800 flex items-center">
+          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 flex items-center">
             <span className="mr-3">🩸</span>
             Available Blood Requests
           </h2>
-          <p className="text-gray-600 mt-1">
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
             Swipe to explore • Send offers to help those in need
           </p>
         </div>
-        <div className="text-sm text-gray-700 bg-gray-200 px-3 py-2 rounded-lg font-medium">
+        <div className="text-sm text-gray-700 dark:text-gray-200 bg-gray-200 dark:bg-gray-700 px-3 py-2 rounded-lg font-medium">
           {requests.length} Active Request{requests.length !== 1 ? "s" : ""}
         </div>
       </div>
@@ -229,28 +229,28 @@ const BloodRequestCarousel = ({
             <SwiperSlide key={request._id}>
               <div
                 ref={(el) => (cardsRef.current[index] = el)}
-                className={`relative bg-white border-2 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 h-full ${
+                className={`relative bg-white dark:bg-gray-800 border-2 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 h-full ${
                   urgencyStyle.pulse
-                    ? "border-red-500 bg-red-50"
-                    : "border-gray-300"
+                    ? "border-red-500 bg-red-50 dark:bg-red-900/10"
+                    : "border-gray-300 dark:border-gray-600"
                 } hover:border-blue-500 transform hover:-translate-y-1`}
               >
                 {}
                 <div className="relative flex items-start justify-between mb-4">
                   <div className="flex items-center">
-                    <div className="bg-red-100 border-2 border-red-300 p-3 rounded-full mr-4">
-                      <span className="text-red-600 text-xl">🩸</span>
+                    <div className="bg-red-100 dark:bg-red-900/30 border-2 border-red-300 dark:border-red-700 p-3 rounded-full mr-4">
+                      <span className="text-red-600 dark:text-red-400 text-xl">🩸</span>
                     </div>
                     <div>
-                      <h3 className="font-bold text-lg text-gray-800 flex items-center">
+                      <h3 className="font-bold text-lg text-gray-800 dark:text-gray-100 flex items-center">
                         {request.bloodGroup} Blood Needed
                         {request.urgency === "Emergency" && (
                           <span className="ml-2 text-red-500 text-lg">🚨</span>
                         )}
                       </h3>
-                      <p className="text-sm text-gray-600 mt-1">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                         Requested by:{" "}
-                        <span className="font-semibold text-gray-800">
+                        <span className="font-semibold text-gray-800 dark:text-gray-200">
                           {request.requester?.name}
                         </span>
                       </p>
@@ -259,12 +259,12 @@ const BloodRequestCarousel = ({
                   <span
                     className={`px-3 py-1 rounded-full text-xs font-bold border-2 ${
                       request.urgency?.toLowerCase() === "emergency"
-                        ? "bg-red-100 text-red-800 border-red-300"
+                        ? "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-300 dark:border-red-700"
                         : request.urgency?.toLowerCase() === "high"
-                          ? "bg-orange-100 text-orange-800 border-orange-300"
+                          ? "bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 border-orange-300 dark:border-orange-700"
                           : request.urgency?.toLowerCase() === "medium"
-                            ? "bg-yellow-100 text-yellow-800 border-yellow-300"
-                            : "bg-green-100 text-green-800 border-green-300"
+                            ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border-yellow-300 dark:border-yellow-700"
+                            : "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-300 dark:border-green-700"
                     }`}
                   >
                     {request.urgency}
@@ -274,34 +274,34 @@ const BloodRequestCarousel = ({
 
                 {}
                 <div className="relative space-y-4 mb-8">
-                  <div className="flex items-center text-sm text-gray-800 bg-gray-50 rounded-lg p-3 border border-gray-300">
+                  <div className="flex items-center text-sm text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 border border-gray-300 dark:border-gray-600">
                     <span className="mr-3 text-lg">📍</span>
                     <span className="font-bold">Location:</span>
-                    <span className="ml-2 text-gray-900 font-medium">
+                    <span className="ml-2 text-gray-900 dark:text-gray-100 font-medium">
                       {request.location}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div className="flex items-center text-gray-800 bg-gray-50 rounded-lg p-3 border border-gray-300">
+                    <div className="flex items-center text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 border border-gray-300 dark:border-gray-600">
                       <span className="mr-2 text-lg">📅</span>
                       <div>
-                        <span className="font-bold block text-gray-900">
+                        <span className="font-bold block text-gray-900 dark:text-gray-100">
                           Posted:
                         </span>
-                        <span className="text-gray-800 font-medium">
+                        <span className="text-gray-800 dark:text-gray-300 font-medium">
                           {formatDate(request.createdAt)}
                         </span>
                       </div>
                     </div>
 
-                    <div className="flex items-center text-gray-800 bg-gray-50 rounded-lg p-3 border border-gray-300">
+                    <div className="flex items-center text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 border border-gray-300 dark:border-gray-600">
                       <span className="mr-2 text-lg">💌</span>
                       <div>
-                        <span className="font-bold block text-gray-900">
+                        <span className="font-bold block text-gray-900 dark:text-gray-100">
                           Offers:
                         </span>
-                        <span className="text-gray-900 font-bold text-lg">
+                        <span className="text-gray-900 dark:text-gray-100 font-bold text-lg">
                           {request.offers?.length || 0}
                         </span>
                       </div>
@@ -338,16 +338,16 @@ const BloodRequestCarousel = ({
       {}
       <div className="flex items-center justify-center mt-6 space-x-4">
         <button
-          className={`swiper-button-prev-custom p-3 rounded-full border border-gray-200 transition-all duration-200 transform ${
+          className={`swiper-button-prev-custom p-3 rounded-full border border-gray-200 dark:border-gray-600 transition-all duration-200 transform ${
             isFirstSlide
-              ? "bg-gray-100 cursor-not-allowed opacity-50"
-              : "bg-white hover:bg-gray-50 shadow-lg hover:shadow-xl hover:scale-110 cursor-pointer"
+              ? "bg-gray-100 dark:bg-gray-700 cursor-not-allowed opacity-50"
+              : "bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 shadow-lg hover:shadow-xl hover:scale-110 cursor-pointer"
           }`}
           disabled={isFirstSlide}
         >
           <svg
             className={`w-5 h-5 ${
-              isFirstSlide ? "text-gray-400" : "text-gray-600"
+              isFirstSlide ? "text-gray-400 dark:text-gray-500" : "text-gray-600 dark:text-gray-300"
             }`}
             fill="none"
             stroke="currentColor"
@@ -365,16 +365,16 @@ const BloodRequestCarousel = ({
         <div className="swiper-pagination-custom flex space-x-2"></div>
 
         <button
-          className={`swiper-button-next-custom p-3 rounded-full border border-gray-200 transition-all duration-200 transform ${
+          className={`swiper-button-next-custom p-3 rounded-full border border-gray-200 dark:border-gray-600 transition-all duration-200 transform ${
             isLastSlide
-              ? "bg-gray-100 cursor-not-allowed opacity-50"
-              : "bg-white hover:bg-gray-50 shadow-lg hover:shadow-xl hover:scale-110 cursor-pointer"
+              ? "bg-gray-100 dark:bg-gray-700 cursor-not-allowed opacity-50"
+              : "bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 shadow-lg hover:shadow-xl hover:scale-110 cursor-pointer"
           }`}
           disabled={isLastSlide}
         >
           <svg
             className={`w-5 h-5 ${
-              isLastSlide ? "text-gray-400" : "text-gray-600"
+              isLastSlide ? "text-gray-400 dark:text-gray-500" : "text-gray-600 dark:text-gray-300"
             }`}
             fill="none"
             stroke="currentColor"
@@ -392,7 +392,7 @@ const BloodRequestCarousel = ({
 
       {}
       <div className="text-center mt-4">
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-gray-500 dark:text-gray-400">
           <span className="hidden sm:inline">
             Use arrow keys or click navigation •{" "}
           </span>

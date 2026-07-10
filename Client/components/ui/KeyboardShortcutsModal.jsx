@@ -30,7 +30,7 @@ const KeyboardShortcutsModal = ({ isOpen, onClose, user }) => {
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
       onClick={handleBackdropClick}
     >
-      <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4 shadow-xl">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
             ⌨️ Keyboard Shortcuts
@@ -69,7 +69,7 @@ const KeyboardShortcutsModal = ({ isOpen, onClose, user }) => {
                   key={index}
                   className="flex justify-between items-center py-1"
                 >
-                  <span className="text-gray-700 text-sm">
+                  <span className="text-gray-700 dark:text-gray-300 text-sm">
                     {shortcut.description}
                   </span>
                   <kbd
@@ -98,10 +98,10 @@ const KeyboardShortcutsModal = ({ isOpen, onClose, user }) => {
                     key={index}
                     className="flex justify-between items-center py-1"
                   >
-                    <span className="text-gray-700 text-sm">
+                    <span className="text-gray-700 dark:text-gray-300 text-sm">
                       {shortcut.description}
                     </span>
-                    <kbd className="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-mono">
+                    <kbd className="bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300 px-2 py-1 rounded text-xs font-mono">
                       {shortcut.key}
                     </kbd>
                   </div>
@@ -111,7 +111,7 @@ const KeyboardShortcutsModal = ({ isOpen, onClose, user }) => {
 
           {}
           <div>
-            <h3 className="text-sm font-semibold text-gray-600 mb-2">
+            <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
               Actions
             </h3>
             {shortcuts
@@ -121,10 +121,10 @@ const KeyboardShortcutsModal = ({ isOpen, onClose, user }) => {
                   key={index}
                   className="flex justify-between items-center py-1"
                 >
-                  <span className="text-gray-700 text-sm">
+                  <span className="text-gray-700 dark:text-gray-300 text-sm">
                     {shortcut.description}
                   </span>
-                  <kbd className="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs font-mono">
+                  <kbd className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-2 py-1 rounded text-xs font-mono">
                     {shortcut.key}
                   </kbd>
                 </div>
@@ -132,7 +132,7 @@ const KeyboardShortcutsModal = ({ isOpen, onClose, user }) => {
           </div>
         </div>
 
-        <div className="mt-6 pt-4 border-t border-gray-200">
+        <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
           <p className="text-xs text-gray-600 dark:text-gray-400 text-center font-medium">
             💡 Tip: These shortcuts work when not typing in input fields
           </p>

@@ -100,7 +100,7 @@ const DashboardHeader = ({
 
             <button
               onClick={() => setShowShortcutsModal(true)}
-              className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-all duration-200"
+              className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-all duration-200"
               title="Keyboard shortcuts (?)"
             >
               <span className="text-sm">⌨️</span>

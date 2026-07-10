@@ -78,34 +78,34 @@ const MyOffersCarousel = ({ myOffers = [], onOpenChat }) => {
           <SwiperSlide key={offer._id}>
             <div
               ref={(el) => (cardsRef.current[idx] = el)}
-              className="bg-white rounded-xl shadow-lg border-2 p-6 h-full blood-card"
+              className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border-2 border-gray-200 dark:border-gray-700 p-6 h-full blood-card"
             >
               <div className="flex justify-between items-start mb-3">
                 <div>
-                  <h3 className="font-semibold text-red-600">
+                  <h3 className="font-semibold text-red-600 dark:text-red-400">
                     {offer.bloodRequest?.bloodGroup} Blood Donation Offer
                   </h3>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
                     To: {offer.bloodRequest?.location}
                   </p>
                 </div>
                 <span
                   className={`px-2 py-1 rounded-full text-xs font-medium ${
                     offer.status === "accepted"
-                      ? "bg-green-100 text-green-800"
+                      ? "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300"
                       : offer.status === "rejected"
-                      ? "bg-red-100 text-red-800"
-                      : "bg-yellow-100 text-yellow-800"
+                      ? "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300"
+                      : "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300"
                   }`}
                 >
                   {(offer.status || "pending").charAt(0).toUpperCase() + (offer.status || "pending").slice(1)}
                 </span>
               </div>
-              <p className="text-sm text-gray-700 italic mb-3">
+              <p className="text-sm text-gray-700 dark:text-gray-300 italic mb-3">
                 "{offer.message}"
               </p>
               <div className="flex justify-between items-center">
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-gray-500 dark:text-gray-400">
                   <p>Sent: {new Date(offer.createdAt).toLocaleDateString()}</p>
                   {offer.respondedAt && (
                     <p>
@@ -117,12 +117,12 @@ const MyOffersCarousel = ({ myOffers = [], onOpenChat }) => {
                 <div className="flex items-center space-x-2">
 
                   {offer.status === "accepted" && (
-                    <div className="text-xs text-green-600 font-medium">
+                    <div className="text-xs text-green-600 dark:text-green-400 font-medium">
                       🎉 Accepted - Please coordinate with the requester
                     </div>
                   )}
                   {offer.status === "pending" && (
-                    <div className="text-xs text-yellow-600 font-medium">
+                    <div className="text-xs text-yellow-600 dark:text-yellow-400 font-medium">
                       ⏳ Awaiting response
                     </div>
                   )}

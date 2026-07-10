@@ -49,7 +49,7 @@ const TabContent = ({
 
   return (
     <div
-      className="bg-white/20 backdrop-blur-lg rounded-2xl p-6 border border-white/30 shadow-xl"
+      className="bg-white/20 dark:bg-gray-800/40 backdrop-blur-lg rounded-2xl p-6 border border-white/30 dark:border-gray-700/50 shadow-xl transition-colors duration-300"
       style={{
         boxShadow: `
           0 20px 40px rgba(0, 0, 0, 0.1),

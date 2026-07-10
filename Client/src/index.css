@@ -2,6 +2,8 @@
 @import "leaflet/dist/leaflet.css";
 @import "./styles/text-legibility.css";
 
+@custom-variant dark (&:is(.dark *));
+
 /* Theme transition improvements */
 * {
   transition-property: background-color, border-color, color, fill, stroke;
