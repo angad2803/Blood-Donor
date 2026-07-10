@@ -25,25 +25,33 @@ const AccountTypeSelection = () => {
   const [locationError, setLocationError] = useState("");
 
   // Initialize form data from user
+  // Do not pre-fill location if it's the server default placeholder
   useEffect(() => {
     if (user) {
       setBloodGroup(user.bloodGroup || "");
-      setLocation(user.location || "");
+      const userLocation = user.location && user.location !== "Unknown" ? user.location : "";
+      setLocation(userLocation);
       setIsDonor(user.isDonor || false);
     }
   }, [user]);
 
-  // Auto-detect location
+  // Auto-detect location on page load.
+  // Runs once on mount. Treats missing, empty, or server-default "Unknown" as needing detection.
   useEffect(() => {
-    // Only detect if location is not already set by user context
-    if (!user?.location && navigator.geolocation) {
+    const locationMissing =
+      !user?.location ||
+      user.location.trim() === "" ||
+      user.location === "Unknown";
+
+    if (locationMissing && navigator.geolocation) {
       setLocationLoading(true);
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           try {
             const { latitude, longitude } = position.coords;
             const response = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
+              { headers: { "Accept-Language": "en" } }
             );
             const data = await response.json();
 
@@ -56,19 +64,21 @@ const AccountTypeSelection = () => {
                 setLocation(locationStr);
               }
             }
-          } catch (error) {
-            setLocationError("Failed to auto-detect location.");
+          } catch (err) {
+            setLocationError("Failed to auto-detect location. Please enter manually.");
           } finally {
             setLocationLoading(false);
           }
         },
-        (error) => {
+        () => {
           setLocationError("Location permission denied. Please enter manually.");
           setLocationLoading(false);
-        }
+        },
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
       );
     }
-  }, [user?.location]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run once on mount only
 
   const handleSubmit = async (e) => {
     e.preventDefault();
