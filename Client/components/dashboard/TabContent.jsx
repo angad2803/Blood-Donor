@@ -35,6 +35,7 @@ const TabContent = ({
           <AcceptedOffersCarousel
             acceptedOffers={acceptedOffers}
             onOpenChat={handleOpenChat}
+            user={user}
           />
         );
       default:

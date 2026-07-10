@@ -99,6 +99,14 @@ app.set("smsQueue", smsQueue);
 io.on("connection", (socket) => {
   console.log("🧠 New client connected:", socket.id);
 
+  // Let users join their personal room so the server can send them targeted events
+  socket.on("join-user-room", (userId) => {
+    if (userId) {
+      socket.join(`user:${userId}`);
+      console.log(`✅ Socket ${socket.id} joined personal room: user:${userId}`);
+    }
+  });
+
   socket.on("join-room", (roomId) => {
     socket.join(roomId);
     console.log(`User ${socket.id} joined room: ${roomId}`);

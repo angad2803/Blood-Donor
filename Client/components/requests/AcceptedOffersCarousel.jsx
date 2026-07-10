@@ -15,6 +15,7 @@ import "swiper/css/effect-coverflow";
 const AcceptedOffersCarousel = ({
   acceptedOffers = [],
   onOpenChat,
+  user,
 }) => {
   const swiperRef = useRef(null);
   const cardsRef = useRef([]);
@@ -98,36 +99,51 @@ const AcceptedOffersCarousel = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
                   <h4 className="font-medium text-gray-800 mb-2">
-                    Requester Details
+                    {offer.donor?._id === user?._id ? "Requester Details" : "Donor Details"}
                   </h4>
                   <p className="text-sm text-gray-600">
                     <strong>Name:</strong>{" "}
-                    {offer.bloodRequest?.requester?.name ||
-                      "Name not available"}
+                    {offer.donor?._id === user?._id 
+                      ? (offer.bloodRequest?.requester?.name || "Name not available")
+                      : (offer.donor?.name || "Name not available")}
                   </p>
                   <p className="text-sm text-gray-600">
                     <strong>Location:</strong>{" "}
-                    {offer.bloodRequest?.requester?.location ||
-                      offer.bloodRequest?.location ||
-                      "Location not available"}
+                    {offer.donor?._id === user?._id 
+                      ? (offer.bloodRequest?.requester?.location || offer.bloodRequest?.location || "Location not available")
+                      : (offer.donor?.location || "Location not available")}
                   </p>
-                  {offer.bloodRequest?.requester?.phone && (
-                    <p className="text-sm text-gray-600">
-                      <strong>Phone:</strong>
-                      <a
-                        href={`tel:${offer.bloodRequest.requester.phone}`}
-                        className="text-blue-600 hover:underline ml-1"
-                      >
-                        {offer.bloodRequest.requester.phone}
-                      </a>
-                    </p>
+                  {offer.donor?._id === user?._id ? (
+                    offer.bloodRequest?.requester?.phone && (
+                      <p className="text-sm text-gray-600">
+                        <strong>Phone:</strong>
+                        <a
+                          href={`tel:${offer.bloodRequest.requester.phone}`}
+                          className="text-blue-600 hover:underline ml-1"
+                        >
+                          {offer.bloodRequest.requester.phone}
+                        </a>
+                      </p>
+                    )
+                  ) : (
+                    offer.donor?.phone && (
+                      <p className="text-sm text-gray-600">
+                        <strong>Phone:</strong>
+                        <a
+                          href={`tel:${offer.donor.phone}`}
+                          className="text-blue-600 hover:underline ml-1"
+                        >
+                          {offer.donor.phone}
+                        </a>
+                      </p>
+                    )
                   )}
                 </div>
 
               </div>
               <div className="bg-white rounded-lg p-3 mb-4">
                 <h4 className="font-medium text-gray-800 mb-2">
-                  Your Offer Message
+                  {offer.donor?._id === user?._id ? "Your Offer Message" : "Donor's Message"}
                 </h4>
                 <p className="text-sm text-gray-600 italic">
                   "{offer.message || "No message provided"}"
@@ -142,16 +158,30 @@ const AcceptedOffersCarousel = ({
                   <span className="mr-2">💬</span>
                   Chat
                 </button>
-                {offer.bloodRequest?.requester?.phone && (
-                  <button
-                    onClick={() =>
-                      window.open(`tel:${offer.bloodRequest.requester.phone}`)
-                    }
-                    className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 flex items-center"
-                  >
-                    <span className="mr-2">📞</span>
-                    Call
-                  </button>
+                {offer.donor?._id === user?._id ? (
+                  offer.bloodRequest?.requester?.phone && (
+                    <button
+                      onClick={() =>
+                        window.open(`tel:${offer.bloodRequest.requester.phone}`)
+                      }
+                      className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 flex items-center"
+                    >
+                      <span className="mr-2">📞</span>
+                      Call
+                    </button>
+                  )
+                ) : (
+                  offer.donor?.phone && (
+                    <button
+                      onClick={() =>
+                        window.open(`tel:${offer.donor.phone}`)
+                      }
+                      className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 flex items-center"
+                    >
+                      <span className="mr-2">📞</span>
+                      Call
+                    </button>
+                  )
                 )}
               </div>
             </div>

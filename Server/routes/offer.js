@@ -53,6 +53,14 @@ router.post("/send", verifyToken, async (req, res) => {
 
     await offer.populate("donor", "name bloodGroup location");
 
+    // Emit real-time event to the requester so their "My Requests" tab shows the new offer
+    const io = req.app.get("io");
+    if (io) {
+      io.to(`user:${bloodRequest.requester}`).emit("request:offer-received", {
+        requestId: requestId,
+        offer,
+      });
+    }
 
     try {
       const requester = await User.findById(bloodRequest.requester);
@@ -244,6 +252,30 @@ router.post("/accept/:offerId", verifyToken, async (req, res) => {
       console.error("❌ Failed to queue acceptance notifications:", emailError);
     }
 
+    // ── Real-time socket events ──────────────────────────────────────────────
+    try {
+      const io = req.app.get("io");
+      if (io) {
+        const donorUserId = typeof offer.donor === "object" ? offer.donor._id : offer.donor;
+        // Tell the donor their offer was accepted
+        io.to(`user:${donorUserId}`).emit("offer:accepted", {
+          offerId: offer._id,
+          requestId: bloodRequest._id,
+        });
+        // Tell the requester their request is now fulfilled
+        io.to(`user:${bloodRequest.requester}`).emit("request:fulfilled", {
+          requestId: bloodRequest._id,
+          offerId: offer._id,
+        });
+        // Broadcast removal from browse list for all other users
+        io.emit("request:fulfilled", {
+          requestId: bloodRequest._id,
+        });
+      }
+    } catch (socketError) {
+      console.error("❌ Failed to emit socket events:", socketError);
+    }
+
     res.json({
       message: "Offer accepted successfully",
       offer,
@@ -283,9 +315,16 @@ router.get("/accepted", verifyToken, async (req, res) => {
   try {
     const userId = req.user._id;
 
+    // Find all blood requests made by the user
+    const userRequests = await BloodRequest.find({ requester: userId });
+    const userRequestIds = userRequests.map(r => r._id);
+
     const acceptedOffers = await Offer.find({
-      donor: userId,
       status: "accepted",
+      $or: [
+        { donor: userId },
+        { bloodRequest: { $in: userRequestIds } }
+      ]
     })
       .populate({
         path: "bloodRequest",
@@ -294,6 +333,7 @@ router.get("/accepted", verifyToken, async (req, res) => {
           select: "name email phone location coordinates",
         },
       })
+      .populate("donor", "name email phone location")
       .sort({ respondedAt: -1 });
 
     res.json({ acceptedOffers });

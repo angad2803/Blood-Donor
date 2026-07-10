@@ -2,8 +2,10 @@ import React, { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import api from "../../api/api.js";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const CreateRequest = () => {
+  const { t } = useTranslation();
   const { user, logout } = useContext(AuthContext);
   const [requests, setRequests] = useState([]);
   const [form, setForm] = useState({
@@ -51,9 +53,19 @@ const CreateRequest = () => {
     setSuccess("");
     setLoading(true);
     try {
-      await api.post("/request/create", form);
+      const res = await api.post("/request/create", form);
       setSuccess("Request created successfully!");
-      setTimeout(() => navigate("/dashboard"), 1200);
+      // Navigate to My Requests tab with a flag to trigger refresh
+      setTimeout(() =>
+        navigate("/dashboard", {
+          state: {
+            message: "🩸 Blood request created! Donors will be notified shortly.",
+            activeTab: "my-requests",
+            refresh: true,
+          },
+        }),
+        1200
+      );
     } catch (err) {
       setError(err.response?.data?.message || "Failed to create request");
     }
@@ -147,7 +159,7 @@ const CreateRequest = () => {
                   required
                   className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 >
-                  <option value="">Select Blood Group</option>
+                  <option value="">{t("createRequest.selectBloodGroup", "Select Blood Group")}</option>
                   <option value="A+">A+</option>
                   <option value="A-">A-</option>
                   <option value="B+">B+</option>
@@ -170,9 +182,9 @@ const CreateRequest = () => {
                   required
                   className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 >
-                  <option value="Normal">Normal</option>
-                  <option value="Urgent">Urgent</option>
-                  <option value="Emergency">Emergency</option>
+                  <option value="Normal">{t("createRequest.urgencyNormal", "Normal")}</option>
+                  <option value="Urgent">{t("createRequest.urgencyUrgent", "Urgent")}</option>
+                  <option value="Emergency">{t("createRequest.urgencyEmergency", "Emergency")}</option>
                 </select>
               </div>
             </div>
@@ -236,7 +248,7 @@ const CreateRequest = () => {
             {requests.length === 0 ? (
               <div className="text-center py-10">
                 <div className="text-4xl mb-3 opacity-50">📋</div>
-                <p className="text-gray-500 dark:text-gray-400">No active requests found</p>
+                <p className="text-gray-500 dark:text-gray-400">{t("createRequest.noRequests", "No active requests found")}</p>
               </div>
             ) : (
               requests.map((req) => (

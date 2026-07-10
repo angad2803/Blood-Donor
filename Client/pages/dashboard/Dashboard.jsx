@@ -16,6 +16,7 @@ import AnimationStyles from "../../components/ui/AnimationStyles";
 import { useDashboardData } from "../../hooks/useDashboardData";
 import { useDashboardState } from "../../hooks/useDashboardState";
 import useThemeStore from "../../stores/themeStore";
+import { getSocket } from "../../utils/socket";
 
 const Dashboard = () => {
   const { user, logout, refreshUserData } = useContext(AuthContext);
@@ -30,6 +31,7 @@ const Dashboard = () => {
     loading,
     requestsWithOffers,
     fetchData,
+    fetchMyRequests,
     handleOfferSent,
     handleAcceptOffer,
   } = useDashboardData();
@@ -66,6 +68,14 @@ const Dashboard = () => {
 
 
 
+  // Join the user's personal socket room for targeted real-time events
+  useEffect(() => {
+    if (user?._id) {
+      const socket = getSocket();
+      socket.emit("join-user-room", user._id);
+    }
+  }, [user?._id]);
+
   // Setup keyboard shortcuts
   useKeyboardShortcuts(
     setActiveTab,
@@ -78,16 +88,20 @@ const Dashboard = () => {
   useEffect(() => {
     fetchData();
 
-    // Handle success messages from navigation state
+    // Handle success messages and refresh triggers from navigation state
     if (location.state?.message) {
       toast.success(location.state.message);
       if (location.state.activeTab) {
         setActiveTab(location.state.activeTab);
       }
+      // If navigated from CreateRequest, refresh myRequests to include the new entry
+      if (location.state.refresh) {
+        fetchMyRequests();
+      }
       // Clear the state to prevent showing message on refresh
       window.history.replaceState({}, document.title);
     }
-  }, [location.state, fetchData, setActiveTab]);
+  }, [location.state, fetchData, fetchMyRequests, setActiveTab]);
 
   // Removed Entrance animations and hover effects
 

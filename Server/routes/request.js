@@ -45,6 +45,17 @@ router.post("/create", verifyToken, async (req, res) => {
     const newRequest = new BloodRequest(requestData);
     await newRequest.save();
 
+    // Populate requester so the socket payload matches what the frontend expects
+    await newRequest.populate("requester", "name bloodGroup location coordinates");
+
+    // Emit real-time event so all connected dashboards update instantly
+    const io = req.app.get("io");
+    if (io) {
+      // Broadcast to all clients (Browse Requests list)
+      io.emit("request:created", newRequest);
+      // Also emit to the requester's personal room so their "My Requests" tab updates
+      io.to(`user:${req.user._id}`).emit("my-request:created", newRequest);
+    }
 
     if (urgency === "High" || urgency === "Emergency") {
       try {

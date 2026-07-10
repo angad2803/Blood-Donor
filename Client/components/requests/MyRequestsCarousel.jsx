@@ -46,9 +46,7 @@ const MyRequestsCarousel = ({
   }, [myRequests]);
 
 
-  const filteredRequests = myRequests.filter(
-    (req) => req.requester?._id !== user?._id
-  );
+  const filteredRequests = myRequests;
 
   if (filteredRequests.length === 0) {
     return (
