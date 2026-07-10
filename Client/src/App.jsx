@@ -36,10 +36,8 @@ import { useTranslation } from "react-i18next";
 
 function App() {
   const { token, isLoading } = useContext(AuthContext);
-  const { initializeTheme } = useThemeStore();
+  const { initializeTheme, isDarkMode } = useThemeStore();
   const { t } = useTranslation();
-
-
   useEffect(() => {
     initializeTheme();
   }, [initializeTheme]);
@@ -162,7 +160,7 @@ function App() {
             pauseOnFocusLoss
             draggable
             pauseOnHover
-            theme="light"
+            theme={isDarkMode ? "dark" : "light"}
           />
         </>
       </Router>

@@ -5,12 +5,14 @@ import { toast } from "react-toastify";
 import api from "../api/api.js";
 import { io } from "socket.io-client";
 import { canDonateTo } from "../../Server/utils/compatability.js";
+import { useTranslation } from "react-i18next";
 
 const socket = io(import.meta.env.VITE_API_URL, {
   withCredentials: true,
 });
 
 const Dashboard = () => {
+  const { t } = useTranslation();
   const { user, logout, logoutCurrentTab, loginWithToken, tabId } =
     useContext(AuthContext);
   const navigate = useNavigate();
@@ -371,47 +373,47 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center bg-blue-50 py-8">
-      <div className="w-full max-w-2xl bg-white rounded-lg shadow-md p-8">
+    <div className="min-h-screen flex flex-col items-center bg-blue-50 dark:bg-gray-900 py-8 transition-colors duration-300">
+      <div className="w-full max-w-2xl bg-white dark:bg-gray-800 rounded-lg shadow-md border border-transparent dark:border-gray-700 p-8 transition-colors duration-300">
         {/* Top user details */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
           <div>
-            <h2 className="text-2xl font-semibold text-blue-700 mb-2">
+            <h2 className="text-2xl font-semibold text-blue-700 dark:text-blue-400 mb-2">
               Welcome, {user?.name}
             </h2>
             {user?.isHospital ? (
               <div>
-                <p className="text-gray-700">
+                <p className="text-gray-700 dark:text-gray-300">
                   Hospital:{" "}
                   <span className="font-semibold">{user?.hospitalName}</span>
                 </p>
-                <p className="text-gray-700">
+                <p className="text-gray-700 dark:text-gray-300">
                   Location:{" "}
                   <span className="font-semibold">{user?.location}</span>
                 </p>
-                <p className="text-gray-700">
+                <p className="text-gray-700 dark:text-gray-300">
                   License:{" "}
                   <span className="font-semibold">{user?.hospitalLicense}</span>
                 </p>
               </div>
             ) : (
               <div>
-                <p className="text-gray-700">
+                <p className="text-gray-700 dark:text-gray-300">
                   Blood Group:{" "}
                   <span className="font-semibold">{user?.bloodGroup}</span>
                 </p>
-                <p className="text-gray-700">
+                <p className="text-gray-700 dark:text-gray-300">
                   Location:{" "}
                   <span className="font-semibold">{user?.location}</span>
                 </p>
                 {user?.isDonor && (
-                  <p className="text-green-600 font-medium text-sm">
+                  <p className="text-green-600 dark:text-green-400 font-medium text-sm">
                     ✓ Registered Donor
                   </p>
                 )}
               </div>
             )}
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               Tab ID: {tabId?.substring(0, 12)}... | User ID:{" "}
               {user?._id?.substring(0, 8)}...
             </p>
@@ -483,10 +485,10 @@ const Dashboard = () => {
         {!user?.isDonor && !user?.isHospital && myRequests.length > 0 && (
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold text-blue-700">
+              <h3 className="text-xl font-semibold text-blue-700 dark:text-blue-400">
                 📋 Your Blood Requests
                 {crossedOutRequests.size > 0 && (
-                  <span className="ml-2 text-sm text-gray-500">
+                  <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
                     ({crossedOutRequests.size} crossed out)
                   </span>
                 )}
@@ -496,7 +498,7 @@ const Dashboard = () => {
               ) && (
                 <button
                   onClick={() => setShowCrossedOut(!showCrossedOut)}
-                  className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition"
+                  className="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition"
                 >
                   {showCrossedOut
                     ? "🙈 Hide Crossed Out"
@@ -514,8 +516,8 @@ const Dashboard = () => {
                     key={req._id}
                     className={`p-4 rounded-lg border-2 transition-all ${
                       req.fulfilled
-                        ? "bg-green-50 border-green-200 shadow-sm"
-                        : "bg-white border-gray-200 shadow-md hover:shadow-lg"
+                        ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 shadow-sm"
+                        : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 shadow-md hover:shadow-lg"
                     } ${crossedOutRequests.has(req._id) ? "opacity-60" : ""}`}
                   >
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between">
@@ -525,14 +527,14 @@ const Dashboard = () => {
                         }`}
                       >
                         <div className="flex items-center gap-2 mb-1">
-                          <strong className="text-lg">{req.bloodGroup}</strong>
-                          <span className="text-gray-600">at</span>
-                          <em className="text-blue-800 font-medium">
+                          <strong className="text-lg text-gray-900 dark:text-white">{req.bloodGroup}</strong>
+                          <span className="text-gray-600 dark:text-gray-400">at</span>
+                          <em className="text-blue-800 dark:text-blue-300 font-medium">
                             {req.hospital || "Hospital not specified"}
                           </em>
-                          <span className="text-gray-600">in</span>
-                          <em className="text-gray-800">{req.location}</em>
-                          <span className="text-gray-600">–</span>
+                          <span className="text-gray-600 dark:text-gray-400">in</span>
+                          <em className="text-gray-800 dark:text-gray-200">{req.location}</em>
+                          <span className="text-gray-600 dark:text-gray-400">–</span>
                           <span
                             className={`px-2 py-1 rounded text-xs font-medium ${
                               req.urgency === "urgent" ||
@@ -571,8 +573,8 @@ const Dashboard = () => {
                               onClick={() => toggleCrossOut(req._id)}
                               className={`ml-2 px-2 py-1 rounded text-xs font-medium transition ${
                                 crossedOutRequests.has(req._id)
-                                  ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
-                                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                  ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 hover:bg-yellow-200 dark:hover:bg-yellow-800/40"
+                                  : "bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-500"
                               }`}
                               title={
                                 crossedOutRequests.has(req._id)
@@ -588,12 +590,12 @@ const Dashboard = () => {
                         </div>
 
                         {req.description && (
-                          <p className="text-sm text-gray-600 mb-2">
+                          <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
                             {req.description}
                           </p>
                         )}
 
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
                           Requested on:{" "}
                           {new Date(req.createdAt).toLocaleDateString()}
                         </p>
@@ -773,18 +775,18 @@ const Dashboard = () => {
         {/* Available Requests to Fulfill (for donors) */}
         {user?.isDonor && (
           <div className="mb-8">
-            <h3 className="text-xl font-semibold mb-4 text-purple-700">
+            <h3 className="text-xl font-semibold mb-4 text-purple-700 dark:text-purple-400">
               🩸 Compatible Requests for {user.bloodGroup} in {user.location}
             </h3>
 
             {loading ? (
-              <p>Loading...</p>
+              <p>{t("dashboard.loading", "Loading...")}</p>
             ) : requests.length === 0 ? (
-              <div className="text-center py-8 bg-gray-50 rounded-lg">
-                <p className="text-gray-500">
+              <div className="text-center py-8 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <p className="text-gray-500 dark:text-gray-400">
                   No matching requests found at the moment
                 </p>
-                <p className="text-sm text-gray-400 mt-1">
+                <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
                   We'll notify you when new requests match your blood type and
                   location
                 </p>
@@ -794,19 +796,19 @@ const Dashboard = () => {
                 {requests.map((req) => (
                   <div
                     key={req._id}
-                    className="p-4 rounded-lg border-2 bg-white border-gray-200 shadow-md hover:shadow-lg transition-all"
+                    className="p-4 rounded-lg border-2 bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 shadow-md hover:shadow-lg transition-all"
                   >
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <strong className="text-lg">{req.bloodGroup}</strong>
-                          <span className="text-gray-600">at</span>
-                          <em className="text-blue-800 font-medium">
+                          <strong className="text-lg text-gray-900 dark:text-white">{req.bloodGroup}</strong>
+                          <span className="text-gray-600 dark:text-gray-400">at</span>
+                          <em className="text-blue-800 dark:text-blue-300 font-medium">
                             {req.hospital || "Hospital not specified"}
                           </em>
-                          <span className="text-gray-600">in</span>
-                          <em className="text-gray-800">{req.location}</em>
-                          <span className="text-gray-600">–</span>
+                          <span className="text-gray-600 dark:text-gray-400">in</span>
+                          <em className="text-gray-800 dark:text-gray-200">{req.location}</em>
+                          <span className="text-gray-600 dark:text-gray-400">–</span>
                           <span
                             className={`px-2 py-1 rounded text-xs font-medium ${
                               req.urgency === "urgent" ||
@@ -823,21 +825,21 @@ const Dashboard = () => {
                         </div>
 
                         {req.description && (
-                          <p className="text-sm text-gray-600 mb-2">
+                          <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
                             {req.description}
                           </p>
                         )}
 
-                        <p className="text-sm text-gray-600 mb-1">
+                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
                           Requested by: {req.requester?.name}
                         </p>
 
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
                           Requested on:{" "}
                           {new Date(req.createdAt).toLocaleDateString()}
                         </p>
 
-                        <div className="text-xs text-blue-600 mt-1">
+                        <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
                           ✓ Compatible with your blood group ({user.bloodGroup})
                         </div>
                       </div>
@@ -1016,7 +1018,7 @@ const Dashboard = () => {
               🤝 Your Accepted Offers
             </h3>
             {loading ? (
-              <p>Loading...</p>
+              <p>{t("dashboard.loading", "Loading...")}</p>
             ) : (
               <div className="space-y-4">
                 {requests
@@ -1134,28 +1136,28 @@ const Dashboard = () => {
         {/* Hospital Dashboard Section */}
         {user?.isHospital && (
           <div className="mb-8">
-            <h3 className="text-xl font-semibold mb-4 text-red-700">
+            <h3 className="text-xl font-semibold mb-4 text-red-700 dark:text-red-400">
               🏥 Hospital Dashboard
             </h3>
 
             {loading ? (
-              <p>Loading requests...</p>
+              <p>{t("dashboard.loading_requests", "Loading requests...")}</p>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                 {/* Statistics Cards */}
-                <div className="bg-blue-50 p-4 rounded-lg border-2 border-blue-200">
-                  <h4 className="font-semibold text-blue-700">
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border-2 border-blue-200 dark:border-blue-800/50">
+                  <h4 className="font-semibold text-blue-700 dark:text-blue-400">
                     Total Requests
                   </h4>
-                  <p className="text-2xl font-bold text-blue-800">
+                  <p className="text-2xl font-bold text-blue-800 dark:text-blue-300">
                     {requests.length}
                   </p>
                 </div>
-                <div className="bg-red-50 p-4 rounded-lg border-2 border-red-200">
-                  <h4 className="font-semibold text-red-700">
+                <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg border-2 border-red-200 dark:border-red-800/50">
+                  <h4 className="font-semibold text-red-700 dark:text-red-400">
                     Urgent Requests
                   </h4>
-                  <p className="text-2xl font-bold text-red-800">
+                  <p className="text-2xl font-bold text-red-800 dark:text-red-300">
                     {
                       requests.filter(
                         (r) => r.urgency === "Emergency" || r.urgency === "High"
@@ -1163,9 +1165,9 @@ const Dashboard = () => {
                     }
                   </p>
                 </div>
-                <div className="bg-green-50 p-4 rounded-lg border-2 border-green-200">
-                  <h4 className="font-semibold text-green-700">Fulfilled</h4>
-                  <p className="text-2xl font-bold text-green-800">
+                <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border-2 border-green-200 dark:border-green-800/50">
+                  <h4 className="font-semibold text-green-700 dark:text-green-400">{t("dashboard.fulfilled", "Fulfilled")}</h4>
+                  <p className="text-2xl font-bold text-green-800 dark:text-green-300">
                     {requests.filter((r) => r.fulfilled).length}
                   </p>
                 </div>
@@ -1175,7 +1177,7 @@ const Dashboard = () => {
             {/* Hospital Blood Requests */}
             <div className="mb-6">
               <div className="flex items-center justify-between mb-3">
-                <h4 className="text-lg font-semibold text-gray-700">
+                <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
                   🩸 All Blood Requests for {user.hospitalName}
                   {requests.filter(
                     (r) =>
@@ -1205,7 +1207,7 @@ const Dashboard = () => {
                 ).length > 0 && (
                   <button
                     onClick={() => setShowCrossedOut(!showCrossedOut)}
-                    className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition"
+                    className="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 rounded-lg transition"
                   >
                     {showCrossedOut
                       ? "🙈 Hide Crossed Out"
@@ -1215,8 +1217,8 @@ const Dashboard = () => {
               </div>
               {requests.filter((r) => r.hospital === user.hospitalName)
                 .length === 0 ? (
-                <div className="text-center py-6 bg-gray-50 rounded-lg">
-                  <p className="text-gray-500">
+                <div className="text-center py-6 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <p className="text-gray-500 dark:text-gray-400">
                     No requests for your hospital at the moment
                   </p>
                 </div>
@@ -1234,10 +1236,10 @@ const Dashboard = () => {
                         key={req._id}
                         className={`p-3 rounded-lg border-2 transition-all ${
                           req.fulfilled
-                            ? "bg-green-50 border-green-200"
+                            ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800/50"
                             : req.urgency === "Emergency"
-                            ? "bg-red-50 border-red-200"
-                            : "bg-white border-gray-200"
+                            ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800/50"
+                            : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600"
                         } ${
                           crossedOutRequests.has(req._id) ? "opacity-60" : ""
                         }`}
@@ -1251,7 +1253,7 @@ const Dashboard = () => {
                             }`}
                           >
                             <div className="flex items-center gap-2 mb-1">
-                              <strong className="text-lg">
+                              <strong className="text-lg text-gray-900 dark:text-white">
                                 {req.bloodGroup}
                               </strong>
                               <span
@@ -1290,10 +1292,10 @@ const Dashboard = () => {
                                 </button>
                               )}
                             </div>
-                            <p className="text-sm text-gray-600">
+                            <p className="text-sm text-gray-600 dark:text-gray-300">
                               Requested by: {req.requester?.name}
                             </p>
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
                               {new Date(req.createdAt).toLocaleDateString()}
                             </p>
                           </div>
@@ -1339,28 +1341,28 @@ const Dashboard = () => {
         {/* Test Section for Regular Users */}
         {!user?.isDonor && !user?.isHospital && requests.length > 0 && (
           <div className="mb-8">
-            <h3 className="text-xl font-semibold mb-4 text-gray-700">
+            <h3 className="text-xl font-semibold mb-4 text-gray-700 dark:text-gray-300">
               🩸 Available Blood Requests (Test View)
             </h3>
             <div className="space-y-4">
               {requests.map((req) => (
                 <div
                   key={req._id}
-                  className="p-4 rounded-lg border-2 bg-white border-gray-200 shadow-md"
+                  className="p-4 rounded-lg border-2 bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 shadow-md"
                 >
                   <div className="flex items-center gap-2 mb-1">
-                    <strong className="text-lg">{req.bloodGroup}</strong>
-                    <span className="text-gray-600">at</span>
-                    <em className="text-blue-800 font-medium">
+                    <strong className="text-lg text-gray-900 dark:text-white">{req.bloodGroup}</strong>
+                    <span className="text-gray-600 dark:text-gray-400">at</span>
+                    <em className="text-blue-800 dark:text-blue-300 font-medium">
                       {req.hospital || "Hospital not specified"}
                     </em>
-                    <span className="text-gray-600">in</span>
-                    <em className="text-gray-800">{req.location}</em>
+                    <span className="text-gray-600 dark:text-gray-400">in</span>
+                    <em className="text-gray-800 dark:text-gray-200">{req.location}</em>
                   </div>
-                  <p className="text-sm text-gray-600 mb-1">
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
                     Requested by: {req.requester?.name}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     Created: {new Date(req.createdAt).toLocaleDateString()}
                   </p>
                 </div>
@@ -1372,10 +1374,10 @@ const Dashboard = () => {
         {/* For Non-Donors and Non-Hospitals: Show message if no requests */}
         {!user?.isDonor && !user?.isHospital && myRequests.length === 0 && (
           <div className="text-center py-8">
-            <h3 className="text-xl font-semibold mb-4 text-gray-600">
+            <h3 className="text-xl font-semibold mb-4 text-gray-600 dark:text-gray-400">
               No Blood Requests Yet
             </h3>
-            <p className="text-gray-500 mb-4">
+            <p className="text-gray-500 dark:text-gray-500 mb-4">
               You haven't made any blood requests yet. Create your first request
               to get started.
             </p>

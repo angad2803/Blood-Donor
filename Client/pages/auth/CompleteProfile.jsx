@@ -3,8 +3,10 @@ import { AuthContext } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/api";
 import { gsap } from "gsap";
+import { useTranslation } from "react-i18next";
 
 const CompleteProfile = () => {
+  const { t } = useTranslation();
   const { loginWithToken } = useContext(AuthContext);
   const navigate = useNavigate();
 
@@ -92,9 +94,9 @@ const CompleteProfile = () => {
       <div className="complete-particle fixed w-2 h-2 bg-green-400/20 rounded-full pointer-events-none"></div>
       <div className="complete-particle fixed w-3 h-3 bg-yellow-400/20 rounded-full pointer-events-none"></div>
 
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center relative overflow-hidden">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center relative overflow-hidden transition-colors duration-300">
         {/* Background Elements */}
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-100/40 via-blue-100/40 to-pink-100/40"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-100/40 via-blue-100/40 to-pink-100/40 dark:from-purple-900/10 dark:via-blue-900/10 dark:to-pink-900/10 transition-colors duration-300"></div>
 
         <div className="relative max-w-md w-full space-y-8">
           {/* Header */}
@@ -107,7 +109,7 @@ const CompleteProfile = () => {
             <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
               Complete Your Profile
             </h2>
-            <p className="mt-2 text-gray-600">
+            <p className="mt-2 text-gray-600 dark:text-gray-300">
               Help us serve you better by completing your profile
             </p>
           </div>
@@ -115,12 +117,12 @@ const CompleteProfile = () => {
           {/* Form */}
           <div
             ref={formRef}
-            className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-white/20"
+            className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-white/20 dark:border-gray-700"
           >
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Blood Group */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   <span className="text-red-500">*</span> Blood Group
                 </label>
                 <select
@@ -128,9 +130,9 @@ const CompleteProfile = () => {
                   value={formData.bloodGroup}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white/70"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white/70 dark:bg-gray-700/70 dark:text-white"
                 >
-                  <option value="">Select Blood Group</option>
+                  <option value="">{t("profile.select_blood_group", "Select Blood Group")}</option>
                   <option value="A+">A+</option>
                   <option value="A-">A-</option>
                   <option value="B+">B+</option>
@@ -144,7 +146,7 @@ const CompleteProfile = () => {
 
               {/* Location */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   <span className="text-red-500">*</span> Location
                 </label>
                 <div className="flex gap-2">
@@ -155,7 +157,7 @@ const CompleteProfile = () => {
                     value={formData.location}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white/70"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white/70 dark:bg-gray-700/70 dark:text-white"
                   />
                 </div>
               </div>
@@ -169,7 +171,7 @@ const CompleteProfile = () => {
                   onChange={handleChange}
                   className="w-5 h-5 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500 focus:ring-2"
                 />
-                <label className="text-sm font-medium text-gray-700">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   I want to register as a blood donor
                 </label>
               </div>
