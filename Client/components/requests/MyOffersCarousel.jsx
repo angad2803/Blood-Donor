@@ -85,7 +85,7 @@ const MyOffersCarousel = ({ myOffers = [], onOpenChat }) => {
                   <h3 className="font-semibold text-red-600 dark:text-red-400">
                     {offer.bloodRequest?.bloodGroup} Blood Donation Offer
                   </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-gray-600 dark:text-gray-100">
                     To: {offer.bloodRequest?.location}
                   </p>
                 </div>
@@ -101,11 +101,11 @@ const MyOffersCarousel = ({ myOffers = [], onOpenChat }) => {
                   {(offer.status || "pending").charAt(0).toUpperCase() + (offer.status || "pending").slice(1)}
                 </span>
               </div>
-              <p className="text-sm text-gray-700 dark:text-gray-300 italic mb-3">
+              <p className="text-sm text-gray-700 dark:text-gray-100 italic mb-3">
                 "{offer.message}"
               </p>
               <div className="flex justify-between items-center">
-                <div className="text-xs text-gray-500 dark:text-gray-400">
+                <div className="text-xs text-gray-500 dark:text-gray-200">
                   <p>Sent: {new Date(offer.createdAt).toLocaleDateString()}</p>
                   {offer.respondedAt && (
                     <p>

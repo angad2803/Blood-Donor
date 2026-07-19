@@ -98,7 +98,7 @@ const MyRequestsCarousel = ({
                     <span className="mr-2">🩸</span>
                     {req.bloodGroup} Blood Request
                   </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-gray-600 dark:text-gray-100">
                     Created on: {new Date(req.createdAt).toLocaleDateString()}
                   </p>
                 </div>
@@ -113,10 +113,10 @@ const MyRequestsCarousel = ({
                 </span>
               </div>
               <div className="mb-4">
-                <p className="text-sm text-gray-600 dark:text-gray-300">
+                <p className="text-sm text-gray-600 dark:text-gray-100">
                   <strong>Location:</strong> {req.location}
                 </p>
-                <p className="text-sm text-gray-600 dark:text-gray-300">
+                <p className="text-sm text-gray-600 dark:text-gray-100">
                   <strong>Urgency:</strong> {req.urgency}
                 </p>
               </div>
@@ -136,7 +136,7 @@ const MyRequestsCarousel = ({
               </div>
               {req.offers && req.offers.length > 0 && (
                 <div>
-                  <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-3">
+                  <h4 className="font-medium text-gray-800 dark:text-white mb-3">
                     Offers Received ({req.offers.length})
                   </h4>
                   <div className="space-y-3">
@@ -147,13 +147,13 @@ const MyRequestsCarousel = ({
                       >
                         <div className="flex justify-between items-start mb-2">
                           <div>
-                            <p className="font-medium text-gray-800 dark:text-gray-200">
+                            <p className="font-medium text-gray-800 dark:text-white">
                               {offer.donor?.name}
                             </p>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                            <p className="text-sm text-gray-600 dark:text-gray-200">
                               Blood Group: {offer.donor?.bloodGroup}
                             </p>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                            <p className="text-sm text-gray-600 dark:text-gray-200">
                               Location: {offer.donor?.location}
                             </p>
                           </div>
@@ -170,10 +170,10 @@ const MyRequestsCarousel = ({
                               offer.status.slice(1)}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-700 dark:text-gray-300 italic mb-3">
+                        <p className="text-sm text-gray-700 dark:text-gray-100 italic mb-3">
                           "{offer.message}"
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                        <p className="text-xs text-gray-500 dark:text-gray-300 mb-3">
                           Sent on:{" "}
                           {new Date(offer.createdAt).toLocaleDateString()}
                         </p>
