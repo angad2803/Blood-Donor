@@ -9,18 +9,7 @@
   color: rgba(255, 255, 255, 0.95) !important;
 }
 
-.text-gray-400,
-.text-gray-500,
-.text-gray-600 {
-  color: rgb(55, 65, 81) !important; /* text-gray-700 equivalent */
-}
-
-.dark .text-gray-400,
-.dark .text-gray-500,
-.dark .text-gray-600 {
-  color: rgb(209, 213, 219) !important; /* text-gray-300 equivalent */
-}
-
+/* Overrides removed because they break Tailwind dark mode utility classes like dark:text-gray-100 */
 /* Improve text contrast on glass/transparent backgrounds */
 .glass-card .text-white\/70,
 .glass-card .text-white\/60,
