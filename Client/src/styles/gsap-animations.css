@@ -55,12 +55,7 @@
   transform: translateY(20px);
 }
 
-/* Card stagger animation setup */
-.blood-card {
-  opacity: 0;
-  transform: translateY(30px) scale(0.95);
-}
-
+/* Card stagger animation setup - opacity left at default (1) so cards are always visible */
 .blood-card.animated {
   opacity: 1;
   transform: translateY(0) scale(1);
