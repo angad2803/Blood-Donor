@@ -22,7 +22,7 @@ secrets/
 keys/
 .secrets
 .keys
-
+D:\Blood_Donor\Client\.env
 # Database files and dumps
 *.sqlite
 *.sqlite3
