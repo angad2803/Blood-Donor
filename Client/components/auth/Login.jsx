@@ -54,21 +54,7 @@ export default function Login() {
         "-=0.5",
       );
 
-    gsap.to(bloodEmojiRef.current, {
-      scale: 1.1,
-      duration: 2,
-      ease: "power2.inOut",
-      yoyo: true,
-      repeat: -1,
-    });
-
-    gsap.to(cardRef.current, {
-      y: -10,
-      duration: 3,
-      ease: "power1.inOut",
-      yoyo: true,
-      repeat: -1,
-    });
+    /* Removed infinite GSAP animations for emoji and card to prevent annoying motion */
 
     if (particlesRef.current) {
       const particles =
