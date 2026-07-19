@@ -106,15 +106,7 @@ const DashboardHeader = ({
               <span className="text-sm">⌨️</span>
             </button>
 
-            {}
-            <button
-              onClick={() => navigate("/gsap-demo")}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-2 py-1.5 rounded-md hover:from-purple-600 hover:to-pink-600 focus:outline-none focus:ring-1 focus:ring-purple-400 transition-all duration-200 flex items-center space-x-1 text-xs"
-              title="View GSAP Animation Demo"
-            >
-              <span className="text-sm">🎨</span>
-              <span>Demos</span>
-            </button>
+
 
             {}
             {user?.isAdmin && (

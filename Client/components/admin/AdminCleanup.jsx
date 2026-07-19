@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../../api/api";
 import { toast } from "react-toastify";
 import { AuthContext } from "../../context/AuthContext";
@@ -12,6 +13,7 @@ const AdminCleanup = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [activeTab, setActiveTab] = useState("cleanup");
   const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
 
 
   const [confirmationModal, setConfirmationModal] = useState({
@@ -194,9 +196,17 @@ const AdminCleanup = () => {
 
   return (
     <div className="max-w-7xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6 text-red-600">
-        ⚠️ Admin Control Panel
-      </h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-red-600">
+          ⚠️ Admin Control Panel
+        </h1>
+        <button
+          onClick={() => navigate("/dashboard")}
+          className="px-4 py-2 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-md transition-colors flex items-center gap-2 font-medium"
+        >
+          <span>←</span> Back to Dashboard
+        </button>
+      </div>
 
       {!isAdmin ? (
         <div className="bg-red-50 border border-red-200 p-4 rounded-lg mb-6">

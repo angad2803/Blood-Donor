@@ -10,9 +10,6 @@ import Login from "../components/auth/Login";
 import { AuthContext } from "../context/AuthContext";
 import useThemeStore from "../stores/themeStore";
 import "./styles/swiper-carousel.css";
-import GSAPDemo from "../components/ui/GSAPDemo";
-import GSAPDemoSimple from "../components/ui/GSAPDemoSimple";
-import GSAPDemoTest from "../components/ui/GSAPDemoTest";
 import Dashboard from "../pages/dashboard/Dashboard";
 import CreateRequest from "../pages/requests/CreateRequest";
 import DonorList from "../pages/requests/DonorsList";
@@ -67,9 +64,7 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/oauth-success" element={<OAuthSuccess />} />
             <Route path="/complete-profile" element={<CompleteProfile />} />
-            <Route path="/gsap-demo" element={<GSAPDemo />} />
-            <Route path="/gsap-simple" element={<GSAPDemoSimple />} />
-            <Route path="/gsap-test" element={<GSAPDemoTest />} />
+
             <Route
               path="/account-type-selection"
               element={<AccountTypeSelection />}
